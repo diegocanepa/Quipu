@@ -1,0 +1,17 @@
+services:
+  fin-mate:
+    build:
+      context: .
+      platforms:
+        - "linux/amd64"
+    ports:
+      - "8080:8080"
+    volumes:
+      - .:/app
+    env_file:
+      - .env
+    environment:
+      - FLASK_APP=app.py
+      - FLASK_RUN_HOST=0.0.0.0
+      - FLASK_RUN_PORT=8080
+    command: flask run

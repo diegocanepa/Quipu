@@ -2,6 +2,7 @@ from flask import Blueprint, request, jsonify
 from core.llm_processor import LLMProcessor
 from pydantic import BaseModel, ValidationError
 import logging
+from config import config
 
 logger = logging.getLogger(__name__)
 
@@ -15,7 +16,7 @@ class ActionRequest(BaseModel):
 
 @bp.route('', methods=['GET'])
 def hello():
-    return jsonify({"soludo": "hello"}), 200
+    return jsonify({"soludo": "hello", "config": config.AKASH_API_BASE_URL}), 200
 
 @bp.route('', methods=['POST'])
 def process_action():

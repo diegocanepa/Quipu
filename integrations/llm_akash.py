@@ -1,10 +1,9 @@
 from langchain_openai import ChatOpenAI
 from langchain_core.messages import HumanMessage
-from config import AKASH_API_BASE_URL, AKASH_API_KEY, LLM_MODEL_NAME, LLM_TEMPERATURE
+from config import config
 import logging
 
 logger = logging.getLogger(__name__)
-
 
 class AkashLLMClient:
     """
@@ -17,10 +16,10 @@ class AkashLLMClient:
         Logs the initialization process.
         """
         self.llm = ChatOpenAI(
-            base_url=AKASH_API_BASE_URL,
-            api_key=AKASH_API_KEY,
-            model_name=LLM_MODEL_NAME,
-            temperature=LLM_TEMPERATURE
+            base_url=config.AKASH_API_BASE_URL,
+            api_key=config.AKASH_API_KEY,
+            model_name=config.LLM_MODEL_NAME,
+            temperature=config.LLM_TEMPERATURE
         )
         logger.info("Akash OpenAI client initialized successfully.")
 
