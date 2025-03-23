@@ -1,12 +1,11 @@
-from integrations.llm_akash import AkashLLMClient
-import re
-import json
+from core.prompts import PROMPT
+from integrations.providers.llm_akash import AkashLLMClient
 import logging
-from typing import Optional
-
+from models.bills import Bills
+from datetime import datetime
+from zoneinfo import ZoneInfo
 
 logger = logging.getLogger(__name__)
-
 
 class LLMProcessor:
     """
@@ -21,39 +20,14 @@ class LLMProcessor:
         """
         self.llm_client = AkashLLMClient()
 
-    def process_content(self, content: str) -> Optional[dict]:
+    def process_content(self, content: str) -> Bills:
         """
         Processes the input content by sending it to the LLM and extracting
         the action, amount, and wallet from the response.
         Logs the processing steps and any errors.
         """
         logger.info(f"Processing content: '{content}'")
-        prompt = f"Analiza el siguiente texto y extrae la acción, la cantidad (si la hay) y la billetera (si la hay). Devuelve un diccionario JSON con las claves 'action', 'ammount' y 'wallet'. Texto: {content}"
+        prompt = PROMPT.format(content=content)
         llm_response = self.llm_client.generate_response(prompt)
-        return self._extract_data(llm_response)
-
-    def _extract_data(self, llm_response: str) -> Optional[dict]:
-        """
-        Attempts to extract the action, amount, and wallet from the LLM response.
-        Tries to parse as JSON first, then falls back to regex.
-        Logs the extraction attempts and results.
-        """
-        try:
-            return json.loads(llm_response)
-        except json.JSONDecodeError:
-            logger.info(f"LLM response is not valid JSON. Falling back to regex extraction. llm_response: '{llm_response}'")
-
-            action_match = re.search(r"acción:\s*([a-zA-Z]+)", llm_response, re.IGNORECASE)
-            ammount_match = re.search(r"cantidad:\s*([0-9.]+)", llm_response, re.IGNORECASE)
-            wallet_match = re.search(r"billetera:\s*([a-zA-Z0-9]+)", llm_response, re.IGNORECASE)
-
-            if action_match and ammount_match and wallet_match:
-                return {
-                    "action": action_match.group(1),
-                    "ammount": float(ammount_match.group(1)),
-                    "wallet": wallet_match.group(1),
-                }
-            return None
-        except Exception as e:
-            logger.error(f"An unexpected error occurred during data extraction: {e}")
-            return None
+        llm_response.date = datetime.now()  
+        return llm_response

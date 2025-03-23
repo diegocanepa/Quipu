@@ -14,10 +14,6 @@ llm_processor = LLMProcessor()
 class ActionRequest(BaseModel):
     content: str
 
-@bp.route('', methods=['GET'])
-def hello():
-    return jsonify({"soludo": "hello", "config": config.AKASH_API_BASE_URL}), 200
-
 @bp.route('', methods=['POST'])
 def process_action():
     """
@@ -33,6 +29,6 @@ def process_action():
     result = llm_processor.process_content(action_request.content)
 
     if result:
-        return jsonify(result), 200
+        return jsonify(result.model_dump()), 200
     else:
         return jsonify({"error": "No se pudo procesar la acción o extraer la información"}), 500
