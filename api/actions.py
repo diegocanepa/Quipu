@@ -4,6 +4,7 @@ from pydantic import BaseModel, ValidationError
 import logging
 from config import config
 
+
 logger = logging.getLogger(__name__)
 
 bp = Blueprint('actions', __name__, url_prefix='/action')

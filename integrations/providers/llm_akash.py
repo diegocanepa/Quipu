@@ -2,7 +2,8 @@ from langchain_openai import ChatOpenAI
 from integrations.llm_providers_interface import LLMClientInterface
 from config import config
 import logging
-from models.bills import Bills
+from models.action_type import Action
+from models.transaction import Transaction
 
 logger = logging.getLogger(__name__)
 
@@ -22,13 +23,21 @@ class AkashLLMClient(LLMClientInterface):
             model_name="DeepSeek-R1-Distill-Qwen-14B",
             temperature=config.LLM_TEMPERATURE
         )
-        self.structured_llm = self.llm.with_structured_output(Bills)
         logger.info("Akash OpenAI client initialized successfully.")
 
-
-    def generate_response(self, prompt: str) -> Bills:
+    
+    def determinate_action(self, prompt: str) -> Action:
         """
         Sends a prompt to the Akash LLM and returns the generated response.
         Logs the request and any errors during the API call.
         """
-        return self.structured_llm.invoke(prompt)
+        structured_llm = self.llm.with_structured_output(Action)
+        return structured_llm.invoke(prompt)
+    
+    def generate_response(self, prompt: str, output):
+        """
+        Sends a prompt to the Akash LLM and returns the generated response.
+        Logs the request and any errors during the API call.
+        """
+        structured_llm = self.llm.with_structured_output(output)
+        return structured_llm.invoke(prompt)

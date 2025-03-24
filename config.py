@@ -10,6 +10,7 @@ class Config:
     AKASH_API_KEY: str = os.getenv("AKASH_API_KEY")
     LLM_MODEL_NAME: str = os.getenv("LLM_MODEL_NAME", "default-model")
     LLM_TEMPERATURE: float = float(os.getenv("LLM_TEMPERATURE", "0.7"))
+    TELEGRAM_BOT_TOKEN: str = os.getenv("TELEGRAM_BOT_TOKEN")
 
     def __init__(self):
         self._validate_configs()
@@ -20,6 +21,8 @@ class Config:
             raise ValueError("AKASH_API_BASE_URL must be set in the .env file.")
         if not self.AKASH_API_KEY:
             raise ValueError("AKASH_API_KEY must be set in the .env file.")
+        if not self.AKASH_API_KEY:
+            raise ValueError("TELEGRAM_BOT_TOKEN must be set in the .env file.")
         try:
             float(self.LLM_TEMPERATURE)
         except ValueError:
