@@ -19,11 +19,19 @@ def register_handlers(app):
 
 async def initialize_telegram_app():
     global telegram_app
-    telegram_app = Application.builder().token(config.TELEGRAM_BOT_TOKEN).build()
-    register_handlers(telegram_app)
-    await telegram_app.initialize()
-    await telegram_app.start()
-    return telegram_app
+    if telegram_app is None:
+        telegram_app = Application.builder().token(config.TELEGRAM_BOT_TOKEN).build()
+        register_handlers(telegram_app)
+        await telegram_app.initialize()
+        await telegram_app.start()
+        logger.info("Telegram app initialized successfully.")
+
+
+async def process_telegram_update(update: Update):
+    try:
+        await telegram_app.process_update(update)
+    except Exception as e:
+        logger.error(f"Error processing Telegram update: {e}", exc_info=True)
 
 @bp.route('/webhook', methods=['POST'])
 async def webhook():
@@ -35,7 +43,7 @@ async def webhook():
 
         data = request.get_json(force=True)
         update = Update.de_json(data, telegram_app.bot)
-        await telegram_app.process_update(update)
+        asyncio.create_task(process_telegram_update(update))
         return jsonify({"status": "OK"}), 200
 
     except Exception as e:
@@ -45,4 +53,7 @@ async def webhook():
 async def shutdown_telegram_app():
     global telegram_app
     if telegram_app:
+        await telegram_app.stop()
         await telegram_app.shutdown()
+        logger.info("Telegram app shutdown successfully")
+    
