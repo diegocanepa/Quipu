@@ -21,7 +21,7 @@ class Config:
             raise ValueError("AKASH_API_BASE_URL must be set in the .env file.")
         if not self.AKASH_API_KEY:
             raise ValueError("AKASH_API_KEY must be set in the .env file.")
-        if not self.AKASH_API_KEY:
+        if not self.TELEGRAM_BOT_TOKEN:
             raise ValueError("TELEGRAM_BOT_TOKEN must be set in the .env file.")
         try:
             float(self.LLM_TEMPERATURE)
