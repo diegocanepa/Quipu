@@ -16,11 +16,8 @@ app.register_blueprint(bot_bp)
 app.register_blueprint(status_bp)
 
 async def main():
-    logger.info("Initializing Telegram Bot...")
-    await initialize_telegram_app()
     logger.info("Starting Flask development server...")
     app.run(host="0.0.0.0", port=8080, debug=True)
-    await shutdown_telegram_app()
 
 if __name__ == '__main__':
     asyncio.run(main())
