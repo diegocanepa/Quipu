@@ -155,7 +155,7 @@ JSON
     "currency_from": "USD",
     "currency_to": "PESOS",
     "price": 1250,
-    "date": "{{{fecha_actual}}",
+    "date": "{{fecha_actual}}",
     "action": "Cambio de divisas"
 }}
 

@@ -16,8 +16,7 @@ async def echo(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     result = llm_processor.process_content(user_message)
 
     if result:
-        result = result.model_dump()
-        response_text = f"API Response: {result}"
-        await update.message.reply_text(response_text)
+        response_text = result.to_formatted_string()
+        await update.message.reply_text(response_text, parse_mode='MarkdownV2')
     else:
         await update.message.reply_text("Hubo un error, intenta nuevamente!.")
