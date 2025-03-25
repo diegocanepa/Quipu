@@ -1,7 +1,6 @@
 from flask import Flask
 from api.actions import bp as actions_bp
 from api.bot import bp as bot_bp
-from api.bot import initialize_telegram_app, shutdown_telegram_app
 from api.status import bp as status_bp
 import logging
 import asyncio
