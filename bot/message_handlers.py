@@ -14,11 +14,10 @@ async def echo(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     logger.info(f"Received message from user {update.effective_user.id}: {user_message}")
 
     result = llm_processor.process_content(user_message)
-    print(f"result: {result}")
-    
+
     if result:
         result = result.model_dump()
         response_text = f"API Response: {result}"
         await update.message.reply_text(response_text)
     else:
-        await update.message.reply_text("An unexpected error occurred.")
+        await update.message.reply_text("Hubo un error, intenta nuevamente!.")
