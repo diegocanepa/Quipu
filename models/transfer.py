@@ -1,6 +1,6 @@
 from pydantic import BaseModel, Field
 from datetime import datetime
-from integrations.spreedsheet.spreedsheet import GoogleSheetsClient
+from integrations.spreadsheet.spreadsheet import GoogleSheetsClient
 
 class Transfer(BaseModel):
     """Represents a financial transaction."""
