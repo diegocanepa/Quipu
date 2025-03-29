@@ -3,6 +3,8 @@ from dotenv import load_dotenv
 
 load_dotenv(".env")  # Load environment variables from .env
 
+
+
 class Config:
     """Class to store application settings."""
 
@@ -11,6 +13,7 @@ class Config:
     LLM_MODEL_NAME: str = os.getenv("LLM_MODEL_NAME", "default-model")
     LLM_TEMPERATURE: float = float(os.getenv("LLM_TEMPERATURE", "0.7"))
     TELEGRAM_BOT_TOKEN: str = os.getenv("TELEGRAM_BOT_TOKEN")
+    GOOGLE_CREDENTIALS: str = os.getenv("GOOGLE_CREDENTIALS")
 
     def __init__(self):
         self._validate_configs()
@@ -23,6 +26,8 @@ class Config:
             raise ValueError("AKASH_API_KEY must be set in the .env file.")
         if not self.TELEGRAM_BOT_TOKEN:
             raise ValueError("TELEGRAM_BOT_TOKEN must be set in the .env file.")
+        if not self.GOOGLE_CREDENTIALS:
+            raise ValueError("GOOGLE_CREDENTIALS must be set in the .env file.")
         try:
             float(self.LLM_TEMPERATURE)
         except ValueError:

@@ -8,6 +8,7 @@ from models.forex import Forex
 from models.investment import Investment
 from models.transaction import Transaction
 from models.transfer import Transfer
+from integrations.spreedsheet.spreedsheet import GoogleSheetsClient
 import pytz
 
 logger = logging.getLogger(__name__)
@@ -24,6 +25,7 @@ class LLMProcessor:
         Logs the initialization.
         """
         self.llm_client = AkashLLMClient()
+        self.spreedsheet_client = GoogleSheetsClient()
 
     def process_content(self, content: str) -> Forex | Investment | Transaction | Transfer:
         """
@@ -49,6 +51,12 @@ class LLMProcessor:
             llm_response = self.llm_client.generate_response(prompt=prompt, output=Forex)
         
         llm_response.date = datetime.now(pytz.timezone("America/Argentina/Buenos_Aires"))
+
+        try:
+            llm_response.save_to_sheet(self.spreedsheet_client)
+        except Exception as e:
+            return None
+
         return llm_response
 
     def determinate_action(self, content: str) -> Action:

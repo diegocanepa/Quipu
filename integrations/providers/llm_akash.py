@@ -4,6 +4,11 @@ from config import config
 import logging
 from models.action_type import Action
 from models.transaction import Transaction
+from models.action_type import Action, ActionTypes
+from models.forex import Forex
+from models.investment import Investment
+from models.transaction import Transaction
+from models.transfer import Transfer
 
 logger = logging.getLogger(__name__)
 
@@ -34,7 +39,7 @@ class AkashLLMClient(LLMClientInterface):
         structured_llm = self.llm.with_structured_output(Action)
         return structured_llm.invoke(prompt)
     
-    def generate_response(self, prompt: str, output):
+    def generate_response(self, prompt: str, output) -> Forex | Investment | Transaction | Transfer:
         """
         Sends a prompt to the Akash LLM and returns the generated response.
         Logs the request and any errors during the API call.

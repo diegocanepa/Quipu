@@ -1,5 +1,6 @@
 from pydantic import BaseModel, Field
 from datetime import datetime
+from integrations.spreedsheet.spreedsheet import GoogleSheetsClient
 
 class Transaction(BaseModel):
     """Represents a financial bill."""
@@ -8,20 +9,31 @@ class Transaction(BaseModel):
     currency: str = Field(description="Currency of the bill")
     category: str = Field(description="Category of the bill")
     date: datetime = Field(description="Actual Datetime")
-    action: str = Field(description="Action (expense or income)")
+    action: str = Field(description="Action (Ingreso or Gasto)")
     
     def to_formatted_string(self) -> str:
         action_emoji = "💸" if self.action.lower() == "expense" else "💰"
         return (
             f"*Transacción* {action_emoji}\n\n"
-            f"📝 *Descripción:* {self.escape_markdown(self.description)}\n"
-            f"🏷️ *Categoría:* {self.escape_markdown(self.category)}\n"
-            f"➡️ *Tipo:* {self.escape_markdown(self.action)}\n"
-            f"🔢 *Monto:* `{self.amount:.2f}` {self.escape_markdown(self.currency)}\n"
+            f"📝 *Descripción:* {self._escape_markdown(self.description)}\n"
+            f"🏷️ *Categoría:* {self._escape_markdown(self.category)}\n"
+            f"➡️ *Tipo:* {self._escape_markdown(self.action)}\n"
+            f"🔢 *Monto:* `{self.amount:.2f}` {self._escape_markdown(self.currency)}\n"
             f"🗓️ *Fecha:* `{self.date.strftime('%Y-%m-%d %H:%M')}`"
         )
         
-    def escape_markdown(self, text: str) -> str:
+    def _escape_markdown(self, text: str) -> str:
         """Escapa caracteres especiales de MarkdownV2."""
         escape_chars = r'_*[]()~`>#+-=|{}.!'
         return ''.join('\\' + char if char in escape_chars else char for char in str(text))
+
+    def save_to_sheet(self, service: GoogleSheetsClient):
+        row = [
+            self.date.date().isoformat(),
+            self.action,
+            self.amount,
+            self.currency,
+            self.category,
+            self.description,
+        ]
+        service.insert_row("FinMate", "Gastos&Ingresos", row)
