@@ -1,90 +1,3 @@
-PROMPT = """
-You are an expert financial assistant. Your task is to analyze a given financial text and extract structured information according to the `Bills` or `Transaction` model.
-If the action is a Expense, bill model
-If the action is Transfer, transaction model.
-
-## Output Format for Bills:
-Provide a JSON response with the following schema:
-```json
-{{
-    "description": "string",
-    "amount": float,
-    "category": "string",
-    "action": "string"
-}}
-```
-
-## Output Format for Transaction:
-Provide a JSON response with the following schema:
-```json
-{{
-    "description": "string",
-    "category": "string",
-    "action": "string"
-    "wallet_from": "string",
-    "wallet_to": "string",
-    "initial_amount": "float"
-    "final_amount": "float"
-}}
-```
-
-## Allowed Actions:
-Choose one from the following predefined actions:
-- "Transaction"
-- "Transfer"
-- "Investment"
-- "Forex Transaction"
-
-## Allowed Wallets:
-If the message references a wallet, it must belong to one of the following:
-- "Binance"
-- "Nexo"
-- "Cocos Capital"
-- "Invertir Online"
-- "Banco Santander"
-- "Revolut"
-- "Cash"
-
-## Example Inputs and Outputs:
-
-### Example 1:
-**Input:**  
-*"Transferí $500 dolares desde Binance a Revolut para pagar un viaje. Me llego 495"*  
-
-**Output:**
-```json
-{{
-    "description": "Transfer from Binance to Revolut for a trip",
-    "category": "Travel",
-    "action": "Transfer",
-    "wallet_from": "Binance",
-    "wallet_to": "Wise",
-    "initial_amount": 500.0,
-    "final_amount": "495.0,
-    "currency": "dolares"
-}}
-```
-
-### Example 2:
-**Input:**  
-*"Compré comida en el supermercado por $30 con mi tarjeta de Banco Santander."*  
-
-**Output:**
-```json
-{{
-    "description": "Supermarket food purchase",
-    "amount": 30.0,
-    "category": "Groceries",
-    "action": "Expense",
-    "currency": "pesos"
-}}
-```
-
-Now, analyze the following message and return a structured JSON response:
-{content}
-"""
-
-
 ACTION_TYPE_PROMPT="""
 Eres un experto en finanzas y tu tarea es analizar una oración proporcionada por un usuario para determinar el tipo de acción financiera a la que se refiere. Debes clasificar la acción en una de las siguientes categorías:
 
@@ -220,7 +133,7 @@ amount: El monto de la transacción.
 currency: La moneda de la transacción.
 category: La categoría del gasto o ingreso (ej. comida, salario, alquiler).
 date: La fecha y hora de la transacción (si se menciona, sino usa la actual).
-action: La naturaleza de la transacción, que debe ser "expense" (gasto) o "income" (ingreso).
+action: La naturaleza de la transacción, que debe ser gasto o ingreso.
 Responde en formato JSON, siguiendo el siguiente esquema:
 
 JSON
@@ -231,7 +144,7 @@ JSON
     "currency": "string",
     "category": "string",
     "date": "datetime",
-    "action": "expense" | "income"
+    "action": "gasto" | "ingreso"
 }}
 Ejemplos:
 
@@ -291,6 +204,8 @@ JSON
     "final_amount": float,
     "currency": "string"
 }}
+
+Las wallet disponibles son: Wise, Deel, Takenos, Revolut, Binance, Efectivo, Nexo, Banco. En caso de que no coincida con alguna de estas poner la mas parecida ya que puede ser un error de tipeo
 
 Ejemplos:
 
