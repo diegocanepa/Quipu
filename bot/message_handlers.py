@@ -13,7 +13,7 @@ async def echo(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     user_message = update.message.text
     logger.info(f"Received message from user {update.effective_user.id}: {user_message}")
 
-    result = llm_processor.process_content(user_message)
+    result = await llm_processor.process_content(user_message)
 
     if result:
         response_text = result.to_formatted_string()

@@ -10,6 +10,7 @@ from models.transaction import Transaction
 from models.transfer import Transfer
 from integrations.spreadsheet.spreadsheet import GoogleSheetsClient
 import pytz
+from integrations.supabase.supabase import SupabaseManager
 
 logger = logging.getLogger(__name__)
 
@@ -26,8 +27,9 @@ class LLMProcessor:
         """
         self.llm_client = AkashLLMClient()
         self.spreadsheet_client = GoogleSheetsClient()
+        self.supabase_client = SupabaseManager()
 
-    def process_content(self, content: str) -> Forex | Investment | Transaction | Transfer:
+    async def process_content(self, content: str) -> Forex | Investment | Transaction | Transfer:
         """
         Processes the input content by sending it to the LLM and extracting
         the action, amount, and wallet from the response.
@@ -54,7 +56,9 @@ class LLMProcessor:
 
         try:
             llm_response.save_to_sheet(self.spreadsheet_client)
+            await llm_response.save_to_database(self.supabase_client)
         except Exception as e:
+            logger.error(f"Error trying to save data on spreadsheet or supabse: '{e}'")
             return None
 
         return llm_response

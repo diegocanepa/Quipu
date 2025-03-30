@@ -1,6 +1,7 @@
 from pydantic import BaseModel, Field
 from datetime import datetime
 from integrations.spreadsheet.spreadsheet import GoogleSheetsClient
+from integrations.supabase.supabase import SupabaseManager
 
 class Transaction(BaseModel):
     """Represents a financial bill."""
@@ -37,3 +38,14 @@ class Transaction(BaseModel):
             self.description,
         ]
         service.insert_row("FinMate", "Gastos&Ingresos", row)
+        
+    async def save_to_database(self, service: SupabaseManager):
+        data = {
+            "description": self.description,
+            "amount": self.amount,
+            "currency": self.currency,
+            "category": self.category,
+            "date": self.date.date().isoformat(),
+            "action": self.action,
+        }
+        await service.insert("transactions", data)
