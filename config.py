@@ -16,6 +16,7 @@ class Config:
     GOOGLE_CREDENTIALS: str = os.getenv("GOOGLE_CREDENTIALS")
     SUPABASE_URL: str = os.getenv("SUPABASE_URL")
     SUPABASE_KEY: str = os.getenv("SUPABASE_KEY")
+    ENVIRONMENT: str = os.getenv("ENVIRONMENT")
     
 
     def __init__(self):
