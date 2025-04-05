@@ -1,3 +1,4 @@
+from typing import Optional
 from pydantic import BaseModel, Field
 from datetime import datetime
 from integrations.spreadsheet.spreadsheet import GoogleSheetsClient
@@ -10,13 +11,13 @@ class Transfer(BaseModel):
     date: datetime = Field(description="Actual Datetime")
     action: str = Field(description="Action")
     wallet_from: str = Field(description="Wallet from")
-    wallet_to: str = Field(description="Wallet to")
+    wallet_to: Optional[str] = Field(description="Wallet to")
     initial_amount: float = Field(description="Initial mount of the bill")
     final_amount: float = Field(description="Final mount of the bill with the fees")
     currency: str = Field(description="Currency of the bill")
 
     def to_formatted_string(self) -> str:
-        wallet_to_str = self._escape_markdown(self.wallet_to) if self.wallet_to is not None else ""
+        wallet_to_str = self._escape_markdown(self.wallet_to) if self.wallet_to is not None else "N/A"
         lines = [
             "*Transferencia de Fondos*\n",
             f"📝 *Descripción:* {self._escape_markdown(self.description)}",

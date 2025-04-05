@@ -15,7 +15,7 @@ class SupabaseManager(SupabaseManagerService):
     async def insert(self, table_name: str, data: Dict[str, Any]) -> Dict[str, Any] | None:
         """Inserts a new record into the specified table."""
         if config.ENVIRONMENT == "TEST":
-            table_name = '{}_TEST'.format(table_name)
+            table_name = '{}_test'.format(table_name)
         
         try:
             response = await self._client.table(table_name).insert(data).execute()

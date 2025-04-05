@@ -26,17 +26,12 @@ async def echo(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
         return
     
     for result in results:
-        response_text = format_processing_result(result)
-        await update.message.reply_text(response_text, parse_mode='MarkdownV2')
-        
-    for result in results:
-        if result:
-            response_text = result.to_formatted_string()
+        if result.error is None:
+            response_text = format_processing_result(result)
             await update.message.reply_text(response_text, parse_mode='MarkdownV2')
         else:
-            await update.message.reply_text("Hubo un error, intenta nuevamente!.")
+            await update.message.reply_text(f'Hubo un error procesando el mensaje: {result.error}.')
             
-
 def format_processing_result(result: ProcessingResult) -> str:
     """
     Formats a ProcessingResult object into the desired user-friendly message with emojis.
