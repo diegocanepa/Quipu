@@ -34,6 +34,9 @@ class GoogleSheetsClient(GoogleSheetsService):
         return gspread.authorize(creds)
 
     def insert_row(self, spreadsheet_name: str, sheet_name: str, row_data: list):
+        if config.ENVIRONMENT == "TEST":
+            return 
+        
         try:
             spreadsheet = self.client.open(spreadsheet_name)
             sheet = spreadsheet.worksheet(sheet_name)
