@@ -18,7 +18,7 @@ La respuesta debe ser directamente el tipo de acción identificada. Por ejemplo:
 """
 
 
-FOREX_PROMP="""
+FOREX_PROMPT="""
 Eres un experto en operaciones de cambio de divisas (Forex). Tu tarea es analizar una oración proporcionada por un usuario y extraer información relevante sobre una operación de compra o venta de monedas extranjeras.
 
 Debes identificar y extraer los siguientes campos:
@@ -29,6 +29,9 @@ Debes identificar y extraer los siguientes campos:
 - `price`: El tipo de cambio al que se realizó la operación.
 - `date`: La fecha y hora de la operación (si se menciona, sino usa la actual).
 - `action`: Debe ser siempre "Cambio de divisas".
+
+Requisitos: 
+- Las currency pueden ser: Pesos Argentinos (ARS) o Dolares (USD)
 
 Responde en formato JSON, siguiendo el siguiente esquema:
 ```json
@@ -73,7 +76,7 @@ JSON
 }}
 
 Ahora analiza la siguiente oración:
-"{content}"
+"{content}. {reason}"
 """
 
 INVESTMENT_PROMPT="""
@@ -90,6 +93,9 @@ amout: La cantidad del activo comprado o vendido.
 price: El precio por unidad del activo en el momento de la operación.
 currency: La moneda en la que se realizó la transacción.
 Responde en formato JSON, siguiendo el siguiente esquema:
+
+Requisitos: 
+- Las currency pueden ser: Pesos Argentinos (ARS) o Dolares (USD)
 
 JSON
 {{
@@ -121,7 +127,7 @@ JSON
 }}
 
 Ahora analiza la siguiente oración:
-"{content}"
+"{content}.{reason}"
 """
 
 TRANSACTION_PROMPT = """Eres un experto en finanzas personales. Tu tarea es analizar una oración proporcionada por un usuario y extraer información relevante sobre un movimiento general de dinero, que puede ser un gasto o un ingreso.
@@ -137,7 +143,6 @@ action: La naturaleza de la transacción, que debe ser gasto o ingreso.
 Responde en formato JSON, siguiendo el siguiente esquema:
 
 JSON
-
 {{
     "description": "string",
     "amount": float,
@@ -146,9 +151,13 @@ JSON
     "date": "datetime",
     "action": "gasto" | "ingreso"
 }}
+
+Requisitos: 
+- Las currency pueden ser: Pesos Argentinos (ARS) o Dolares (USD)
+
 Ejemplos:
 
-Oración: "Gané $1500 de mi salario hoy."
+Oración: "Gané 1500usd de mi salario hoy."
 Respuesta:
 
 JSON
@@ -158,23 +167,35 @@ JSON
     "currency": "USD",
     "category": "salario",
     "date": "{{fecha_actual}}",
-    "action": "Pago"
+    "action": "ingreso"
 }}
 
-Oración: "Pagué €50 por la cena anoche."
+Oración: "Pagué 50usd por la cena anoche."
 Respuesta:
 JSON
 {{
     "description": "Cena",
     "amount": 50.0,
-    "currency": "EUR",
+    "currency": "USD",
     "category": "comida",
     "date": "{{fecha_ayer}}",
-    "action": "Gasto"
+    "action": "gasto"
+}}
+
+Oracion: "Cambie 100 dolares a 1250 pesos"
+Respuesta:
+JSON
+{{
+    "description": "Ingreso por cambio de dolares",
+    "amount": 120000,
+    "currency": "ARS",
+    "category": "Cambio de divisas",
+    "date": "{{fecha_ayer}}",
+    "action": "ingreso"
 }}
 
 Ahora analiza la siguiente oración:
-"{content}"
+"{content}.{reason}"
 """
 
 TRANSFER_PROMPT = """Eres un experto en gestión de transferencias de dinero. Tu tarea es analizar una oración proporcionada por un usuario y extraer información relevante sobre una transferencia de fondos entre billeteras o cuentas.
@@ -190,14 +211,14 @@ wallet_to: La billetera o cuenta de destino de los fondos.
 initial_amount: La cantidad de dinero transferida inicialmente.
 final_amount: La cantidad final de dinero recibida después de cualquier comisión.
 currency: La moneda de la transferencia.
-Responde en formato JSON, siguiendo el siguiente esquema:
 
+Responde en formato JSON, siguiendo el siguiente esquema:
 JSON
 {{
     "description": "string",
     "category": "string",
     "date": "datetime",
-    "action": "Transferencia",
+    "action": "Transferencia" | "Cambio",
     "wallet_from": "string",
     "wallet_to": "string",
     "initial_amount": float,
@@ -205,13 +226,14 @@ JSON
     "currency": "string"
 }}
 
-Las wallet disponibles son: Wise, Deel, Takenos, Revolut, Binance, Efectivo, Nexo, Banco. En caso de que no coincida con alguna de estas poner la mas parecida ya que puede ser un error de tipeo
+Requisitos: 
+- Las currency pueden ser: Pesos Argentinos (ARS) o Dolares (USD)
+- Las wallet disponibles son: Wise, Deel, Takenos, Revolut, Binance, Efectivo, Nexo, Banco. En caso de que no coincida con alguna de estas poner la mas parecida ya que puede ser un error de tipeo
 
 Ejemplos:
 
 Oración: "Transferí $100 desde mi cuenta de Banco Santander a mi cuenta de Revolut hoy."
 Respuesta:
-
 JSON
 {{
     "description": "Transferencia desde Banco Santander a Revolut",
@@ -225,9 +247,8 @@ JSON
     "currency": "USD"
 }}
 
-Oración: "Envié €50 desde Binance a la cuenta de un amigo en Nexo, llegaron €49 ayer."
+Oración: "Envié 50USD desde Binance a la cuenta de un amigo en Nexo, llegaron 49USD ayer."
 Respuesta:
-
 JSON
 {{
     "description": "Envío desde Binance a Nexo",
@@ -238,9 +259,112 @@ JSON
     "wallet_to": "Nexo",
     "initial_amount": 50.0,
     "final_amount": 49.0,
-    "currency": "EUR"
+    "currency": "USD"
+}}
+
+Oración: "Cambie 100usd efectivo por 120000 pesos argentinos. De este cambio de divisas se redujo la cantidad de plata en la billetera origen por lo que se deberia insertar una transferencia con billetera destino en None"
+Respuesta:
+JSON
+{{
+    "description": "Cambio de dolares en efectivo",
+    "category": "externa",
+    "date": "{{fecha_ayer}}",
+    "action": "Cambio",
+    "wallet_from": "Efectivo",
+    "wallet_to": None,
+    "initial_amount": 50.0,
+    "final_amount": 0,
+    "currency": "USD"
 }}
 
 Ahora analiza la siguiente oración:
-"{content}"
+"{content}.{reason}"
+"""
+
+INCOME_PROMPT="""
+Eres un experto en finanzas personales. Tu tarea es analizar una oración proporcionada por un usuario y extraer información relevante sobre un ingreso.
+
+Debes identificar y extraer los siguientes campos:
+
+description: Una breve descripción de la transacción (ej. compra en supermercado).
+amount: El monto de la transacción.
+currency: La moneda de la transacción.
+category: La categoría del gasto o ingreso (ej. comida, salario, alquiler).
+date: La fecha y hora de la transacción (si se menciona, sino usa la actual).
+action: ingreso.
+
+Responde en formato JSON, siguiendo el siguiente esquema:
+JSON
+{{
+    "description": "string",
+    "amount": float,
+    "currency": "string",
+    "category": "string",
+    "date": "datetime",
+    "action": "ingreso"
+}}
+
+Requisitos: 
+- Las currency pueden ser: Pesos Argentinos (ARS) o Dolares (USD)
+
+Ejemplos:
+
+Oración: "Cambio 100usd por 1200 pesos argentinos por dolar. De este cambio de divisas se obtuvo un monto de pesos argentinos por lo que se considera un ingreso"
+Respuesta:
+JSON
+{{
+    "description": "Cambio de divisas",
+    "amount": 120000,
+    "currency": "ARS",
+    "category": "Cambio Divisas",
+    "date": "datetime",
+    "action": "ingreso"
+}}
+
+Ahora analiza la siguiente oración:
+"{content}.{reason}"
+"""
+
+EXPENSE_PROMPT="""
+Eres un experto en finanzas personales. Tu tarea es analizar una oración proporcionada por un usuario y extraer información relevante sobre un gasto.
+
+Debes identificar y extraer los siguientes campos:
+
+description: Una breve descripción de la transacción (ej. compra en supermercado).
+amount: El monto de la transacción.
+currency: La moneda de la transacción.
+category: La categoría del gasto o ingreso (ej. comida, salario, alquiler).
+date: La fecha y hora de la transacción (si se menciona, sino usa la actual).
+action: gasto
+
+Responde en formato JSON, siguiendo el siguiente esquema:
+JSON
+{{
+    "description": "string",
+    "amount": float,
+    "currency": "string",
+    "category": "string",
+    "date": "datetime",
+    "action": "gasto" | "ingreso"
+}}
+
+Requisitos: 
+- Las currency pueden ser: Pesos Argentinos (ARS) o Dolares (USD)
+
+Ejemplos:
+
+Oración: "Transferi 100 dolares de wise a deel, recibi 85 dolares. En la transferencia pudo existir un fee/comision si el monto origen es distinto al monto destino."
+Respuesta:
+JSON
+{{
+    "description": "Fee/comision transferencia de billeteras",
+    "amount": 15,
+    "currency": "USD",
+    "category": "Comision",
+    "date": "datetime",
+    "action": "gasto"
+}}
+
+Ahora analiza la siguiente oración:
+"{content}.{reason}"
 """

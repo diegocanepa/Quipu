@@ -9,7 +9,7 @@ logger = logging.getLogger(__name__)
 
 bp = Blueprint('bot', __name__, url_prefix='/bot')
 
-def register_handlers(app):
+def register_handlers(app: Application):
     """Add handlers"""
     app.add_handler(CommandHandler("start", command_handlers.start))
     app.add_handler(CommandHandler("help", command_handlers.help_command))

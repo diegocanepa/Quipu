@@ -2,9 +2,8 @@ from langchain_openai import ChatOpenAI
 from integrations.llm_providers_interface import LLMClientInterface
 from config import config
 import logging
-from models.action_type import Action
 from models.transaction import Transaction
-from models.action_type import Action, ActionTypes
+from models.action_type import Action
 from models.forex import Forex
 from models.investment import Investment
 from models.transaction import Transaction

@@ -10,4 +10,4 @@ class ActionTypes(str, Enum):
 
 class Action(BaseModel):
     """Represents a financial bill."""
-    action: ActionTypes = Field(description="Action in a forex transaction")
+    action: ActionTypes = Field(description="Action")

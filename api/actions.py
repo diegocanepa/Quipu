@@ -26,9 +26,9 @@ def process_action():
     except ValidationError as e:
         return jsonify({"error": e.errors()}), 400
 
-    result = llm_processor.process_content(action_request.content)
+    result = llm_processor.determine_action_type(action_request.content)
 
     if result:
-        return jsonify(result.model_dump()), 200
+        return jsonify({"action": result}), 200
     else:
         return jsonify({"error": "No se pudo procesar la acción o extraer la información"}), 500

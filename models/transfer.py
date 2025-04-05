@@ -16,19 +16,27 @@ class Transfer(BaseModel):
     currency: str = Field(description="Currency of the bill")
 
     def to_formatted_string(self) -> str:
-        return (
-            f"*Transferencia de Fondos*\n\n"
-            f"📝 *Descripción:* {self._escape_markdown(self.description)}\n"
-            f"📂 *Categoría:* {self._escape_markdown(self.category)}\n"
-            f"➡️ *Acción:* {self._escape_markdown(self.action)}\n"
-            f"🏦 *Desde:* {self._escape_markdown(self.wallet_from)}\n"
-            f"➡️ *Hacia:* {self._escape_markdown(self.wallet_to)}\n"
-            f"📤 *Monto Inicial:* `{self.initial_amount:.2f}` {self._escape_markdown(self.currency)}\n"
-            f"📥 *Monto Final:* `{self.final_amount:.2f}` {self._escape_markdown(self.currency)}\n"
-            f"➖ *Comisión:* `{self.initial_amount - self.final_amount:.2f}` {self._escape_markdown(self.currency)}\n"
-            f"🗓️ *Fecha:* `{self.date.strftime('%Y-%m-%d %H:%M')}`"
-        )
-        
+        wallet_to_str = self._escape_markdown(self.wallet_to) if self.wallet_to is not None else ""
+        lines = [
+            "*Transferencia de Fondos*\n",
+            f"📝 *Descripción:* {self._escape_markdown(self.description)}",
+            f"📂 *Categoría:* {self._escape_markdown(self.category)}",
+            f"➡️ *Acción:* {self._escape_markdown(self.action)}",
+            f"🏦 *Desde:* {self._escape_markdown(self.wallet_from)}",
+            f"➡️ *Hacia:* {wallet_to_str}",
+            f"📤 *Monto Inicial:* `{self.initial_amount:.2f}` {self._escape_markdown(self.currency)}",
+            f"📥 *Monto Final:* `{self.final_amount:.2f}` {self._escape_markdown(self.currency)}",
+        ]
+
+        if self.final_amount != 0:
+            commission = self.initial_amount - self.final_amount
+            lines.append(f"➖ *Comisión:* `{commission:.2f}` {self._escape_markdown(self.currency)}")
+
+        lines.append(f"🗓️ *Fecha:* `{self.date.strftime('%Y-%m-%d %H:%M')}`")
+
+        return "\n".join(lines)
+
+            
     def _escape_markdown(self, text: str) -> str:
         """Escapa caracteres especiales de MarkdownV2."""
         escape_chars = r'_*[]()~`>#+-=|{}.!'

@@ -1,6 +1,5 @@
 from abc import ABC, abstractmethod
 from typing import List, Dict, Any
-from pydantic import BaseModel
 
 class LLMClientInterface(ABC):
     """Interface for language model clients."""
