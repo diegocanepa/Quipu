@@ -365,6 +365,18 @@ JSON
     "action": "gasto"
 }}
 
+Oración: "Transferi 100 dolares de wise a deel, recibi 100 dolares. En la transferencia pudo existir un fee/comision si el monto origen es distinto al monto destino."
+Respuesta:
+JSON
+{{
+    "description": "Fee/comision transferencia de billeteras",
+    "amount": 0,
+    "currency": "USD",
+    "category": "Comision",
+    "date": "2023-10-27T10:30:00Z",
+    "action": "gasto"
+}}
+
 Ahora analiza la siguiente oración:
 "{content}.{reason}"
 """

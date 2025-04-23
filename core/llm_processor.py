@@ -78,7 +78,6 @@ class LLMProcessor:
                     response = self.llm_client.generate_response(
                         prompt=request.prompt, output=request.output_model
                     )
-                    logger.info(f"response: {response}")
                     llm_responses.append(ProcessingResult(data_object=response))
                 except Exception as e:
                     logger.error(f"Error calling LLM for prompt: '{request.output_model.__name__}': '{e}'", exc_info=True)
@@ -86,14 +85,14 @@ class LLMProcessor:
 
             current_datetime = datetime.now(pytz.timezone("America/Argentina/Buenos_Aires"))
             for response in llm_responses:
-                if response.data_object:
+                if response.error:
+                    processing_results.append(response)
+                elif response.data_object and self.has_significant_value(response.data_object):
                     response.data_object.date = current_datetime
-                    response.saved_to_spreadsheet= self._save_to_spreadsheet(response.data_object)
-                    response.saved_to_database= await self._save_to_database(response.data_object)
+                    response.saved_to_spreadsheet = self._save_to_spreadsheet(response.data_object)
+                    response.saved_to_database = await self._save_to_database(response.data_object)
                     processing_results.append(response)
                     logger.info(f"Processed: {response.model_dump_json()}")
-                else:
-                    processing_results.append(ProcessingResult(error="LLM returned no data"))
 
         except Exception as e:
             logger.error(f"An unexpected error occurred during content processing: '{e}'", exc_info=True)
@@ -228,3 +227,6 @@ class LLMProcessor:
         except Exception as e:
             logger.error(f"Error saving data to database: '{e}'", exc_info=True)
             return False
+        
+    def has_significant_value(self, action) -> bool:
+        return isinstance(action, Transfer) or (not isinstance(action, Transfer) and getattr(action, 'amount', None) != 0)
