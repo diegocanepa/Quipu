@@ -228,7 +228,7 @@ JSON
 
 Requisitos: 
 - Las currency pueden ser: Pesos Argentinos (ARS) o Dolares (USD)
-- Las wallet disponibles son: Wise, Deel, Takenos, Revolut, Binance, Efectivo, Nexo, Banco. En caso de que no coincida con alguna de estas poner la mas parecida ya que puede ser un error de tipeo
+- Las wallet disponibles son: Wise, Deel, Takenos, Revolut, Binance, Efectivo, Nexo, Santander, Inversion. En caso de que no coincida con alguna de estas poner la mas parecida ya que puede ser un error de tipeo
 
 Ejemplos:
 
