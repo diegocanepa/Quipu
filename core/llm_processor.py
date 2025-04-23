@@ -78,6 +78,7 @@ class LLMProcessor:
                     response = self.llm_client.generate_response(
                         prompt=request.prompt, output=request.output_model
                     )
+                    logger.info(f"response: {response}")
                     llm_responses.append(ProcessingResult(data_object=response))
                 except Exception as e:
                     logger.error(f"Error calling LLM for prompt: '{request.output_model.__name__}': '{e}'", exc_info=True)
@@ -85,7 +86,7 @@ class LLMProcessor:
 
             current_datetime = datetime.now(pytz.timezone("America/Argentina/Buenos_Aires"))
             for response in llm_responses:
-                if response:
+                if response.data_object:
                     response.data_object.date = current_datetime
                     response.saved_to_spreadsheet= self._save_to_spreadsheet(response.data_object)
                     response.saved_to_database= await self._save_to_database(response.data_object)

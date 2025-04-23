@@ -27,7 +27,7 @@ Debes identificar y extraer los siguientes campos:
 - `currency_from`: La moneda que se está vendiendo o cambiando.
 - `currency_to`: La moneda que se está comprando.
 - `price`: El tipo de cambio al que se realizó la operación.
-- `date`: La fecha y hora de la operación (si se menciona, sino usa la actual).
+- `date`: La fecha y hora de la operación (si se menciona, sino usa la actual). En formato ISO 8601, por ejemplo: '2023-10-27T10:30:00Z'.
 - `action`: Debe ser siempre "Cambio de divisas".
 
 Requisitos: 
@@ -57,7 +57,7 @@ JSON
     "currency_from": "USD",
     "currency_to": "PESOS",
     "price": 1250,
-    "date": "{{fecha_actual}}",
+    "date": "2023-10-27T10:30:00Z",
     "action": "Cambio de divisas"
 }}
 
@@ -71,7 +71,7 @@ JSON
     "currency_from": "USD",
     "currency_to": "PESOS",
     "price": 1250,
-    "date": "{{fecha_actual}}",
+    "date": "2023-10-27T10:30:00Z",
     "action": "Cambio de divisas"
 }}
 
@@ -86,7 +86,7 @@ Debes identificar y extraer los siguientes campos:
 
 description: Una breve descripción de la inversión (ej. compra de acciones de Tesla).
 category: La categoría del activo invertido (ej. acciones, criptomonedas, bonos).
-date: La fecha y hora de la operación (si se menciona, sino usa la actual).
+date: La fecha y hora de la operación (si se menciona, sino usa la actual). En formato ISO 8601, por ejemplo: '2023-10-27T10:30:00Z'.
 action: La acción realizada, que debe ser "buy" (comprar) o "sell" (vender).
 platform: La plataforma donde se realizó la inversión (ej. Binance, Interactive Brokers).
 amout: La cantidad del activo comprado o vendido.
@@ -118,7 +118,7 @@ JSON
 {{
     "description": "Compra de 5 acciones de Apple",
     "category": "acciones",
-    "date": "{{fecha_actual}}",
+    "date": "2023-10-27T10:30:00Z",
     "action": "buy",
     "platform": "Interactive Brokers",
     "amout": 5.0,
@@ -138,7 +138,7 @@ description: Una breve descripción de la transacción (ej. compra en supermerca
 amount: El monto de la transacción.
 currency: La moneda de la transacción.
 category: La categoría del gasto o ingreso (ej. comida, salario, alquiler).
-date: La fecha y hora de la transacción (si se menciona, sino usa la actual).
+date: La fecha y hora de la transacción (si se menciona, sino usa la actual). En formato ISO 8601, por ejemplo: '2023-10-27T10:30:00Z'.
 action: La naturaleza de la transacción, que debe ser gasto o ingreso.
 Responde en formato JSON, siguiendo el siguiente esquema:
 
@@ -166,7 +166,7 @@ JSON
     "amount": 1500.0,
     "currency": "USD",
     "category": "salario",
-    "date": "{{fecha_actual}}",
+    "date": "2023-10-27T10:30:00Z",
     "action": "ingreso"
 }}
 
@@ -178,7 +178,7 @@ JSON
     "amount": 50.0,
     "currency": "USD",
     "category": "comida",
-    "date": "{{fecha_ayer}}",
+    "date": "2023-10-27T10:30:00Z",
     "action": "gasto"
 }}
 
@@ -190,7 +190,7 @@ JSON
     "amount": 120000,
     "currency": "ARS",
     "category": "Cambio de divisas",
-    "date": "{{fecha_ayer}}",
+    "date": "2023-10-27T10:30:00Z",
     "action": "ingreso"
 }}
 
@@ -204,7 +204,7 @@ Debes identificar y extraer los siguientes campos:
 
 description: Una breve descripción de la transferencia (ej. transferencia de Binance a Nexo).
 category: La categoría de la transferencia (ej. interna, externa).
-date: La fecha y hora de la transferencia (si se menciona, sino usa la actual).
+date: La fecha y hora de la transferencia (si se menciona, sino usa la actual). En formato ISO 8601, por ejemplo: '2023-10-27T10:30:00Z'.
 action: Debe ser siempre "Transferencia".
 wallet_from: La billetera o cuenta de origen de los fondos.
 wallet_to: La billetera o cuenta de destino de los fondos.
@@ -238,7 +238,7 @@ JSON
 {{
     "description": "Transferencia desde Banco Santander a Revolut",
     "category": "interna",
-    "date": "{{fecha_actual}}",
+    "date": "2023-10-27T10:30:00Z",
     "action": "Transferencia",
     "wallet_from": "Banco Santander",
     "wallet_to": "Revolut",
@@ -253,7 +253,7 @@ JSON
 {{
     "description": "Envío desde Binance a Nexo",
     "category": "externa",
-    "date": "{{fecha_ayer}}",
+    "date": "2023-10-27T10:30:00Z",
     "action": "Transferencia",
     "wallet_from": "Binance",
     "wallet_to": "Nexo",
@@ -268,7 +268,7 @@ JSON
 {{
     "description": "Cambio de dolares en efectivo",
     "category": "externa",
-    "date": "{{fecha_ayer}}",
+    "date": "2023-10-27T10:30:00Z",
     "action": "Cambio",
     "wallet_from": "Efectivo",
     "wallet_to": None,
@@ -290,7 +290,7 @@ description: Una breve descripción de la transacción (ej. compra en supermerca
 amount: El monto de la transacción.
 currency: La moneda de la transacción.
 category: La categoría del gasto o ingreso (ej. comida, salario, alquiler).
-date: La fecha y hora de la transacción (si se menciona, sino usa la actual).
+date: La fecha y hora de la transacción (si se menciona, sino usa la actual). En formato ISO 8601, por ejemplo: '2023-10-27T10:30:00Z'.
 action: ingreso.
 
 Responde en formato JSON, siguiendo el siguiente esquema:
@@ -317,7 +317,7 @@ JSON
     "amount": 120000,
     "currency": "ARS",
     "category": "Cambio Divisas",
-    "date": "datetime",
+    "date": "2023-10-27T10:30:00Z",
     "action": "ingreso"
 }}
 
@@ -334,7 +334,7 @@ description: Una breve descripción de la transacción (ej. compra en supermerca
 amount: El monto de la transacción.
 currency: La moneda de la transacción.
 category: La categoría del gasto o ingreso (ej. comida, salario, alquiler).
-date: La fecha y hora de la transacción (si se menciona, sino usa la actual).
+date: La fecha y hora de la transacción (si se menciona, sino usa la actual). En formato ISO 8601, por ejemplo: '2023-10-27T10:30:00Z'.
 action: gasto
 
 Responde en formato JSON, siguiendo el siguiente esquema:
@@ -361,7 +361,7 @@ JSON
     "amount": 15,
     "currency": "USD",
     "category": "Comision",
-    "date": "datetime",
+    "date": "2023-10-27T10:30:00Z",
     "action": "gasto"
 }}
 
