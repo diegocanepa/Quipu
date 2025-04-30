@@ -64,12 +64,17 @@ jobs:
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           aws-region: ${{ secrets.AWS_REGION }}
 
+      - name: Install dependencies for test
+        run: |
+          mkdir package
+          python -m pip install --target ./package -r requirements.txt
+
       - name: Zip function for test
         run: |
-          zip -r function.zip . -x "*/__pycache__/*" "*.pyc"
-        
+          zip -r function.zip . package/ -x "*/__pycache__/*" "*.pyc"
+
       - name: List zip contents
-        run: unzip -l function.zip  
+        run: unzip -l function.zip
 
       - name: Deploy to Lambda (Test)
         run: aws lambda update-function-code --function-name ${{ secrets.AWS_LAMBDA_NAME_TEST }} --zip-file fileb://function.zip
@@ -97,12 +102,17 @@ jobs:
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           aws-region: ${{ secrets.AWS_REGION }}
 
+      - name: Install dependencies for production
+        run: |
+          mkdir package
+          python -m pip install --target ./package -r requirements.txt
+
       - name: Zip function for production
         run: |
-          zip -r function.zip . -x "*/__pycache__/*" "*.pyc"
-        
+          zip -r function.zip . package/ -x "*/__pycache__/*" "*.pyc"
+
       - name: List zip contents
-        run: unzip -l function.zip 
+        run: unzip -l function.zip
 
       - name: Deploy to Lambda (Production)
         run: aws lambda update-function-code --function-name ${{ secrets.AWS_LAMBDA_NAME_PROD }} --zip-file fileb://function.zip
