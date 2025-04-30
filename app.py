@@ -16,10 +16,17 @@ register_handlers()
 
 @app.post("/telegram")
 async def telegram_webhook() -> Response:
-    """Receive updates from Telegram and queue them"""
-    update = Update.de_json(data=request.json, bot=application.bot)
-    await application.update_queue.put(update)
-    return Response(status=HTTPStatus.OK)
+    logger.info("Recibiendo petición POST en /telegram")
+    logger.info(f"Headers de la petición: {request.headers}")
+    logger.info(f"Cuerpo de la petición: {request.get_data(as_text=True)}")
+    logger.info(f"App: {application}")
+    try:
+        update = Update.de_json(data=request.json, bot=application.bot)
+        await application.update_queue.put(update)
+        return Response(status=HTTPStatus.OK)
+    except Exception as e:
+        logger.error(f"Error al procesar la actualización: {e}")
+        return Response(status=HTTPStatus.INTERNAL_SERVER_ERROR)
 
 @app.get("/healthcheck")
 async def healthcheck():
