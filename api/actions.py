@@ -2,7 +2,6 @@ from flask import Blueprint, request, jsonify
 from core.llm_processor import LLMProcessor
 from pydantic import BaseModel, ValidationError
 import logging
-from config import config
 
 logger = logging.getLogger(__name__)
 

@@ -3,7 +3,6 @@ from typing import List
 from telegram import Update
 from core.llm_processor import LLMProcessor, ProcessingResult
 from telegram.ext import ContextTypes
-from config import config
 
 logger = logging.getLogger(__name__)
 

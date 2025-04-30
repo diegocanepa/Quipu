@@ -1,5 +1,5 @@
 from abc import ABC, abstractmethod
-from typing import List, Dict, Any
+from typing import Any
 
 class LLMClientInterface(ABC):
     """Interface for language model clients."""
