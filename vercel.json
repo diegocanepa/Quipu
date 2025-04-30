@@ -1,13 +1,14 @@
 {
-    "functions": {
-        "api/telegram.py": {
-            "runtime": "python3.9"
+    "builds": [
+        {
+            "src": "app.py",
+            "use": "@vercel/python"
         }
-    },
+    ],
     "routes": [
         {
-            "src": "/telegram",
-            "dest": "api/telegram.py"
+            "src": "/(.*)",
+            "dest": "app.py"
         }
     ]
 }
