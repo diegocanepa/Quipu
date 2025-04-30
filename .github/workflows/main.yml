@@ -68,7 +68,7 @@ jobs:
         run: |
           zip -r function.zip . -x "*/__pycache__/*" "*.pyc"
 
-      - name: Deploy to Lambda (Test - Manual)
+      - name: Deploy to Lambda (Test)
         run: aws lambda update-function-code --function-name ${{ secrets.AWS_LAMBDA_NAME_TEST }} --zip-file fileb://function.zip
 
   deploy_prod:
@@ -98,6 +98,5 @@ jobs:
         run: |
           zip -r function.zip . -x "*/__pycache__/*" "*.pyc"
 
-      - name: Deploy to Lambda (Production - Manual)
+      - name: Deploy to Lambda (Production)
         run: aws lambda update-function-code --function-name ${{ secrets.AWS_LAMBDA_NAME_PROD }} --zip-file fileb://function.zip
-        if: github.event_name == 'workflow_dispatch'
