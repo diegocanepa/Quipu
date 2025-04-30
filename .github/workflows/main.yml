@@ -2,6 +2,9 @@ name: Deploy Lambda
 
 on:
   workflow_dispatch:
+  push:
+    branches:
+      - '*' # Monitorea todas las ramas para el build y lint
 
 jobs:
   build:
