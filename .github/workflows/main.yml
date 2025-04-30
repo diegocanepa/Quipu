@@ -67,6 +67,9 @@ jobs:
       - name: Zip function for test
         run: |
           zip -r function.zip . -x "*/__pycache__/*" "*.pyc"
+        
+      - name: List zip contents
+        run: unzip -l function.zip  
 
       - name: Deploy to Lambda (Test)
         run: aws lambda update-function-code --function-name ${{ secrets.AWS_LAMBDA_NAME_TEST }} --zip-file fileb://function.zip
@@ -97,6 +100,9 @@ jobs:
       - name: Zip function for production
         run: |
           zip -r function.zip . -x "*/__pycache__/*" "*.pyc"
+        
+      - name: List zip contents
+        run: unzip -l function.zip 
 
       - name: Deploy to Lambda (Production)
         run: aws lambda update-function-code --function-name ${{ secrets.AWS_LAMBDA_NAME_PROD }} --zip-file fileb://function.zip

@@ -28,3 +28,4 @@ def run_telegram_bot():
     register_handlers(application)
     register_conversation_handlers(application)
     application.run_polling()
+    
