@@ -23,7 +23,7 @@ async def telegram_webhook() -> Response:
     logger.info(f"App: {application}")
     try:
         update = Update.de_json(data=request.json, bot=application.bot)
-        await application.update_queue.put(update)
+        await application.process_update(update) 
         return Response(status=HTTPStatus.OK)
     except Exception as e:
         logger.error(f"Error al procesar la actualización: {e}")
