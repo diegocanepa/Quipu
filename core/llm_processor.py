@@ -1,7 +1,5 @@
 from core.prompts import ACTION_TYPE_PROMPT, TRANSACTION_PROMPT, TRANSFER_PROMPT, FOREX_PROMPT, INVESTMENT_PROMPT, INCOME_PROMPT, EXPENSE_PROMPT
 from integrations.providers.llm_akash import AkashLLMClient as LLMAgent
-from integrations.spreadsheet.spreadsheet import GoogleSheetsClient as GSheetsClient
-from integrations.supabase.supabase import SupabaseManager as SupaManager
 import logging
 from datetime import datetime
 from models.action_type import ActionTypes
@@ -24,8 +22,6 @@ class ProcessingResult(BaseModel):
     Represents the result of processing and saving a data object.
     """
     data_object: Optional[Union[Forex, Investment, Transaction, Transfer]] = None
-    saved_to_spreadsheet: bool = False
-    saved_to_database: bool = False
     error: Optional[str] = None
 
 class LLMProcessor:
@@ -40,8 +36,6 @@ class LLMProcessor:
         database clients. Logs the initialization.
         """
         self.llm_client = LLMAgent()
-        self.spreadsheet_client = GSheetsClient()
-        self.supabase_client = SupaManager()
         logger.info("LLMProcessor initialized.")
 
     async def process_content(self, content: str) -> List[ProcessingResult]:
@@ -58,6 +52,7 @@ class LLMProcessor:
         """
         logger.info(f"Processing content: '{content}'")
         processing_results: List[ProcessingResult] = []
+        current_datetime = datetime.now(pytz.timezone("America/Argentina/Buenos_Aires"))
 
         try:
             action_type = self.determine_action_type(content)
@@ -66,37 +61,27 @@ class LLMProcessor:
                 processing_results.append(ProcessingResult(error="No se pudo determinar una accion para registrar en base al mensaje"))
                 return processing_results
 
-            llm_request_models = await self._process_action(content, action_type)
+            llm_request_models = self._process_action(content, action_type)
             if not llm_request_models:
                 logger.warning(f"Failed to create LLM request models for action: '{action_type.value}'.")
                 processing_results.append(ProcessingResult(error=f"Se identifico la accion '{action_type.value}' pero no fue posible procesar el mensaje."))
                 return processing_results
 
-            llm_responses: List[ProcessingResult] = []
             for request in llm_request_models:
                 try:
                     response = self.llm_client.generate_response(
                         prompt=request.prompt, output=request.output_model
                     )
-                    llm_responses.append(ProcessingResult(data_object=response))
+                    if self.has_significant_value(response):
+                        response.date = current_datetime
+                        processing_results.append(ProcessingResult(data_object=response))
+                        logger.info(f"Processed: {response.model_dump_json()}")
                 except Exception as e:
-                    logger.error(f"Error calling LLM for prompt: '{request.output_model.__name__}': '{e}'", exc_info=True)
-                    llm_responses.append(ProcessingResult(error=f'Ocurrio un error procesando la {request.output_model.__name__}'))
-
-            current_datetime = datetime.now(pytz.timezone("America/Argentina/Buenos_Aires"))
-            for response in llm_responses:
-                if response.error:
-                    processing_results.append(response)
-                elif response.data_object and self.has_significant_value(response.data_object):
-                    response.data_object.date = current_datetime
-                    response.saved_to_spreadsheet = self._save_to_spreadsheet(response.data_object)
-                    response.saved_to_database = await self._save_to_database(response.data_object)
-                    processing_results.append(response)
-                    logger.info(f"Processed: {response.model_dump_json()}")
-
+                    logger.error(f"Error calling LLM for action: '{request.output_model.__name__}': '{e}'", exc_info=True)
+                    processing_results.append(ProcessingResult(error=f'Ocurrio un error procesando la {request.output_model.__name__}'))
         except Exception as e:
             logger.error(f"An unexpected error occurred during content processing: '{e}'", exc_info=True)
-            processing_results.append(ProcessingResult(error=f"Algo sucedio. No pudimos procesar el mensaje :("))
+            processing_results.append(ProcessingResult(error="Algo sucedio. No pudimos procesar el mensaje :("))
 
         return processing_results
 
@@ -109,7 +94,7 @@ class LLMProcessor:
         logger.debug(f"Determined action type: '{action.action}' for content: '{content}'.")
         return action.action
 
-    async def _process_action(self, content: str, action_type: ActionTypes) -> Optional[List[RequestLLMModel]]:
+    def _process_action(self, content: str, action_type: ActionTypes) -> Optional[List[RequestLLMModel]]:
         """
         Determines the necessary LLM calls based on the action type and returns
         a list of RequestLLMModel objects.
@@ -195,38 +180,6 @@ class LLMProcessor:
             The formatted prompt.
         """
         return promp.format(content=content, reason=reason if reason else "")
-
-    def _save_to_spreadsheet(self, data: Union[Forex, Investment, Transaction, Transfer]) -> bool:
-        """
-        Saves the processed data to the Google Sheets spreadsheet.
-
-        Returns:
-            True if saved successfully, False otherwise.
-        """
-        try:
-            logger.info(f"Saving data to spreadsheet: '{data.__class__.__name__}'")
-            data.save_to_sheet(self.spreadsheet_client)
-            logger.info(f"Successfully saved to spreadsheet.")
-            return True
-        except Exception as e:
-            logger.error(f"Error saving data to spreadsheet: '{e}'", exc_info=True)
-            return False
-
-    async def _save_to_database(self, data: Union[Forex, Investment, Transaction, Transfer]) -> bool:
-        """
-        Saves the processed data to the Supabase database.
-
-        Returns:
-            True if saved successfully, False otherwise.
-        """
-        try:
-            logger.info(f"Saving data to database: '{data.__class__.__name__}'")
-            await data.save_to_database(self.supabase_client)
-            logger.info(f"Successfully saved to database.")
-            return True
-        except Exception as e:
-            logger.error(f"Error saving data to database: '{e}'", exc_info=True)
-            return False
         
     def has_significant_value(self, action) -> bool:
         return isinstance(action, Transfer) or (not isinstance(action, Transfer) and getattr(action, 'amount', None) != 0)
