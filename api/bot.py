@@ -1,6 +1,7 @@
 import logging
 from telegram.ext import Application, MessageHandler, filters, CommandHandler, ConversationHandler, CallbackQueryHandler
 from bot import command_handlers, message_handlers
+from config import config
 
 logger = logging.getLogger(__name__)
 
@@ -23,7 +24,7 @@ def register_conversation_handlers(app: Application):
     app.add_handler(conv_handler)
     
 def run_telegram_bot(): 
-    application = Application.builder().token("8072928840:AAElzErSXGchd2Kq8MXQilaJ1WkxS6scnDE").build()
+    application = Application.builder().token(config.TELEGRAM_BOT_TOKEN).build()
     register_handlers(application)
     register_conversation_handlers(application)
     application.run_polling()
