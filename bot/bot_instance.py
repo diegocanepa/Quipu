@@ -1,12 +1,10 @@
 import logging
 from telegram.ext import (
     Application,
-    MessageHandler,
-    filters,
     CommandHandler,
-    ConversationHandler,
+    MessageHandler,
     CallbackQueryHandler,
-    ContextTypes,
+    filters,
 )
 from bot import command_handlers, message_handlers
 from config import config
@@ -20,22 +18,11 @@ application = (
     .build()
 )
 
-
 def register_handlers():
-    """Add command and conversation handlers"""
     application.add_handler(CommandHandler("start", command_handlers.start))
     application.add_handler(CommandHandler("help", command_handlers.help_command))
-    
-    # For all text messages
     application.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, message_handlers.proccess_message))
-
-    # For confirmation or cancelation
     application.add_handler(CallbackQueryHandler(message_handlers.confirm_save, pattern="^confirm#"))
     application.add_handler(CallbackQueryHandler(message_handlers.cancel_save, pattern="^cancel#"))
 
-async def setup_webhook():
-    """Set webhook URL for Telegram"""
-    await application.bot.set_webhook(url=config.WEBHOOK_URL)
-
-def get_application():
-    return application
+register_handlers()
