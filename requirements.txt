@@ -10,3 +10,5 @@ oauth2client
 supabase
 pydantic-core
 ruff
+flask[async]
+asgiref
