@@ -13,9 +13,6 @@ from config import config
 
 logger = logging.getLogger(__name__)
 
-print(config.TELEGRAM_BOT_TOKEN)
-print(config.WEBHOOK_URL)
-
 application = (
     Application.builder()
     .token(config.TELEGRAM_BOT_TOKEN)
