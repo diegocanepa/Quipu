@@ -12,8 +12,20 @@ logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(
 logger = logging.getLogger(__name__)
 
 app = Flask(__name__)
-application = get_application()  # Obtener la instancia de la aplicación
-register_handlers(application)  # Pasar la instancia a register_handlers()
+application = get_application()
+register_handlers(application)
+
+async def process_updates():
+    async with application:
+        await application.start()
+        while True:
+            try:
+                update = await application.update_queue.get()
+                logger.info(f"Procesando actualización: {update}")
+                await application.process_update(update)
+            finally:
+                application.update_queue.task_done()
+            await asyncio.sleep(0.1)  # Pequeña pausa para no consumir CPU al 100%
 
 @app.post("/telegram")
 async def telegram_webhook() -> Response:
@@ -23,7 +35,7 @@ async def telegram_webhook() -> Response:
     logger.info(f"App: {application}")
     try:
         update = Update.de_json(data=request.json, bot=application.bot)
-        await application.process_update(update) 
+        await application.update_queue.put(update)
         return Response(status=HTTPStatus.OK)
     except Exception as e:
         logger.error(f"Error al procesar la actualización: {e}")
@@ -46,6 +58,7 @@ async def main():
     )
 
     async with application:
+        asyncio.create_task(process_updates())  # Iniciar el consumidor de la cola en segundo plano
         await application.start()
         await server.serve()
         await application.stop()
