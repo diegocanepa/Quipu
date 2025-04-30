@@ -66,12 +66,12 @@ jobs:
 
       - name: Install dependencies for test
         run: |
-          mkdir package
-          python -m pip install --target ./package -r requirements.txt
+          python -m pip install --upgrade pip
+          pip install --target ./ -r requirements.txt
 
       - name: Zip function for test
         run: |
-          zip -r function.zip . package/ -x "*/__pycache__/*" "*.pyc"
+          zip -r function.zip . -x "*/__pycache__/*" "*.pyc"
 
       - name: List zip contents
         run: unzip -l function.zip
@@ -104,12 +104,12 @@ jobs:
 
       - name: Install dependencies for production
         run: |
-          mkdir package
-          python -m pip install --target ./package -r requirements.txt
+          python -m pip install --upgrade pip
+          pip install --target ./ -r requirements.txt
 
       - name: Zip function for production
         run: |
-          zip -r function.zip . package/ -x "*/__pycache__/*" "*.pyc"
+          zip -r function.zip . -x "*/__pycache__/*" "*.pyc"
 
       - name: List zip contents
         run: unzip -l function.zip
