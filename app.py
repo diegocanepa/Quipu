@@ -1,22 +1,46 @@
-from flask import Flask
-from api.actions import bp as actions_bp
-from api.bot import bp as bot_bp
-from api.status import bp as status_bp
 import logging
 import asyncio
+from flask import Flask, Response, request, make_response
+from asgiref.wsgi import WsgiToAsgi
+import uvicorn
+from http import HTTPStatus
+from telegram import Update
+from api.bot import register_handlers, get_application, setup_webhook
 
-# Configure logging
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 logger = logging.getLogger(__name__)
 
 app = Flask(__name__)
-app.register_blueprint(actions_bp)
-app.register_blueprint(bot_bp)
-app.register_blueprint(status_bp)
+application = get_application()
+register_handlers()
+
+@app.post("/telegram")
+async def telegram_webhook() -> Response:
+    """Receive updates from Telegram and queue them"""
+    update = Update.de_json(data=request.json, bot=application.bot)
+    await application.update_queue.put(update)
+    return Response(status=HTTPStatus.OK)
+
+@app.get("/healthcheck")
+async def healthcheck():
+    """Simple health check"""
+    return make_response("Bot is running", HTTPStatus.OK)
 
 async def main():
-    logger.info("Starting Flask development server...")
-    app.run(host="0.0.0.0", port=8080, debug=True)
+    await setup_webhook()
+    server = uvicorn.Server(
+        config=uvicorn.Config(
+            app=WsgiToAsgi(app),
+            port=8080,
+            host="0.0.0.0",
+            use_colors=True,
+        )
+    )
+
+    async with application:
+        await application.start()
+        await server.serve()
+        await application.stop()
 
 if __name__ == '__main__':
     asyncio.run(main())

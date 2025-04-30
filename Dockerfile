@@ -1,35 +1,17 @@
-# Etapa 1: Build con Rust y Python
-FROM python:3.12-alpine AS builder
+# Use an official Python runtime as a parent image
+FROM python:3.9-slim
 
-# Instalar dependencias del sistema
-RUN apk add --no-cache gcc musl-dev libffi-dev rust cargo
-
-# Crear ambiente virtual
+# Set the working directory in the container
 WORKDIR /app
-RUN python -m venv /opt/venv
-ENV PATH="/opt/venv/bin:$PATH"
 
-# Copiar e instalar dependencias
-COPY requirements.txt .
+# Copy the current directory contents into the container at /app
+COPY . /app
+
+# Install any needed dependencies specified in requirements.txt
 RUN pip install --no-cache-dir -r requirements.txt
 
-# Etapa 2: Imagen final sin Rust
-FROM python:3.12-alpine
-
-# Variables de entorno
-ENV PATH="/opt/venv/bin:$PATH"
-
-# Copiar el virtualenv con paquetes ya compilados
-COPY --from=builder /opt/venv /opt/venv
-
-# Crear usuario no root por seguridad
-RUN addgroup -S appgroup && adduser -S appuser -G appgroup
-USER appuser
-
-# Definir directorio de trabajo
-WORKDIR /app
-COPY . .
-
-# Exponer puerto y comando de ejecución
+# Make port 8080 available to the world outside this container
 EXPOSE 8080
-CMD ["flask", "run"]
+
+# Run app.py when the container launches
+CMD ["python", "app.py"]

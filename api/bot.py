@@ -1,41 +1,41 @@
 import logging
-from flask import Blueprint, request, jsonify
-from telegram import Update
-from config import config
-from telegram.ext import Application, MessageHandler, filters, CommandHandler
+from telegram.ext import (
+    Application,
+    MessageHandler,
+    filters,
+    CommandHandler,
+    ConversationHandler,
+    CallbackQueryHandler,
+    ContextTypes,
+)
 from bot import command_handlers, message_handlers
+from config import config
 
 logger = logging.getLogger(__name__)
 
-bp = Blueprint('bot', __name__, url_prefix='/bot')
+application = (
+    Application.builder()
+    .token(config.TELEGRAM_BOT_TOKEN)
+    .updater(None) 
+    .build()
+)
 
-def register_handlers(app: Application):
-    """Add handlers"""
-    app.add_handler(CommandHandler("start", command_handlers.start))
-    app.add_handler(CommandHandler("help", command_handlers.help_command))
-    app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, message_handlers.echo))
-    
-async def initializes_telegram_app():
-    telegram_app = Application.builder().token(config.TELEGRAM_BOT_TOKEN).build()
-    register_handlers(telegram_app)
-    await telegram_app.initialize()
-    await telegram_app.start()
-    return telegram_app
 
-@bp.route('/webhook', methods=['POST'])
-async def webhook():
-    """Handles incoming webhook requests from Telegram."""
-    try:
-        # Initializes Telegram Application.
-        global telegram_app
-        telegram_app = await initializes_telegram_app()
-        
-        # Hanlde request
-        data = request.get_json(force=True)
-        update = Update.de_json(data, telegram_app.bot)
-        await telegram_app.process_update(update)
-        return jsonify({"status": "OK"}), 200
+def register_handlers():
+    """Add command and conversation handlers"""
+    application.add_handler(CommandHandler("start", command_handlers.start))
+    application.add_handler(CommandHandler("help", command_handlers.help_command))
     
-    except Exception as e:
-        logger.error(f"Error processing webhook: {e}", exc_info=True)
-        return jsonify({"status": "Error", "message": str(e)}), 500
+    # For all text messages
+    application.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, message_handlers.proccess_message))
+
+    # For confirmation or cancelation
+    application.add_handler(CallbackQueryHandler(message_handlers.confirm_save, pattern="^confirm#"))
+    application.add_handler(CallbackQueryHandler(message_handlers.cancel_save, pattern="^cancel#"))
+
+async def setup_webhook():
+    """Set webhook URL for Telegram"""
+    await application.bot.set_webhook(url=config.WEBHOOK_URL)
+
+def get_application():
+    return application

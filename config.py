@@ -17,6 +17,7 @@ class Config:
     SUPABASE_URL: str = os.getenv("SUPABASE_URL")
     SUPABASE_KEY: str = os.getenv("SUPABASE_KEY")
     ENVIRONMENT: str = os.getenv("ENVIRONMENT")
+    WEBHOOK_URL: str = os.getenv("WEBHOOK_URL")
     
 
     def __init__(self):
