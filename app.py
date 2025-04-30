@@ -1,3 +1,4 @@
+# app.py
 import logging
 import asyncio
 from flask import Flask, Response, request, make_response
@@ -11,8 +12,8 @@ logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(
 logger = logging.getLogger(__name__)
 
 app = Flask(__name__)
-application = get_application()
-register_handlers()
+application = get_application()  # Obtener la instancia de la aplicación
+register_handlers(application)  # Pasar la instancia a register_handlers()
 
 @app.post("/telegram")
 async def telegram_webhook() -> Response:

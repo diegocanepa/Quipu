@@ -21,7 +21,7 @@ application = (
 )
 
 
-def register_handlers():
+def register_handlers(application):
     """Add command and conversation handlers"""
     application.add_handler(CommandHandler("start", command_handlers.start))
     application.add_handler(CommandHandler("help", command_handlers.help_command))
