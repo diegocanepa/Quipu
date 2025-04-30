@@ -19,6 +19,7 @@ async def process_updates():
     async with application:
         await application.start()
         while True:
+            logger.info("Running update process")
             try:
                 update = await application.update_queue.get()
                 logger.info(f"Procesando actualización: {update}")
