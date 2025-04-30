@@ -6,7 +6,6 @@ from models.transaction import Transaction
 from models.action_type import Action
 from models.forex import Forex
 from models.investment import Investment
-from models.transaction import Transaction
 from models.transfer import Transfer
 
 logger = logging.getLogger(__name__)

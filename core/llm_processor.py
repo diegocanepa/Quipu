@@ -96,7 +96,7 @@ class LLMProcessor:
 
         except Exception as e:
             logger.error(f"An unexpected error occurred during content processing: '{e}'", exc_info=True)
-            processing_results.append(ProcessingResult(error=f"Algo sucedio. No pudimos procesar el mensaje :("))
+            processing_results.append(ProcessingResult(error="Algo sucedio. No pudimos procesar el mensaje :("))
 
         return processing_results
 
@@ -206,7 +206,7 @@ class LLMProcessor:
         try:
             logger.info(f"Saving data to spreadsheet: '{data.__class__.__name__}'")
             data.save_to_sheet(self.spreadsheet_client)
-            logger.info(f"Successfully saved to spreadsheet.")
+            logger.info("Successfully saved to spreadsheet.")
             return True
         except Exception as e:
             logger.error(f"Error saving data to spreadsheet: '{e}'", exc_info=True)
@@ -222,7 +222,7 @@ class LLMProcessor:
         try:
             logger.info(f"Saving data to database: '{data.__class__.__name__}'")
             await data.save_to_database(self.supabase_client)
-            logger.info(f"Successfully saved to database.")
+            logger.info("Successfully saved to database.")
             return True
         except Exception as e:
             logger.error(f"Error saving data to database: '{e}'", exc_info=True)
