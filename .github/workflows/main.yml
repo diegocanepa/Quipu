@@ -1,10 +1,7 @@
 name: Deploy Lambda
 
 on:
-  push:
-    branches:
-      - '*' # Monitorea todas las ramas para el build y lint
-  workflow_dispatch: # Permite la ejecución manual del workflow
+  workflow_dispatch:
 
 jobs:
   build:
@@ -70,7 +67,6 @@ jobs:
 
       - name: Deploy to Lambda (Test - Manual)
         run: aws lambda update-function-code --function-name ${{ secrets.AWS_LAMBDA_NAME_TEST }} --zip-file fileb://function.zip
-        if: github.event_name == 'workflow_dispatch'
 
   deploy_prod:
     needs: lint
