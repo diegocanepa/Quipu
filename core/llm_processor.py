@@ -1,8 +1,8 @@
-from core.prompts import ACTION_TYPE_PROMPT, TRANSACTION_PROMPT, TRANSFER_PROMPT, FOREX_PROMPT, INVESTMENT_PROMPT, INCOME_PROMPT, EXPENSE_PROMPT
+from core.prompts import MULTI_ACTION_PROMPT, TRANSACTION_PROMPT, TRANSFER_PROMPT, FOREX_PROMPT, INVESTMENT_PROMPT, INCOME_PROMPT, EXPENSE_PROMPT
 from integrations.providers.llm_akash import AkashLLMClient as LLMAgent
 import logging
 from datetime import datetime
-from models.action_type import ActionTypes
+from models.action_type import ActionTypes, Actions
 from models.forex import Forex
 from models.investment import Investment
 from models.transaction import Transaction
@@ -55,16 +55,21 @@ class LLMProcessor:
         current_datetime = datetime.now(pytz.timezone("America/Argentina/Buenos_Aires"))
 
         try:
-            action_type = self.determine_action_type(content)
-            if not action_type:
+            actions_types = self.determine_action_type(content)
+            if not actions_types or len(actions_types)==0:
                 logger.warning(f"Could not determine action type for content: '{content}'.")
                 processing_results.append(ProcessingResult(error="No se pudo determinar una accion para registrar en base al mensaje"))
                 return processing_results
 
-            llm_request_models = self._process_action(content, action_type)
+            llm_request_models = []
+            for action in actions_types:
+                llm_request_models.append(self._process_action(action.message, action.action_type))
+
+            llm_request_models = [item for sublist in llm_request_models for item in sublist]
+            
             if not llm_request_models:
-                logger.warning(f"Failed to create LLM request models for action: '{action_type.value}'.")
-                processing_results.append(ProcessingResult(error=f"Se identifico la accion '{action_type.value}' pero no fue posible procesar el mensaje."))
+                logger.warning(f"Failed to create LLM request models for action:")
+                processing_results.append(ProcessingResult(error=f"Se identifico la accion pero no fue posible procesar el mensaje."))
                 return processing_results
 
             for request in llm_request_models:
@@ -85,14 +90,14 @@ class LLMProcessor:
 
         return processing_results
 
-    def determine_action_type(self, content: str) -> Optional[ActionTypes]:
+    def determine_action_type(self, content: str) -> Optional[Actions]:
         """
         Determines the action type from the input content using the LLM.
         """
-        prompt = ACTION_TYPE_PROMPT.format(content=content)
-        action = self.llm_client.determinate_action(prompt)
-        logger.debug(f"Determined action type: '{action.action}' for content: '{content}'.")
-        return action.action
+        prompt = MULTI_ACTION_PROMPT.format(content=content)
+        actions = self.llm_client.determinate_action(prompt)
+        logger.info(f"Determined actions types for content: '{content}', actions: '{actions}'.")
+        return actions.actions
 
     def _process_action(self, content: str, action_type: ActionTypes) -> Optional[List[RequestLLMModel]]:
         """
