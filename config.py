@@ -3,8 +3,6 @@ from dotenv import load_dotenv
 
 load_dotenv(".env")  # Load environment variables from .env
 
-
-
 class Config:
     """Class to store application settings."""
 
@@ -18,6 +16,8 @@ class Config:
     SUPABASE_KEY: str = os.getenv("SUPABASE_KEY")
     ENVIRONMENT: str = os.getenv("ENVIRONMENT")
     WEBHOOK_URL: str = os.getenv("WEBHOOK_URL")
+    TRANSCRIPTION_API_BASE_URL: str = os.getenv("TRANSCRIPTION_API_BASE_URL")
+    
     
 
     def __init__(self):
