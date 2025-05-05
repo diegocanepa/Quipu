@@ -1,22 +1,39 @@
-ACTION_TYPE_PROMPT="""
-Eres un experto en finanzas y tu tarea es analizar una oración proporcionada por un usuario para determinar el tipo de acción financiera a la que se refiere. Debes clasificar la acción en una de las siguientes categorías:
+MULTI_ACTION_PROMPT = """
+Eres un experto en finanzas y tu tarea es analizar una oración proporcionada por un usuario para determinar las múltiples acciones financieras a las que se refiere. Debes clasificar cada acción identificada en una de las siguientes categorías:
 
 - "Cambio de divisas" (para operaciones de compra o venta de monedas extranjeras)
 - "Inversion" (para acciones de invertir dinero con el objetivo de obtener ganancias futuras)
 - "Transaccion" (para movimientos generales de dinero, como pagos de bienes o servicios, depósitos, retiros que no encajan en otras categorías)
 - "Transferencia" (para el envío de dinero de una cuenta a otra, ya sea propia o de terceros)
 
-Analiza la siguiente oración:
+Para cada acción identificada, debes devolver un objeto JSON con la siguiente estructura:
+
+```json
+{{
+  "action_type": "TIPO_DE_ACCION",
+  "message": "FRASE_ESPECIFICA_DE_LA_ACCION"
+}}
+Si no se encuentra ninguna acción financiera en la oración, devuelve un array JSON vacío: [].
+
+Si se encuentran múltiples acciones, devuelve un array JSON conteniendo múltiples objetos, cada uno representando una acción con su tipo y la parte del mensaje que la describe. Por ejemplo, para la oración "Gaste 3500 peso en una coca cola. Transferi 200usd de wise a nexo.", la respuesta debería ser:
+
+JSON
+
+[
+  {{
+    "action_type": "Transaccion",
+    "message": "Gaste 3500 peso en una coca cola"
+  }},
+  {{
+    "action_type": "Transferencia",
+    "message": "Transferi 200usd de wise a nexo"
+  }}
+]
+
+Analiza la siguiente oración y devuelve el array JSON de acciones detectadas:
 
 "{content}"
-
-Basándote en tu análisis, indica **únicamente** el tipo de acción financiera en español, eligiendo una de las cuatro categorías mencionadas anteriormente. No incluyas ninguna explicación o frase adicional.
-
-La respuesta debe ser directamente el tipo de acción identificada. Por ejemplo:
-
-"Cambio de divisas"
 """
-
 
 FOREX_PROMPT="""
 Eres un experto en operaciones de cambio de divisas (Forex). Tu tarea es analizar una oración proporcionada por un usuario y extraer información relevante sobre una operación de compra o venta de monedas extranjeras.

@@ -3,7 +3,7 @@ from integrations.llm_providers_interface import LLMClientInterface
 from config import config
 import logging
 from models.transaction import Transaction
-from models.action_type import Action
+from models.action_type import Actions
 from models.forex import Forex
 from models.investment import Investment
 from models.transfer import Transfer
@@ -29,12 +29,12 @@ class AkashLLMClient(LLMClientInterface):
         logger.info("Akash OpenAI client initialized successfully.")
 
     
-    def determinate_action(self, prompt: str) -> Action:
+    def determinate_action(self, prompt: str) -> Actions:
         """
         Sends a prompt to the Akash LLM and returns the generated response.
         Logs the request and any errors during the API call.
         """
-        structured_llm = self.llm.with_structured_output(Action)
+        structured_llm = self.llm.with_structured_output(Actions)
         return structured_llm.invoke(prompt)
     
     def generate_response(self, prompt: str, output) -> Forex | Investment | Transaction | Transfer:
