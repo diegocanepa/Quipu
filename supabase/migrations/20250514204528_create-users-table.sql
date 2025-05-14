@@ -20,3 +20,6 @@ COMMENT ON COLUMN public.users.last_interaction_at IS 'Timestamp of the user''s 
 COMMENT ON COLUMN public.users.telegram_username IS 'Telegram username (can be NULL or change).';
 COMMENT ON COLUMN public.users.telegram_first_name IS 'Telegram first name.';
 COMMENT ON COLUMN public.users.telegram_last_name IS 'Telegram last name.';
+
+CREATE UNIQUE INDEX idx_users_webapp_user_id ON public.users (webapp_user_id) WHERE webapp_user_id IS NOT NULL;
+CREATE UNIQUE INDEX idx_users_webapp_integration_id ON public.users (webapp_integration_id) WHERE webapp_integration_id IS NOT NULL;
