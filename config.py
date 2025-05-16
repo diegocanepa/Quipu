@@ -19,6 +19,10 @@ class Config:
     ENVIRONMENT: str = os.getenv("ENVIRONMENT")
     WEBHOOK_URL: str = os.getenv("WEBHOOK_URL")
     FF_AUDIO_TRANSCRIPTION: str = os.getenv("FF_AUDIO_TRANSCRIPTION", "false")
+    FF_TRANSFER: str = os.getenv("FF_TRANSFER", "true")
+    FF_EXCHANGE: str = os.getenv("FF_EXCHANGE", "true")
+    FF_TRANSACTION: str = os.getenv("FF_TRANSACTION", "true")
+    FF_INVESTMENT: str = os.getenv("FF_INVESTMENT", "true")
 
     def __init__(self):
         self._validate_configs()
