@@ -1,7 +1,9 @@
 import os
+
 from dotenv import load_dotenv
 
 load_dotenv(".env")  # Load environment variables from .env
+
 
 class Config:
     """Class to store application settings."""
@@ -16,9 +18,7 @@ class Config:
     SUPABASE_KEY: str = os.getenv("SUPABASE_KEY")
     ENVIRONMENT: str = os.getenv("ENVIRONMENT")
     WEBHOOK_URL: str = os.getenv("WEBHOOK_URL")
-    TRANSCRIPTION_API_BASE_URL: str = os.getenv("TRANSCRIPTION_API_BASE_URL")
-    
-    
+    FF_AUDIO_TRANSCRIPTION: str = os.getenv("FF_AUDIO_TRANSCRIPTION", "false")
 
     def __init__(self):
         self._validate_configs()
@@ -41,6 +41,7 @@ class Config:
             float(self.LLM_TEMPERATURE)
         except ValueError:
             raise ValueError("LLM_TEMPERATURE must be a valid float in the .env file.")
+
 
 # Create a global instance of the settings for easy access
 config = Config()

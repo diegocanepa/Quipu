@@ -35,7 +35,7 @@ Analiza la siguiente oración y devuelve el array JSON de acciones detectadas:
 "{content}"
 """
 
-FOREX_PROMPT="""
+FOREX_PROMPT = """
 Eres un experto en operaciones de cambio de divisas (Forex). Tu tarea es analizar una oración proporcionada por un usuario y extraer información relevante sobre una operación de compra o venta de monedas extranjeras.
 
 Debes identificar y extraer los siguientes campos:
@@ -96,7 +96,7 @@ Ahora analiza la siguiente oración:
 "{content}. {reason}"
 """
 
-INVESTMENT_PROMPT="""
+INVESTMENT_PROMPT = """
 Eres un experto en inversiones financieras. Tu tarea es analizar una oración proporcionada por un usuario y extraer información relevante sobre una acción de compra o venta de un activo de inversión.
 
 Debes identificar y extraer los siguientes campos:
@@ -298,7 +298,7 @@ Ahora analiza la siguiente oración:
 "{content}.{reason}"
 """
 
-INCOME_PROMPT="""
+INCOME_PROMPT = """
 Eres un experto en finanzas personales. Tu tarea es analizar una oración proporcionada por un usuario y extraer información relevante sobre un ingreso.
 
 Debes identificar y extraer los siguientes campos:
@@ -342,7 +342,7 @@ Ahora analiza la siguiente oración:
 "{content}.{reason}"
 """
 
-EXPENSE_PROMPT="""
+EXPENSE_PROMPT = """
 Eres un experto en finanzas personales. Tu tarea es analizar una oración proporcionada por un usuario y extraer información relevante sobre un gasto.
 
 Debes identificar y extraer los siguientes campos:
