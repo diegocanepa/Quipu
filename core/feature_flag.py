@@ -27,23 +27,23 @@ class FeatureFlagsEnum(Enum):
 FEATURE_FLAGS = {
     FeatureFlagsEnum.AUDIO_TRANSCRIPTION: FeatureFlag(
         is_enabled=config.FF_AUDIO_TRANSCRIPTION,
-        disabled_message="La transcripción de audio está deshabilitada 🙁 \n\n 🚀 Proximamente se podrá usar  ",
+        disabled_message="La transcripción de audio está deshabilitada 🙁 \n\n 🚀 Próximamente se podrá usar  ",
     ),
     FeatureFlagsEnum.TRANSFER: FeatureFlag(
         is_enabled=config.FF_TRANSFER,
-        disabled_message="Las transferencias están deshabilitadas 🙁 \n\n 🚀 Proximamente se podrá usar",
+        disabled_message="Las transferencias están deshabilitadas 🙁 \n\n 🚀 Próximamente se podrá usar",
     ),
     FeatureFlagsEnum.EXCHANGE: FeatureFlag(
         is_enabled=config.FF_EXCHANGE,
-        disabled_message="Los intercambios están deshabilitados 🙁 \n\n 🚀 Proximamente se podrá usar",
+        disabled_message="Los intercambios están deshabilitados 🙁 \n\n 🚀 Próximamente se podrá usar",
     ),
     FeatureFlagsEnum.TRANSACTION: FeatureFlag(
         is_enabled=config.FF_TRANSACTION,
-        disabled_message="Las transacciones están deshabilitadas 🙁 \n\n 🚀 Proximamente se podrá usar",
+        disabled_message="Las transacciones están deshabilitadas 🙁 \n\n 🚀 Próximamente se podrá usar",
     ),
     FeatureFlagsEnum.INVESTMENT: FeatureFlag(
         is_enabled=config.FF_INVESTMENT,
-        disabled_message="Las inversiones están deshabilitadas 🙁 \n\n 🚀 Proximamente se podrá usar",
+        disabled_message="Las inversiones están deshabilitadas 🙁 \n\n 🚀 Próximamente se podrá usar",
     ),
 }
 
