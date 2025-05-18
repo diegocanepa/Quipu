@@ -57,7 +57,8 @@ class Transfer(BaseModel):
         ]
         service.insert_row("FinMate", "Transferencias", row)
         
-    async def save_to_database(self, service: SupabaseManager):
+    def save_to_database(self, service: SupabaseManager):
+        table_name = service.get_table_name("transfers")
         data = {
             "description": self.description,
             "category": self.category,
@@ -69,4 +70,4 @@ class Transfer(BaseModel):
             "final_amount": self.final_amount,
             "currency": self.currency,
         }
-        await service.insert("transfers", data)
+        service.insert(table_name, data)

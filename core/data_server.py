@@ -24,7 +24,7 @@ class DataSaver:
         self.supabase_client = SupaManager()
         logger.info("DataSaver initialized.")
 
-    async def save_content(self, data: Union[Forex, Investment, Transaction, Transfer]) -> bool:
+    def save_content(self, data: Union[Forex, Investment, Transaction, Transfer]) -> bool:
         """
         Saves the processed data to the Google Sheets spreadsheet and the
         Supabase database.
@@ -36,7 +36,7 @@ class DataSaver:
             True if saving to both was successful, False otherwise.
         """
         success_spreadsheet = self._save_to_spreadsheet(data)
-        success_database = await self._save_to_database(data)
+        success_database = self._save_to_database(data)
         return success_spreadsheet and success_database
 
     def _save_to_spreadsheet(self, data: Union[Forex, Investment, Transaction, Transfer]) -> bool:
@@ -58,7 +58,7 @@ class DataSaver:
             logger.error(f"Error saving data to spreadsheet: '{e}'", exc_info=True)
             return False
 
-    async def _save_to_database(self, data: Union[Forex, Investment, Transaction, Transfer]) -> bool:
+    def _save_to_database(self, data: Union[Forex, Investment, Transaction, Transfer]) -> bool:
         """
         Saves the processed data to the Supabase database.
 
@@ -70,7 +70,7 @@ class DataSaver:
         """
         try:
             logger.info(f"Saving data to database: '{data.__class__.__name__}'")
-            await data.save_to_database(self.supabase_client)
+            data.save_to_database(self.supabase_client)
             logger.info("Successfully saved to database.")
             return True
         except Exception as e:

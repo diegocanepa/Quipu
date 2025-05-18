@@ -46,7 +46,8 @@ class Investment(BaseModel):
         ]
         service.insert_row("FinMate", "Inversiones", row)
 
-    async def save_to_database(self, service: SupabaseManager):
+    def save_to_database(self, service: SupabaseManager):
+        table_name = service.get_table_name("investments")
         data = {
             "description": self.description,
             "category": self.category,
@@ -57,4 +58,4 @@ class Investment(BaseModel):
             "price": self.price,
             "currency": self.currency,
         }
-        await service.insert("investments", data)
+        service.insert(table_name, data)

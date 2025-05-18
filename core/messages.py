@@ -135,7 +135,6 @@ MSG_WEBAPP_DEEPLINK_TRIGGERED = (
     "Procesando tu solicitud de vinculación... 🔄"
 )
 
-# General messages
 MSG_ONBOARDING_REQUIRED = (
     "¡Hola! 👋\n\n"
     "Para poder utilizar todas las funcionalidades del bot, necesitas vincular "

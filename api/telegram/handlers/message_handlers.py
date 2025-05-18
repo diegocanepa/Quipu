@@ -44,7 +44,7 @@ async def confirm_save(update: Update, context: ContextTypes.DEFAULT_TYPE) -> in
             logger.info(f"Mensaje a guardar: {data_to_save}")
             logger.info(f"Mensaje original: {original_message_id}")
 
-            success = await data_saver.save_content(data_to_save)
+            success = data_saver.save_content(data_to_save)
             original_text = query.message.text
 
             if success:
