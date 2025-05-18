@@ -18,11 +18,11 @@ class Config:
     SUPABASE_KEY: str = os.getenv("SUPABASE_KEY")
     ENVIRONMENT: str = os.getenv("ENVIRONMENT")
     WEBHOOK_URL: str = os.getenv("WEBHOOK_URL")
-    FF_AUDIO_TRANSCRIPTION: str = os.getenv("FF_AUDIO_TRANSCRIPTION", "false")
-    FF_TRANSFER: str = os.getenv("FF_TRANSFER", "true")
-    FF_EXCHANGE: str = os.getenv("FF_EXCHANGE", "true")
-    FF_TRANSACTION: str = os.getenv("FF_TRANSACTION", "true")
-    FF_INVESTMENT: str = os.getenv("FF_INVESTMENT", "true")
+    FF_AUDIO_TRANSCRIPTION: bool = os.getenv("FF_AUDIO_TRANSCRIPTION", "false").lower() == "true"
+    FF_TRANSFER: bool = os.getenv("FF_TRANSFER", "true").lower() == "true"
+    FF_EXCHANGE: bool = os.getenv("FF_EXCHANGE", "true").lower() == "true"
+    FF_TRANSACTION: bool = os.getenv("FF_TRANSACTION", "true").lower() == "true"
+    FF_INVESTMENT: bool = os.getenv("FF_INVESTMENT", "true").lower() == "true"
 
     def __init__(self):
         self._validate_configs()
