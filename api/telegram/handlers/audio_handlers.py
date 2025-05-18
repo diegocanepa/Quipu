@@ -6,7 +6,7 @@ from telegram import Update
 from telegram.ext import ContextTypes
 from core.audio_processor import AudioProcessor
 from core.message_processor import MessageProcessor
-from api.middlewere.require_onboarding import require_onboarding
+from api.telegram.middlewere.require_onboarding import require_onboarding
 
 logger = logging.getLogger(__name__)
 

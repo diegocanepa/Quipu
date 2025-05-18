@@ -9,6 +9,8 @@ from telegram.ext import (
     filters,
 )
 
+from api.telegram.handlers.command_handlers import show_info
+
 from core import messages
 from core.onboarding import states
 from core.user_data_manager import UserDataManager
@@ -28,7 +30,6 @@ async def start_onboarding(update: Update, context: ContextTypes.DEFAULT_TYPE) -
     Sends the welcome message and presents linking options if not onboarded.
     """
     user = update.effective_user
-    
     logger.info(f"User {user.id} initiated /start (no payload).")
 
     # Check if already onboarded
@@ -39,7 +40,6 @@ async def start_onboarding(update: Update, context: ContextTypes.DEFAULT_TYPE) -
         await show_info(update, context)
         return ConversationHandler.END # End the onboarding conversation if already done
 
-    context.user_data['onboarding_in_progress'] = True 
 
     user_exists = user_manager.get_user_data(user.id) is not None
 
@@ -54,31 +54,18 @@ async def start_onboarding(update: Update, context: ContextTypes.DEFAULT_TYPE) -
     else:
         await update.effective_message.reply_text(messages.MSG_WELCOME_BACK, parse_mode='HTML')
 
-    # Send welcome message
+
     # Present linking options with inline buttons
     keyboard = [
-        [
-            InlineKeyboardButton(messages.BTN_GOOGLE_SHEET, callback_data='link_sheet'),
-        ],
-        [
-            InlineKeyboardButton(messages.BTN_WEBAPP, callback_data='link_webapp'),
-        ]
+        [InlineKeyboardButton(messages.BTN_GOOGLE_SHEET, callback_data='link_sheet')],
+        [InlineKeyboardButton(messages.BTN_WEBAPP, callback_data='link_webapp')]
     ]
-    reply_markup = InlineKeyboardMarkup(keyboard)
 
-    # Use reply_text on the original message or send a new one depending on context
-    if update.message:
-        await update.message.reply_text(
-            messages.MSG_PRESENT_OPTIONS,
-            parse_mode='HTML',
-            reply_markup=reply_markup
-        )
-    elif update.callback_query:
-         await update.effective_message.reply_text(
-             messages.MSG_PRESENT_OPTIONS,
-             parse_mode='HTML',
-             reply_markup=reply_markup
-         )
+    await update.effective_message.reply_text(
+        messages.MSG_PRESENT_OPTIONS,
+        parse_mode='HTML',
+        reply_markup=InlineKeyboardMarkup(keyboard)
+    )
 
     # If not onboarded, start the process. This flag is used to indicate user is in the flow.
     context.user_data['onboarding_in_progress'] = True 
@@ -94,7 +81,7 @@ async def choose_sheet(update: Update, context: ContextTypes.DEFAULT_TYPE) -> in
     user = update.effective_user
     logger.info(f"User {user.id} chose Google Sheet linking.")
     
-    message = update.callback_query.message if update.callback_query else update.message
+    message = update.effective_message
     
     # If it's a callback query, answer it to remove loading indicator
     if update.callback_query:
@@ -205,7 +192,7 @@ async def choose_webapp(update: Update, context: ContextTypes.DEFAULT_TYPE) -> i
     user = update.effective_user
     logger.info(f"User {user.id} chose Webapp linking.")
 
-    message = update.callback_query.message if update.callback_query else update.message
+    message = update.effective_message
     
     # If it's a callback query, answer it to remove loading indicator
     if update.callback_query:
@@ -259,14 +246,16 @@ async def handle_deeplink_start(update: Update, context: ContextTypes.DEFAULT_TY
 
         processing_message = await message.reply_text(messages.MSG_WEBAPP_DEEPLINK_TRIGGERED, parse_mode='HTML')
 
-        try:
-            await processing_message.delete()
-        except Exception as e:
-            logger.warning(f"Failed to delete webapp processing message: {e}")
 
         if webapp_user_id:
-            user_manager.set_webapp_linked(user.id, webapp_user_id)
+            user_manager.set_webapp_linked(user.id, webapp_user_id) # TODO: Check if this have a error
             logger.info(f"Webapp user ID {webapp_user_id} linked successfully for user {user.id}.")
+            
+            try:
+                await processing_message.delete()
+            except Exception as e:
+                logger.warning(f"Failed to delete webapp processing message: {e}")
+            
             await message.reply_text(messages.MSG_WEBAPP_LINK_SUCCESS, parse_mode='HTML')
             context.user_data['onboarding_in_progress'] = False
             context.user_data['onboarding_state'] = states.FINISHED
@@ -275,7 +264,6 @@ async def handle_deeplink_start(update: Update, context: ContextTypes.DEFAULT_TY
             # Webapp linking failed
             logger.warning(f"Webapp linking failed for user {user.id} with webapp user ID: {webapp_user_id}.")
             keyboard = [
-                [InlineKeyboardButton(messages.BTN_RETRY_WEBAPP_LINK, callback_data='retry_webapp_link')],
                 [InlineKeyboardButton(messages.BTN_SWITCH_TO_SHEET, callback_data='switch_to_sheet')],
                 [InlineKeyboardButton(messages.BTN_CANCEL_ONBOARDING, callback_data='cancel_onboarding')]
             ]
@@ -331,28 +319,6 @@ async def onboarding_fallback(update: Update, context: ContextTypes.DEFAULT_TYPE
     else:
         return ConversationHandler.END
 
-# Handler to manually trigger Sheet linking after initial onboarding
-async def trigger_sheet_linking_cmd(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
-    """Handles the /linksheet command to start Google Sheet linking if not already linked."""
-    user_id = update.effective_user.id
-    if user_manager.is_sheet_linked(user_id):
-        await update.message.reply_text(messages.MSG_SHEET_ALREADY_LINKED, parse_mode='HTML')
-        return ConversationHandler.END
-    else:
-        logger.info(f"User {user_id} initiated sheet linking via command")
-        await choose_sheet(update, context)
-        return states.GOOGLE_SHEET_AWAITING_URL
-
-# Handler to manually trigger Webapp linking after initial onboarding
-async def trigger_webapp_linking_cmd(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
-    """Handles the /linkweb command to start Webapp linking if not already linked."""
-    user_id = update.effective_user.id
-    if user_manager.is_webapp_linked(user_id):
-        await update.message.reply_text(messages.MSG_WEBAPP_ALREADY_LINKED.format(url_link=config.WEBAPP_BASE_URL), parse_mode='HTML')
-        return ConversationHandler.END
-    else:
-        await choose_webapp(update, context)
-        return states.WEBAPP_SHOWING_INSTRUCTIONS
 
 async def cancel_onboarding(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
     """
@@ -363,6 +329,7 @@ async def cancel_onboarding(update: Update, context: ContextTypes.DEFAULT_TYPE) 
     
     # Clear any onboarding-related data
     context.user_data['onboarding_in_progress'] = False
+    context.user_data['onboarding_state'] = states.FINISHED
     
     # Send message informing about cancellation and how to restart
     await query.message.reply_text(
@@ -372,24 +339,10 @@ async def cancel_onboarding(update: Update, context: ContextTypes.DEFAULT_TYPE) 
     
     return ConversationHandler.END
 
-async def retry_webapp_link(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
-    """
-    Handles the retry of webapp linking.
-    """
-    if update.callback_query:
-        await update.callback_query.answer("🔄 Reintentando vinculación web")
-    await choose_webapp(update, context)
-
-async def switch_to_sheet(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
-    """
-    Handles the switch to sheet linking.
-    """
-    if update.callback_query:
-        await update.callback_query.answer("📊 Cambiando a Google Sheet")
-    await choose_sheet(update, context)
 
 # --- Conversation Handler Definition ---
-# This handles the multi-step onboarding flow when initiated by a plain /start
+# This handles the multi-step onboarding flow when initiated by a plain /start.
+# Be careful with the order of the handlers and modifications. If you change something, please test all the flows.
 onboarding_conv_handler = ConversationHandler(
     entry_points=[
         # Start the conversation via /start command (no payload)
@@ -399,8 +352,8 @@ onboarding_conv_handler = ConversationHandler(
         MessageHandler(filters.TEXT & filters.Regex(r'^/start link_.*'), handle_deeplink_start),
         
         # Direct linking commands
-        CommandHandler('linksheet', trigger_sheet_linking_cmd),
-        CommandHandler('linkweb', trigger_webapp_linking_cmd),
+        CommandHandler('linksheet', choose_sheet),
+        CommandHandler('linkweb', choose_webapp),
         
         # Callback queries for direct linking
         CallbackQueryHandler(choose_sheet, pattern='^link_sheet$'),
@@ -435,87 +388,3 @@ onboarding_conv_handler = ConversationHandler(
         MessageHandler(filters.ALL, onboarding_fallback)
     ]
 )
-
-# --- Other Handlers (outside onboarding conversation) ---
-
-# This handler specifically catches the /start command *with* a payload (used for webapp deep linking)
-# It should be added BEFORE the onboarding_conv_handler's entry_point in main.py's add_handler calls.
-# The filter ensures it only runs for /start followed by at least one character (the payload).
-deeplink_start_handler = MessageHandler(filters.TEXT & filters.Regex(r'^/start .+'), handle_deeplink_start)
-# The filter `~filters.Update.MESSAGE.text.strip().endswith('/start')` attempts to exclude plain /start even if it has trailing spaces
-
-
-# Handler for /info command
-async def show_info(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    """Shows the user's current linking status."""
-    user_id = update.effective_user.id
-    status = user_manager.get_user_linking_status(user_id)
-
-    # Prepare status and links
-    has_sheet = status.get('sheet_id')
-    has_webapp = status.get('webapp_user_id')
-    
-    # Prepare links if services are connected
-    sheet_link = sheet_linker.get_sheet_url(status.get('sheet_id')) if has_sheet else ""
-    webapp_link = config.WEBAPP_BASE_URL
-
-    # Prepare status messages
-    sheet_status = messages.STATUS_LINKED.format(url_link=sheet_link) if has_sheet else messages.STATUS_NOT_LINKED
-    webapp_status = messages.STATUS_LINKED.format(url_link=webapp_link) if has_webapp else messages.STATUS_NOT_LINKED
-    
-    # Prepare info message
-    info_message = messages.MSG_INFO_STATUS.format(sheet_status=sheet_status, webapp_status=webapp_status)
-
-    if not user_manager.is_onboarding_complete(user_id):
-        info_message += messages.MSG_INFO_NOT_LINKED_ACTIONS
-    else:
-        info_message += messages.MSG_INFO_LINKED_ACTIONS
-
-        # Add commands to link the other method if not already linked
-        if not has_sheet or not has_webapp:
-            info_message += messages.MSG_INFO_LINK_OTHER_METHOD
-            if not has_sheet:
-                info_message += "\n" + messages.MSG_INFO_LINK_SHEET_CMD
-            if not has_webapp:
-                info_message += "\n" + messages.MSG_INFO_LINK_WEBAPP_CMD
-
-    await update.message.reply_text(info_message, parse_mode='HTML', disable_web_page_preview=True)
-
-
-
-# --- Handler for Unrecognized Messages/Commands ---
-# This handler catches anything not explicitly handled.
-# It should only respond if the user *is* onboarded, otherwise the require_onboarding check or
-# the onboarding conversation handler's fallbacks should take precedence.
-async def handle_unrecognized(update: Update, context: ContextTypes.DEFAULT_TYPE):
-     """Handles messages/commands that don't match any specific handler."""
-     user_id = update.effective_user.id
-     text = update.effective_message.text # Get the message text
-
-     # IMPORTANT: Check if the user is currently in the onboarding conversation
-     # The ConversationHandler's fallback might already handle this.
-     # If you want this handler to run *only* outside conversations and for onboarded users:
-     if context.user_data.get('onboarding_in_progress'):
-          # If onboarding conversation is active, let its fallback handle it
-          logger.debug(f"User {user_id} sent unrecognized message '{text}', but in onboarding conversation. Letting conv handler fallback.")
-          # Returning here allows the ConversationHandler's MessageHandler(filters.ALL, onboarding_fallback) to catch it.
-          return
-     else:
-          # User is not in onboarding conversation. Check if they are onboarded.
-          if not user_manager.is_onboarding_complete(user_id):
-               logger.info(f"User {user_id} sent unrecognized message '{text}' and is not onboarded. Prompting setup.")
-               await update.effective_message.reply_text(messages.MSG_ONBOARDING_REQUIRED + "\n\n Use /start para comenzar! ✨", parse_mode='HTML')
-               # TODO: Add a button to start the onboarding process
-          else:
-               logger.info(f"User {user_id} sent unrecognized message '{text}' and IS onboarded. Providing general help.")
-               # User is onboarded but sent something the bot doesn't recognize as a command or data entry format
-               if update.effective_message.text.startswith('/'):
-                    await update.effective_message.reply_text(messages.MSG_UNKNOWN_COMMAND, parse_mode='HTML')
-               else:
-                    # Assume it's potentially a data entry attempt that failed parsing
-                    await update.effective_message.reply_text(messages.MSG_UNKNOWN_MESSAGE)
-
-# --- Help Handler ---
-async def help_command(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
-     """Displays the help message."""
-     await update.message.reply_text(messages.MSG_HELP_TEXT, parse_mode='HTML')

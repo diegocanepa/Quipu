@@ -6,7 +6,7 @@ from asgiref.wsgi import WsgiToAsgi
 import uvicorn
 from http import HTTPStatus
 from telegram import Update
-from api.bot import register_handlers, get_application, setup_webhook
+from api.telegram.bot import register_handlers, get_application, setup_webhook
 
 logging.basicConfig(level=logging.DEBUG, format='%(asctime)s - %(levelname)s - %(message)s')
 logger = logging.getLogger(__name__)

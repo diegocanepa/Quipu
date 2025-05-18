@@ -4,7 +4,7 @@ from telegram import Update
 from core.message_processor import MessageProcessor
 from telegram.ext import ContextTypes, ConversationHandler
 from core.data_server import DataSaver
-from api.middlewere.require_onboarding import require_onboarding
+from api.telegram.middlewere.require_onboarding import require_onboarding
 
 logger = logging.getLogger(__name__)
 
