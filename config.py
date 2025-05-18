@@ -1,7 +1,9 @@
 import os
+
 from dotenv import load_dotenv
 
 load_dotenv(".env")  # Load environment variables from .env
+
 
 class Config:
     """Class to store application settings."""
@@ -20,7 +22,11 @@ class Config:
     WEBAPP_BASE_URL: str = os.getenv("WEBAPP_BASE_URL")
     GOOGLE_SHEET_TEMPLATE_URL: str = os.getenv("GOOGLE_SHEET_TEMPLATE_URL")
     GOOGLE_SERVICE_ACCOUNT_EMAIL: str = os.getenv("GOOGLE_SERVICE_ACCOUNT_EMAIL")
-
+    FF_AUDIO_TRANSCRIPTION: str = os.getenv("FF_AUDIO_TRANSCRIPTION", "false")
+    FF_TRANSFER: str = os.getenv("FF_TRANSFER", "true")
+    FF_EXCHANGE: str = os.getenv("FF_EXCHANGE", "true")
+    FF_TRANSACTION: str = os.getenv("FF_TRANSACTION", "true")
+    FF_INVESTMENT: str = os.getenv("FF_INVESTMENT", "true")
 
     def __init__(self):
         self._validate_configs()
@@ -50,6 +56,6 @@ class Config:
         except ValueError:
             raise ValueError("LLM_TEMPERATURE must be a valid float in the .env file.")
 
+
 # Create a global instance of the settings for easy access
 config = Config()
-
