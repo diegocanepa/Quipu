@@ -1,0 +1,5 @@
+# States for the onboarding conversation handler
+CHOOSING_LINK_METHOD = 1
+GOOGLE_SHEET_AWAITING_URL = 2
+WEBAPP_SHOWING_INSTRUCTIONS = 3
+FINISHED = 4

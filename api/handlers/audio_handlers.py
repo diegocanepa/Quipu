@@ -6,6 +6,7 @@ from telegram import Update
 from telegram.ext import ContextTypes
 from core.audio_processor import AudioProcessor
 from core.message_processor import MessageProcessor
+from api.middlewere.require_onboarding import require_onboarding
 
 logger = logging.getLogger(__name__)
 
@@ -13,6 +14,7 @@ logger = logging.getLogger(__name__)
 audio_processor = AudioProcessor()
 message_processor = MessageProcessor()
 
+@require_onboarding
 async def handle_audio_message(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     """Handles incoming voice messages and calls the audio processor."""
     user_id = update.effective_user.id

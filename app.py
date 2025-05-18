@@ -8,7 +8,7 @@ from http import HTTPStatus
 from telegram import Update
 from api.bot import register_handlers, get_application, setup_webhook
 
-logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
+logging.basicConfig(level=logging.DEBUG, format='%(asctime)s - %(levelname)s - %(message)s')
 logger = logging.getLogger(__name__)
 
 app = Flask(__name__)
@@ -55,6 +55,8 @@ async def main():
             port=8080,
             host="0.0.0.0",
             use_colors=True,
+            log_level="debug",
+            reload=True
         )
     )
 

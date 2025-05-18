@@ -17,8 +17,10 @@ class Config:
     ENVIRONMENT: str = os.getenv("ENVIRONMENT")
     WEBHOOK_URL: str = os.getenv("WEBHOOK_URL")
     TRANSCRIPTION_API_BASE_URL: str = os.getenv("TRANSCRIPTION_API_BASE_URL")
-    
-    
+    WEBAPP_BASE_URL: str = os.getenv("WEBAPP_BASE_URL")
+    GOOGLE_SHEET_TEMPLATE_URL: str = os.getenv("GOOGLE_SHEET_TEMPLATE_URL")
+    GOOGLE_SERVICE_ACCOUNT_EMAIL: str = os.getenv("GOOGLE_SERVICE_ACCOUNT_EMAIL")
+
 
     def __init__(self):
         self._validate_configs()
@@ -37,6 +39,12 @@ class Config:
             raise ValueError("SUPABASE_URL must be set in the .env file.")
         if not self.SUPABASE_KEY:
             raise ValueError("SUPABASE_KEY must be set in the .env file.")
+        if not self.GOOGLE_SHEET_TEMPLATE_URL:
+            raise ValueError("GOOGLE_SHEET_TEMPLATE_URL must be set in the .env file.")
+        if not self.GOOGLE_SERVICE_ACCOUNT_EMAIL:
+            raise ValueError("GOOGLE_SERVICE_ACCOUNT_EMAIL must be set in the .env file.")
+        if not self.WEBAPP_BASE_URL:
+            raise ValueError("WEBAPP_BASE_URL must be set in the .env file.")
         try:
             float(self.LLM_TEMPERATURE)
         except ValueError:
@@ -44,3 +52,4 @@ class Config:
 
 # Create a global instance of the settings for easy access
 config = Config()
+
