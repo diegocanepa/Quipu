@@ -225,6 +225,11 @@ MSG_ONBOARDING_ERROR = (
     "👉 Usa /start para reiniciar el proceso"
 )
 
+# Pop up answers / messages
+GOOGLE_SHEET_SELECTED = "✅ Google Sheet seleccionado"
+WEBAPP_SELECTED = "✅ Cuenta Web seleccionada"
+CANCEL_ONBOARDING_ANSWER = "❌ Configuración cancelada"
+
 # Button Texts
 BTN_GOOGLE_SHEET = "📊 Vincular Google Sheet"
 BTN_WEBAPP = "🌐 Vincular Cuenta Web"

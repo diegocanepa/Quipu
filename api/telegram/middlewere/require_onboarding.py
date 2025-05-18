@@ -15,12 +15,15 @@ user_manager = UserDataManager()
 def require_onboarding(handler_func):
     """Decorator/Wrapper to check if user is onboarded before running handler."""
     async def wrapper(update: Update, context: ContextTypes.DEFAULT_TYPE):
-        user_id = update.effective_user.id
-        if user_manager.is_onboarding_complete(user_id):
-            logger.debug(f"User {user_id} is onboarded. Proceeding with handler {handler_func.__name__}.")
+        user = update.effective_user        
+        if user_manager.is_onboarding_complete(user.id):
+            logger.debug(f"User {user.id} is onboarded. Proceeding with handler {handler_func.__name__}.")
             return await handler_func(update, context)
         else:
-            logger.info(f"User {user_id} is NOT onboarded. Blocking handler {handler_func.__name__}.")
+            logger.info(f"User {user.id} is NOT onboarded. Blocking handler {handler_func.__name__}.")
+            create_user_if_not_exists(user.id, user.username, user.first_name, user.last_name)
+            logger.info(f"User {user.id} created.")
+            
             keyboard = [
                 [InlineKeyboardButton(BTN_GOOGLE_SHEET, callback_data='link_sheet')],
                 [InlineKeyboardButton(BTN_WEBAPP, callback_data='link_webapp')]
@@ -31,3 +34,13 @@ def require_onboarding(handler_func):
             # For simplicity here, we just send the message. The main /start handler handles the initial entry.
             return
     return wrapper
+
+def create_user_if_not_exists(user_id, username, first_name, last_name):
+    user_exists = user_manager.get_user_data(user_id) is not None
+    if not user_exists:
+        user_manager.create_user(
+            user_id=user_id,
+            username=username,
+            first_name=first_name,
+            last_name=last_name
+        )
