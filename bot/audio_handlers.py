@@ -1,10 +1,16 @@
 # In your main bot file (e.g., api/bot.py)
 import logging
 import os
-import requests
+
 from telegram import Update
 from telegram.ext import ContextTypes
+
 from core.audio_processor import AudioProcessor
+from core.feature_flag import (
+    FeatureFlagsEnum,
+    get_disabled_message,
+    is_feature_enabled,
+)
 from core.message_processor import MessageProcessor
 
 logger = logging.getLogger(__name__)
@@ -13,8 +19,18 @@ logger = logging.getLogger(__name__)
 audio_processor = AudioProcessor()
 message_processor = MessageProcessor()
 
-async def handle_audio_message(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+
+async def handle_audio_message(
+    update: Update, context: ContextTypes.DEFAULT_TYPE
+) -> None:
     """Handles incoming voice messages and calls the audio processor."""
+
+    if not is_feature_enabled(FeatureFlagsEnum.AUDIO_TRANSCRIPTION):
+        await update.message.reply_text(
+            get_disabled_message(FeatureFlagsEnum.AUDIO_TRANSCRIPTION)
+        )
+        return
+
     user_id = update.effective_user.id
     voice = update.message.voice
     file_id = voice.file_id
@@ -33,10 +49,16 @@ async def handle_audio_message(update: Update, context: ContextTypes.DEFAULT_TYP
         os.remove(filename)
 
         if transcription_result:
-            await message_processor.process_and_respond(user_message=transcription_result, update=update, context=context)
+            await message_processor.process_and_respond(
+                user_message=transcription_result, update=update, context=context
+            )
         else:
-            await update.message.reply_text("Voice processed, but no transcription text was found in the result.")
+            await update.message.reply_text(
+                "Voice processed, but no transcription text was found in the result."
+            )
 
     except Exception as e:
         logger.error(f"Error handling voice message: {e}")
-        await update.message.reply_text("Sorry, there was an error processing the voice message.")
+        await update.message.reply_text(
+            "Sorry, there was an error processing the voice message."
+        )
