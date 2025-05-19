@@ -18,6 +18,7 @@ class Config:
     SUPABASE_KEY: str = os.getenv("SUPABASE_KEY")
     ENVIRONMENT: str = os.getenv("ENVIRONMENT")
     WEBHOOK_URL: str = os.getenv("WEBHOOK_URL")
+    TRANSCRIPTION_API_BASE_URL: str = os.getenv("TRANSCRIPTION_API_BASE_URL")
     FF_AUDIO_TRANSCRIPTION: bool = os.getenv("FF_AUDIO_TRANSCRIPTION", "false").lower() == "true"
     FF_TRANSFER: bool = os.getenv("FF_TRANSFER", "true").lower() == "true"
     FF_EXCHANGE: bool = os.getenv("FF_EXCHANGE", "true").lower() == "true"
@@ -41,6 +42,10 @@ class Config:
             raise ValueError("SUPABASE_URL must be set in the .env file.")
         if not self.SUPABASE_KEY:
             raise ValueError("SUPABASE_KEY must be set in the .env file.")
+        if not self.WEBHOOK_URL:
+            raise ValueError("WEBHOOK_URL must be set in the .env file.")
+        if not self.TRANSCRIPTION_API_BASE_URL:
+            raise ValueError("TRANSCRIPTION_API_BASE_URL must be set in the .env file.")
         try:
             float(self.LLM_TEMPERATURE)
         except ValueError:
