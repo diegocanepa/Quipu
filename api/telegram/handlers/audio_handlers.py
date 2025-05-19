@@ -12,6 +12,7 @@ from core.feature_flag import (
     is_feature_enabled,
 )
 from core.message_processor import MessageProcessor
+from api.telegram.middlewere.require_onboarding import require_onboarding
 
 logger = logging.getLogger(__name__)
 
@@ -19,7 +20,7 @@ logger = logging.getLogger(__name__)
 audio_processor = AudioProcessor()
 message_processor = MessageProcessor()
 
-
+@require_onboarding
 async def handle_audio_message(
     update: Update, context: ContextTypes.DEFAULT_TYPE
 ) -> None:

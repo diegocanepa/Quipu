@@ -39,7 +39,8 @@ class Transaction(BaseModel):
         ]
         service.insert_row("FinMate", "Gastos&Ingresos", row)
         
-    async def save_to_database(self, service: SupabaseManager):
+    def save_to_database(self, service: SupabaseManager):
+        table_name = service.get_table_name("transactions")
         data = {
             "description": self.description,
             "amount": self.amount,
@@ -48,4 +49,4 @@ class Transaction(BaseModel):
             "date": self.date.date().isoformat(),
             "action": self.action,
         }
-        await service.insert("transactions", data)
+        service.insert(table_name, data)

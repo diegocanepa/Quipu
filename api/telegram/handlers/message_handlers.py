@@ -4,6 +4,7 @@ from telegram import Update
 from core.message_processor import MessageProcessor
 from telegram.ext import ContextTypes, ConversationHandler
 from core.data_server import DataSaver
+from api.telegram.middlewere.require_onboarding import require_onboarding
 
 logger = logging.getLogger(__name__)
 
@@ -13,6 +14,7 @@ data_saver = DataSaver()
 # Variable set to know the stage of the conversation
 CONFIRM_SAVE = 1
 
+@require_onboarding
 async def handle_text_message(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     """    
     Handles incoming messages from Telegram users, processes them using the LLMProcessor,
@@ -42,7 +44,7 @@ async def confirm_save(update: Update, context: ContextTypes.DEFAULT_TYPE) -> in
             logger.info(f"Mensaje a guardar: {data_to_save}")
             logger.info(f"Mensaje original: {original_message_id}")
 
-            success = await data_saver.save_content(data_to_save)
+            success = data_saver.save_content(data_to_save)
             original_text = query.message.text
 
             if success:

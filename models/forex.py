@@ -43,7 +43,8 @@ class Forex(BaseModel):
         print(f"row: {row}")
         service.insert_row("FinMate", "CambioDeDivisas", row)
         
-    async def save_to_database(self, service: SupabaseManager):
+    def save_to_database(self, service: SupabaseManager):
+        table_name = service.get_table_name("forex")
         data =  {
             "description": self.description,
             "amount": self.amount,
@@ -53,5 +54,5 @@ class Forex(BaseModel):
             "date": self.date.date().isoformat(),
             "action": self.action,
          }
-        await service.insert("forex", data)
+        service.insert(table_name, data)
         
