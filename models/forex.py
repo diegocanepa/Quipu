@@ -1,6 +1,8 @@
+from typing import Any, Dict, Optional
 from pydantic import BaseModel, Field
 from datetime import datetime
-from integrations.spreadsheet.spreadsheet import GoogleSheetsClient
+from core.models.user import User
+from integrations.spreadsheet.spreadsheet import SpreadsheetManager
 from integrations.supabase.supabase import SupabaseManager
 
 class Forex(BaseModel):
@@ -29,7 +31,7 @@ class Forex(BaseModel):
         escape_chars = r'_*[]()~`>#+-=|{}.!'
         return ''.join('\\' + char if char in escape_chars else char for char in str(text))
     
-    def save_to_sheet(self, service: GoogleSheetsClient):
+    def save_to_sheet(self, service: SpreadsheetManager, user: User) -> bool:
         row = [
             self.date.date().isoformat(),
             self.action,
@@ -40,19 +42,21 @@ class Forex(BaseModel):
             self.price * self.amount,
             self.description
         ]
-        print(f"row: {row}")
-        service.insert_row("FinMate", "CambioDeDivisas", row)
+        return service.insert_row_by_id(user.google_sheet_id, "CambioDeDivisas", row)
         
-    def save_to_database(self, service: SupabaseManager):
+    def save_to_database(self, service: SupabaseManager, user: User) -> bool:
         table_name = service.get_table_name("forex")
-        data =  {
+        data = {
+            "webapp_user_id": user.webapp_user_id,
+            "telegram_user_id": user.telegram_user_id,
+            "whatsapp_user_id": user.whatsapp_user_id,
             "description": self.description,
             "amount": self.amount,
             "currency_from": self.currency_from,
             "currency_to": self.currency_to,
             "price": self.price,
-            "date": self.date.date().isoformat(),
+            "date": self.date.isoformat(),
             "action": self.action,
          }
-        service.insert(table_name, data)
+        return service.insert(table_name, data)
         

@@ -1,7 +1,8 @@
 from pydantic import BaseModel, Field
 from datetime import datetime
-from integrations.spreadsheet.spreadsheet import GoogleSheetsClient
+from integrations.spreadsheet.spreadsheet import SpreadsheetManager
 from integrations.supabase.supabase import SupabaseManager
+from core.models.user import User
 
 class Transaction(BaseModel):
     """Represents a financial bill."""
@@ -28,7 +29,7 @@ class Transaction(BaseModel):
         escape_chars = r'_*[]()~`>#+-=|{}.!'
         return ''.join('\\' + char if char in escape_chars else char for char in str(text))
 
-    def save_to_sheet(self, service: GoogleSheetsClient):
+    def save_to_sheet(self, service: SpreadsheetManager, user: User) -> bool:
         row = [
             self.date.date().isoformat(),
             self.action,
@@ -37,16 +38,19 @@ class Transaction(BaseModel):
             self.category,
             self.description,
         ]
-        service.insert_row("FinMate", "Gastos&Ingresos", row)
+        return service.insert_row_by_id(user.google_sheet_id, "Gastos&Ingresos", row)
         
-    def save_to_database(self, service: SupabaseManager):
+    def save_to_database(self, service: SupabaseManager, user: User) -> bool:
         table_name = service.get_table_name("transactions")
         data = {
+            "webapp_user_id": user.webapp_user_id,
+            "telegram_user_id": user.telegram_user_id,
+            "whatsapp_user_id": user.whatsapp_user_id,
             "description": self.description,
             "amount": self.amount,
             "currency": self.currency,
             "category": self.category,
-            "date": self.date.date().isoformat(),
+            "date": self.date.isoformat(),
             "action": self.action,
         }
-        service.insert(table_name, data)
+        return service.insert(table_name, data)
