@@ -16,4 +16,4 @@ class DetectedAction(BaseModel):
 
 class Actions(BaseModel):
     """Represents the result of processing a user message with detected actions."""
-    actions: List[DetectedAction] = Field(description="List of detected actions and their messages")
+    actions: List[DetectedAction] = Field(description="List of detected actions and their messages") 

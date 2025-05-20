@@ -1,23 +1,23 @@
-from typing import Optional
 from pydantic import BaseModel, Field
 from datetime import datetime
-from integrations.spreadsheet.spreadsheet import SpreadsheetManager
-from integrations.supabase.supabase import SupabaseManager
+from typing import Optional, List, Dict, Any
+from core.models.base_model import FinancialModel
 from core.models.user import User
 
-class Transfer(BaseModel):
-    """Represents a financial transaction."""
-    description: str = Field(description="Description of the bill")
-    category: str = Field(description="Category of the bill")
-    date: datetime = Field(description="Actual Datetime")
-    action: str = Field(description="Action")
-    wallet_from: str = Field(description="Wallet from")
-    wallet_to: Optional[str] = Field(description="Wallet to")
-    initial_amount: float = Field(description="Initial mount of the bill")
-    final_amount: float = Field(description="Final mount of the bill with the fees")
-    currency: str = Field(description="Currency of the bill")
+class Transfer(BaseModel, FinancialModel):
+    """Represents a transfer operation."""
+    description: str = Field(description="Description of the transfer")
+    category: str = Field(description="Category of the transfer")
+    date: datetime = Field(description="Operation datetime")
+    action: str = Field(description="Action type")
+    wallet_from: str = Field(description="Source wallet")
+    wallet_to: Optional[str] = Field(default=None, description="Target wallet")
+    initial_amount: float = Field(description="Initial amount before fees")
+    final_amount: float = Field(description="Final amount after fees")
+    currency: str = Field(description="Currency of the operation")
 
-    def to_formatted_string(self) -> str:
+    def to_presentation_string(self) -> str:
+        """Returns a formatted string representation for user presentation."""
         wallet_to_str = self._escape_markdown(self.wallet_to) if self.wallet_to is not None else "N/A"
         lines = [
             "*Transferencia de Fondos*\n",
@@ -38,14 +38,9 @@ class Transfer(BaseModel):
 
         return "\n".join(lines)
 
-            
-    def _escape_markdown(self, text: str) -> str:
-        """Escapa caracteres especiales de MarkdownV2."""
-        escape_chars = r'_*[]()~`>#+-=|{}.!'
-        return ''.join('\\' + char if char in escape_chars else char for char in str(text))
-
-    def save_to_sheet(self, service: SpreadsheetManager, user: User) -> bool:
-        row = [
+    def to_sheet_row(self) -> List[Any]:
+        """Returns data formatted for spreadsheet storage."""
+        return [
             self.date.date().isoformat(),
             self.action,
             self.category,
@@ -56,14 +51,10 @@ class Transfer(BaseModel):
             self.currency,
             self.description,
         ]
-        return service.insert_row_by_id(user.google_sheet_id, "Transferencias", row)
         
-    def save_to_database(self, service: SupabaseManager, user: User) -> bool:
-        table_name = service.get_table_name("transfers")
-        data = {
-            "webapp_user_id": user.webapp_user_id,
-            "telegram_user_id": user.telegram_user_id,
-            "whatsapp_user_id": user.whatsapp_user_id,
+    def to_storage_dict(self, user: User) -> Dict[str, Any]:
+        """Returns data formatted for database storage."""
+        return {
             "description": self.description,
             "category": self.category,
             "date": self.date.isoformat(),
@@ -73,5 +64,15 @@ class Transfer(BaseModel):
             "initial_amount": self.initial_amount,
             "final_amount": self.final_amount,
             "currency": self.currency,
+            "webapp_user_id": user.webapp_user_id,
+            "telegram_user_id": user.telegram_user_id,
+            "whatsapp_user_id": user.whatsapp_user_id,
         }
-        return service.insert(table_name, data)
+
+    def get_base_table_name(self) -> str:
+        """Returns the base table name without test prefix."""
+        return "transfers"
+
+    def get_worksheet_name(self) -> str:
+        """Returns the worksheet name for Google Sheets."""
+        return "Transferencias" 

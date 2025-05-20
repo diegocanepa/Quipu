@@ -2,11 +2,11 @@ from langchain_openai import ChatOpenAI
 from integrations.llm_providers_interface import LLMClientInterface
 from config import config
 import logging
-from models.transaction import Transaction
-from models.action_type import Actions
-from models.forex import Forex
-from models.investment import Investment
-from models.transfer import Transfer
+from core.models.financial.transaction import Transaction
+from core.models.common.action_type import Actions
+from core.models.financial.forex import Forex
+from core.models.financial.investment import Investment
+from core.models.financial.transfer import Transfer
 
 logger = logging.getLogger(__name__)
 
