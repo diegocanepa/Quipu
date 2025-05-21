@@ -36,7 +36,7 @@ class MessageProcessor:
             if result.error:
                 await update.message.reply_text(f"❌ {result.error}", parse_mode='MarkdownV2')
             else:
-                response_text = result.data_object.to_formatted_string()
+                response_text = result.data_object.to_presentation_string()
                 callback_id = f"{update.message.message_id}_{idx}"
 
                 keyboard = [

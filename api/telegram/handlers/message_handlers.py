@@ -5,11 +5,13 @@ from core.message_processor import MessageProcessor
 from telegram.ext import ContextTypes, ConversationHandler
 from core.data_server import DataSaver
 from api.telegram.middlewere.require_onboarding import require_onboarding
+from core.user_data_manager import UserDataManager
 
 logger = logging.getLogger(__name__)
 
 message_processor = MessageProcessor()
 data_saver = DataSaver()
+user_data_manager = UserDataManager()
 
 # Variable set to know the stage of the conversation
 CONFIRM_SAVE = 1
@@ -29,6 +31,7 @@ async def handle_text_message(update: Update, context: ContextTypes.DEFAULT_TYPE
 async def confirm_save(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
     """Callback query handler para el botón de confirmar. Guarda los datos."""
     query = update.callback_query
+    user = update.effective_user
     await query.answer()
     logger.info(f"Callback Query Data (Confirm): {query.data}")
     
@@ -41,10 +44,11 @@ async def confirm_save(update: Update, context: ContextTypes.DEFAULT_TYPE) -> in
         if original_message_id == query.message.message_id and f'pendingsave#{callback_id}' in context.user_data:
             data_to_save = context.user_data[f'pendingsave#{callback_id}']
             
-            logger.info(f"Mensaje a guardar: {data_to_save}")
-            logger.info(f"Mensaje original: {original_message_id}")
+            logger.info(f"Mensaje a guardar: {data_to_save} from user {user.id}")
 
-            success = data_saver.save_content(data_to_save)
+            db_user = user_data_manager.get_user_data(user.id)
+            
+            success = data_saver.save_content(data_to_save, db_user)
             original_text = query.message.text
 
             if success:

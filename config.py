@@ -19,15 +19,14 @@ class Config:
     ENVIRONMENT: str = os.getenv("ENVIRONMENT")
     WEBHOOK_URL: str = os.getenv("WEBHOOK_URL")
     TRANSCRIPTION_API_BASE_URL: str = os.getenv("TRANSCRIPTION_API_BASE_URL")
-    WEBAPP_BASE_URL: str = os.getenv("WEBAPP_BASE_URL")
-    GOOGLE_SHEET_TEMPLATE_URL: str = os.getenv("GOOGLE_SHEET_TEMPLATE_URL")
-    GOOGLE_SERVICE_ACCOUNT_EMAIL: str = os.getenv("GOOGLE_SERVICE_ACCOUNT_EMAIL")
-    FF_AUDIO_TRANSCRIPTION: bool = os.getenv("FF_AUDIO_TRANSCRIPTION", "false").lower() == "true"
+    FF_AUDIO_TRANSCRIPTION: bool = (
+        os.getenv("FF_AUDIO_TRANSCRIPTION", "true").lower() == "true"
+    )
     FF_TRANSFER: bool = os.getenv("FF_TRANSFER", "true").lower() == "true"
     FF_EXCHANGE: bool = os.getenv("FF_EXCHANGE", "true").lower() == "true"
     FF_TRANSACTION: bool = os.getenv("FF_TRANSACTION", "true").lower() == "true"
     FF_INVESTMENT: bool = os.getenv("FF_INVESTMENT", "true").lower() == "true"
-    
+
     def __init__(self):
         self._validate_configs()
 
@@ -45,17 +44,8 @@ class Config:
             raise ValueError("SUPABASE_URL must be set in the .env file.")
         if not self.SUPABASE_KEY:
             raise ValueError("SUPABASE_KEY must be set in the .env file.")
-        if not self.GOOGLE_SHEET_TEMPLATE_URL:
-            raise ValueError("GOOGLE_SHEET_TEMPLATE_URL must be set in the .env file.")
-        if not self.GOOGLE_SERVICE_ACCOUNT_EMAIL:
-            raise ValueError("GOOGLE_SERVICE_ACCOUNT_EMAIL must be set in the .env file.")
-        if not self.WEBAPP_BASE_URL:
-            raise ValueError("WEBAPP_BASE_URL must be set in the .env file.")
-        if not self.WEBHOOK_URL:
-            raise ValueError("WEBHOOK_URL must be set in the .env file.")
         if not self.TRANSCRIPTION_API_BASE_URL:
             raise ValueError("TRANSCRIPTION_API_BASE_URL must be set in the .env file.")
-        
         try:
             float(self.LLM_TEMPERATURE)
         except ValueError:

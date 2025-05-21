@@ -15,20 +15,20 @@ class SupabaseManager(SupabaseManagerService):
     def __init__(self):
         self._client: Client = create_client(config.SUPABASE_URL, config.SUPABASE_KEY)
 
-    def insert(self, table_name: str, data: Dict[str, Any]) -> Dict[str, Any] | None:
+    def insert(self, table_name: str, data: Dict[str, Any]) -> bool:
         """Inserts a new record into the specified table."""        
         try:
             response = self._client.table(table_name).insert(data).execute()
             
             if hasattr(response, 'data') and response.data:
-                return response.data[0]
+                return True
             if hasattr(response, 'error') and response.error:
                 logger.error(f"Error inserting into '{table_name}': {response.error}")
-                return None
-            return None
+                return False
+            return False
         except Exception as e:
             logger.error(f"An error occurred while inserting into '{table_name}': {e}")
-            return None
+            return False
         
     def get_table_name(self, table_name: str) -> str:
         if config.ENVIRONMENT == "TEST":

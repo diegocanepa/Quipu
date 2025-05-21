@@ -3,7 +3,7 @@ from telegram import Update
 from telegram.ext import ContextTypes
 
 from core import messages
-from core.onboarding.google_sheet_linker import GoogleSheetLinker
+from integrations.spreadsheet.spreadsheet import SpreadsheetManager
 from core.user_data_manager import UserDataManager
 from api.telegram.handlers.message_sender import MessageSender
 
@@ -13,7 +13,7 @@ logger = logging.getLogger(__name__)
 
 # Initialize managers
 user_manager = UserDataManager()
-sheet_linker = GoogleSheetLinker()
+spreadsheet_manager = SpreadsheetManager()
 message_sender = MessageSender()
 
 async def help_command(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
@@ -30,7 +30,7 @@ async def show_info(update: Update, context: ContextTypes.DEFAULT_TYPE):
     has_webapp = status.get('webapp_user_id')
     
     # Prepare links if services are connected
-    sheet_link = sheet_linker.get_sheet_url(status.get('sheet_id')) if has_sheet else ""
+    sheet_link = spreadsheet_manager.get_sheet_url(status.get('sheet_id')) if has_sheet else ""
     webapp_link = config.WEBAPP_BASE_URL
 
     # Prepare status messages
