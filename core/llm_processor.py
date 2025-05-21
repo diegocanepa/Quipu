@@ -16,7 +16,7 @@ from core.prompts import (
     TRANSFER_PROMPT,
 )
 from integrations.providers.llm_akash import AkashLLMClient as LLMAgent
-from core.models.common.action_type import Actions, ActionTypes
+from core.models.common.action_type import Actions
 from core.models.financial.forex import Forex
 from core.models.financial.investment import Investment
 from core.models.financial.transaction import Transaction
