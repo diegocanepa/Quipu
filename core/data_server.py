@@ -35,17 +35,16 @@ class DataSaver:
         Returns:
             True if saving to all configured storage methods was successful, False otherwise.
         """
-        success = True
+        success_spreadsheet = True
         
         # Save to spreadsheet if user has it configured
         if user.is_sheet_linked:
-            success = success and self._save_to_spreadsheet(data, user)
+            success_spreadsheet = self._save_to_spreadsheet(data, user)
 
-        # Save to database if user has webapp configured
-        if user.is_webapp_linked:
-            success = success and self._save_to_database(data, user)
+        # Save to database always just in case the user creates a new account later
+        success_database = self._save_to_database(data, user)
 
-        return success
+        return success_spreadsheet and success_database
 
     def _save_to_spreadsheet(self, data: FinancialModel, user: User) -> bool:
         """
