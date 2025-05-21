@@ -60,7 +60,7 @@ class Transaction(BaseModel, FinancialModel):
             "currency": self.currency,
             "category": self.category,
             "date": self.date.isoformat(),
-            "action": self.action,
+            "action": self.action.value,
             "webapp_user_id": user.webapp_user_id,
             "telegram_user_id": user.telegram_user_id,
             "whatsapp_user_id": user.whatsapp_user_id,
