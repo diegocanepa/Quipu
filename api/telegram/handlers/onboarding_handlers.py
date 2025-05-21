@@ -15,14 +15,14 @@ from api.telegram.handlers.state_manager import StateManager
 from core import messages
 from core.onboarding import states
 from core.user_data_manager import UserDataManager
-from core.onboarding.google_sheet_linker import GoogleSheetLinker
+from integrations.spreadsheet.spreadsheet import SpreadsheetManager
 from config import config
 
 logger = logging.getLogger(__name__)
 
 # Initialize managers
 user_manager = UserDataManager()
-sheet_linker = GoogleSheetLinker()
+spreadsheet_manager = SpreadsheetManager()
 message_sender = MessageSender()
 state_manager = StateManager()
 
@@ -96,7 +96,7 @@ async def receive_sheet_url(update: Update, context: ContextTypes.DEFAULT_TYPE) 
     sheet_url = update.message.text.strip()
     logger.info(f"User {user.id} provided potential sheet URL: {sheet_url}")
 
-    sheet_id = sheet_linker.get_sheet_id_from_url(sheet_url)
+    sheet_id = spreadsheet_manager.get_sheet_id_from_url(sheet_url)
     if not sheet_id:
         logger.warning(f"User {user.id} provided invalid URL format: {sheet_url}")
         await message_sender.send_message(
@@ -107,7 +107,7 @@ async def receive_sheet_url(update: Update, context: ContextTypes.DEFAULT_TYPE) 
         return states.GOOGLE_SHEET_AWAITING_URL
 
     processing_msg = await message_sender.send_message(update, messages.MSG_SHEET_LINK_CHECKING)
-    access_granted = sheet_linker.check_sheet_access(sheet_id)
+    access_granted = spreadsheet_manager.check_access(sheet_id)
     await message_sender.clean_up_processing_message(processing_msg)
 
     if access_granted:

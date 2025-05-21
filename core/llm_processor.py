@@ -16,11 +16,11 @@ from core.prompts import (
     TRANSFER_PROMPT,
 )
 from integrations.providers.llm_akash import AkashLLMClient as LLMAgent
-from models.action_type import Actions, ActionTypes
-from models.forex import Forex
-from models.investment import Investment
-from models.transaction import Transaction
-from models.transfer import Transfer
+from core.models.common.action_type import Actions
+from core.models.financial.forex import Forex
+from core.models.financial.investment import Investment
+from core.models.financial.transaction import Transaction
+from core.models.financial.transfer import Transfer
 
 logger = logging.getLogger(__name__)
 
