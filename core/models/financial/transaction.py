@@ -34,28 +34,6 @@ class Transaction(BaseModel, FinancialModel):
             f"🔢 *Monto:* `{self.amount:.2f}` {self._escape_markdown(self.currency)}\n"
             f"🗓️ *Fecha:* `{self.date.strftime('%Y-%m-%d %H:%M')}`"
         )
-        
-    def _escape_markdown(self, text: str) -> str:
-        """Escapes special characters for MarkdownV2."""
-        escape_chars = r'_*[]()~`>#+-=|{}.!'
-        return ''.join('\\' + char if char in escape_chars else char for char in str(text))
-
-    def save_to_sheet(self, spreadsheet_manager, user) -> bool:
-        """
-        Prepares and saves transaction data to Google Sheets.
-        Used by DataSaver.
-        """
-        row = self.to_sheet_row()
-        return spreadsheet_manager.insert_row_by_id(user.google_sheet_id, "Gastos&Ingresos", row)
-
-    def save_to_database(self, supabase_manager, user) -> bool:
-        """
-        Prepares and saves transaction data to Supabase.
-        Used by DataSaver.
-        """
-        table_name = supabase_manager.get_table_name("transactions")
-        data = self.to_storage_dict()
-        return supabase_manager.insert(table_name, data)
 
     def to_sheet_row(self) -> List[Any]:
         """

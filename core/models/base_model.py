@@ -2,6 +2,8 @@ from abc import ABC, abstractmethod
 from typing import Any, List, Dict
 import os
 
+from core.models.user import User
+
 class FinancialModel(ABC):
     """Base interface for all financial models."""
     
@@ -16,7 +18,7 @@ class FinancialModel(ABC):
         pass
 
     @abstractmethod
-    def to_storage_dict(self) -> Dict[str, Any]:
+    def to_storage_dict(self, user: User) -> Dict[str, Any]:
         """Returns data formatted for database storage."""
         pass
 
