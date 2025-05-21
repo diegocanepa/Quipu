@@ -84,9 +84,9 @@ class LLMProcessor:
 
             llm_request_models = []
             for action in actions_types:
-                llm_request_models.append(
-                    self._process_action(action.message, action.action_type)
-                )
+                result = self._process_action(action.message, action.action_type)
+                if result is not None:  # Filter out None values
+                    llm_request_models.append(result)
 
             llm_request_models = [
                 item for sublist in llm_request_models for item in sublist
