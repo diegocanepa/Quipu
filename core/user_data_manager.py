@@ -74,11 +74,11 @@ class UserDataManager:
             
             result = self._client.insert(self._users_table, new_user.to_dict())
             if result:
-                logger.info(f"New user {user_id} created in Supabase.")
+                logger.info(f"New user {telegram_user_id} created in Supabase.")
             else:
-                logger.error(f"Error creating user {user_id} in Supabase.")
+                logger.error(f"Error creating user {telegram_user_id} in Supabase.")
         else:
-            logger.info(f"User {user_id} already exists. Skipping creation.")
+            logger.info(f"User {telegram_user_id} already exists. Skipping creation.")
 
     def update_last_interaction_time(self, user_id: int) -> None:
         """Updates the last interaction timestamp for an existing user."""
