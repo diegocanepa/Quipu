@@ -26,6 +26,7 @@ class Config:
     FF_EXCHANGE: bool = os.getenv("FF_EXCHANGE", "true").lower() == "true"
     FF_TRANSACTION: bool = os.getenv("FF_TRANSACTION", "true").lower() == "true"
     FF_INVESTMENT: bool = os.getenv("FF_INVESTMENT", "true").lower() == "true"
+    WEBAPP_BASE_URL: str = os.getenv("WEBAPP_BASE_URL")
 
     def __init__(self):
         self._validate_configs()
@@ -46,6 +47,10 @@ class Config:
             raise ValueError("SUPABASE_KEY must be set in the .env file.")
         if not self.TRANSCRIPTION_API_BASE_URL:
             raise ValueError("TRANSCRIPTION_API_BASE_URL must be set in the .env file.")
+        if not self.WEBAPP_BASE_URL:
+            raise ValueError("WEBAPP_BASE_URL must be set in the .env file.")
+        if not self.WEBHOOK_URL:
+            raise ValueError("WEBHOOK_URL must be set in the .env file.")
         try:
             float(self.LLM_TEMPERATURE)
         except ValueError:
