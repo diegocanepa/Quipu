@@ -22,6 +22,10 @@ class Config:
     FF_AUDIO_TRANSCRIPTION: bool = (
         os.getenv("FF_AUDIO_TRANSCRIPTION", "true").lower() == "true"
     )
+    REDIS_HOST: str = os.getenv("REDIS_HOST")
+    REDIS_PORT: int = int(os.getenv("REDIS_PORT", 6379))
+    REDIS_PASSWORD: str = os.getenv("REDIS_PASSWORD", None)
+    REDIS_DB: int = int(os.getenv("REDIS_DB", 0))
     FF_TRANSFER: bool = os.getenv("FF_TRANSFER", "true").lower() == "true"
     FF_EXCHANGE: bool = os.getenv("FF_EXCHANGE", "true").lower() == "true"
     FF_TRANSACTION: bool = os.getenv("FF_TRANSACTION", "true").lower() == "true"
