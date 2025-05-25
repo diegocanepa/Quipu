@@ -245,6 +245,15 @@ Debés identificar y extraer los siguientes campos de la transacción:
 - **date**: Si se menciona fecha u hora, usala. Si no, usá la fecha y hora actual en formato ISO 8601 (`YYYY-MM-DDTHH:MM:SSZ`).
 - **action**: "gasto" si es egreso, "ingreso" si es entrada de dinero.
 
+Listas válidas de categorías:
+
+- Para gastos:
+["comida", "transporte", "alquiler", "servicios", "salud", "educación", "ocio", "regalo", "deporte", "hogar", "viajes", "gastos_mensuales", "otros"]
+
+- Para ingresos:
+["salario", "venta", "regalo", "freelance", "inversión", "reembolso", "ingresos_recurrentes", "premio", "otros"]
+
+
 Respondé **solo** en formato JSON, sin explicaciones, siguiendo este esquema:
 
 ```json
