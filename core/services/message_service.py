@@ -76,8 +76,7 @@ class MessageService:
         cache_key = self._generate_message_key(user_id, message.message_id, message.source)
         try:
             message_dict = message.__dict__.copy()
-            if hasattr(message.message_object, 'to_dict'):
-                message_dict['message_object'] = message.message_object.to_dict()
+            message_dict['message_object'] = message.message_object.model_dump(mode='json')
             data_to_save = json.dumps(message_dict)
             self.cache_service.set(cache_key, data_to_save, expiry=self.CACHE_EXPIRY_SECONDS)
             logger.info(f"Message (ID: {message.message_id}, User: {user_id}, Platform: {message.source.value}) saved to cache.")

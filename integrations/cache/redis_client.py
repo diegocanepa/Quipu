@@ -32,17 +32,18 @@ class RedisCacheClient(CacheService):
         Establishes the connection with the Redis server.
         """
         try:
-            self.redis_pinclient = redis.Redis(
+            self.redis_client = redis.Redis(
                 host=self.host,
                 port=self.port,
                 password=self.password,
                 db=self.db,
                 decode_responses=True  # To get strings instead of bytes
             )
+            self.redis_client.ping()
             logger.info(f"Successfully connected to Redis (or Valkey) at {self.host}:{self.port}, DB: {self.db}")
         except redis.exceptions.ConnectionError as e:
             logger.info(f"Error connecting to Redis (or Valkey): {e}")
-            self.redis_client = None
+            self.redis_client = None # :TODO Raise an error when this happen otherwise it's a silence error. 
 
 
     def get(self, key: str) -> Optional[Any]:
