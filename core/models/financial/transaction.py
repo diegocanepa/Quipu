@@ -16,7 +16,7 @@ class Transaction(BaseModel, FinancialModel):
     description: str = Field(description="Description of the transaction")
     amount: float = Field(description="Amount of the transaction")
     currency: str = Field(description="Currency of the transaction")
-    category: str = Field(description="Category of the transaction")
+    category: str = Field(description="Category of the transaction") # :TODO This could be an Enum. One for income and other for expenses. 
     date: datetime = Field(description="Transaction datetime")
     action: TransactionType = Field(description="Type of transaction (income/expense)")
     
