@@ -23,7 +23,7 @@ class AkashLLMClient(LLMClientInterface):
         self.llm = ChatOpenAI(
             base_url=config.AKASH_API_BASE_URL,
             api_key=config.AKASH_API_KEY,
-            model_name="DeepSeek-R1-Distill-Qwen-14B",
+            model_name=config.LLM_MODEL_NAME,
             temperature=config.LLM_TEMPERATURE
         )
         logger.info("Akash OpenAI client initialized successfully.")
