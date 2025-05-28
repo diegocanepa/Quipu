@@ -43,7 +43,7 @@ async def start_onboarding(update: Update, context: ContextTypes.DEFAULT_TYPE) -
 
     if not user_exists:
         user_manager.create_user(
-            user_id=user.id,
+            telegram_user_id=user.id,
             username=user.username,
             first_name=user.first_name,
             last_name=user.last_name

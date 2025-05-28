@@ -39,7 +39,7 @@ def create_user_if_not_exists(user_id, username, first_name, last_name):
     user_exists = user_manager.get_user_data(user_id) is not None
     if not user_exists:
         user_manager.create_user(
-            user_id=user_id,
+            telegram_user_id=user_id,
             username=username,
             first_name=first_name,
             last_name=last_name

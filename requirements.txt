@@ -12,3 +12,4 @@ pydantic-core
 ruff
 flask[async]
 asgiref
+redis

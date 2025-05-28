@@ -1,6 +1,7 @@
 import logging
 from datetime import datetime, timezone
 from typing import Optional
+import uuid
 
 from integrations.supabase.supabase import SupabaseManager
 from core.models.user import User
@@ -12,25 +13,25 @@ class UserDataManager:
         self._client = SupabaseManager()
         self._users_table = self._client.get_table_name("users")
 
-    def _get_user_from_supabase(self, user_id: int) -> Optional[User]:
+    def _get_user_from_supabase(self, telegram_user_id: int) -> Optional[User]:
         """Internal method to get user data from Supabase."""
         try:
             response = self._client._client.table(self._users_table)\
                 .select("*")\
-                .eq("telegram_user_id", user_id)\
+                .eq("telegram_user_id", telegram_user_id)\
                 .execute()
             
             if response and hasattr(response, 'data') and response.data:
-                logger.info(f"Found user {user_id} in Supabase.")
+                logger.info(f"Found user {telegram_user_id} in Supabase.")
                 return User.from_dict(response.data[0])
             
-            logger.info(f"No user found for ID: {user_id}")
+            logger.info(f"No user found for ID: {telegram_user_id}")
             return None
         except Exception as e:
             logger.error(f"Error getting user data from Supabase: {e}")
             return None
 
-    def get_user_data(self, user_id: int) -> Optional[User]:
+    def get_user_data(self, telegram_user_id: int) -> Optional[User]:
         """
         Retrieves all data for a specific user.
 
@@ -40,11 +41,11 @@ class UserDataManager:
         Returns:
             A User instance containing the user's data, or None if the user is not found.
         """
-        return self._get_user_from_supabase(user_id)
+        return self._get_user_from_supabase(telegram_user_id)
 
     def create_user(
         self,
-        user_id: int,
+        telegram_user_id: int,
         username: str | None,
         first_name: str,
         last_name: str | None
@@ -58,11 +59,12 @@ class UserDataManager:
             first_name: The user's Telegram first name (string).
             last_name: The user's Telegram last name (string, can be None).
         """
-        existing_user = self.get_user_data(user_id)
+        existing_user = self.get_user_data(telegram_user_id)
         if not existing_user:
             now_utc = datetime.now(timezone.utc)
             new_user = User(
-                telegram_user_id=user_id,
+                id=uuid.uuid4(),
+                telegram_user_id=telegram_user_id,
                 telegram_username=username,
                 telegram_first_name=first_name,
                 telegram_last_name=last_name,
@@ -72,11 +74,11 @@ class UserDataManager:
             
             result = self._client.insert(self._users_table, new_user.to_dict())
             if result:
-                logger.info(f"New user {user_id} created in Supabase.")
+                logger.info(f"New user {telegram_user_id} created in Supabase.")
             else:
-                logger.error(f"Error creating user {user_id} in Supabase.")
+                logger.error(f"Error creating user {telegram_user_id} in Supabase.")
         else:
-            logger.info(f"User {user_id} already exists. Skipping creation.")
+            logger.info(f"User {telegram_user_id} already exists. Skipping creation.")
 
     def update_last_interaction_time(self, user_id: int) -> None:
         """Updates the last interaction timestamp for an existing user."""
