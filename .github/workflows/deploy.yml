@@ -182,7 +182,8 @@ jobs:
           
           # Extract and install new version
           cd /tmp
-          tar -xzf quipu-*.tar.gz
+          PACKAGE_FILE=$(ls -1 quipu-*.tar.gz | head -1)
+          tar -xzf "$PACKAGE_FILE"
           sudo cp quipu $DEPLOY_DIR/
           sudo cp version.txt $DEPLOY_DIR/ 2>/dev/null || true
           sudo chmod +x $DEPLOY_DIR/quipu
