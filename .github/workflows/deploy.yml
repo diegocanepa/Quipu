@@ -183,7 +183,9 @@ jobs:
           # Extract and install new version
           cd /tmp
           PACKAGE_FILE=$(ls -1 quipu-*.tar.gz | head -1)
-          tar -xzf "$PACKAGE_FILE"
+          mkdir -p quipu_extract
+          cd quipu_extract
+          tar -xzf "/tmp/$PACKAGE_FILE"
           sudo cp quipu $DEPLOY_DIR/
           sudo cp version.txt $DEPLOY_DIR/ 2>/dev/null || true
           sudo chmod +x $DEPLOY_DIR/quipu
@@ -214,7 +216,8 @@ jobs:
           fi
           
           # Cleanup
-          rm -f /tmp/quipu-*.tar.gz /tmp/quipu /tmp/version.txt /tmp/quipu.service /tmp/deploy.sh
+          rm -f /tmp/quipu-*.tar.gz /tmp/version.txt /tmp/quipu.service /tmp/deploy.sh
+          rm -rf /tmp/quipu_extract
           
           echo "=== Deployment completed ==="
           DEPLOY_EOF
