@@ -4,7 +4,7 @@ class CommandButton:
         Initializes a CommandButton instance.
 
         Args:
-            name (str): The name of the button.
+            text (str): The text of the button.
             callback_data (str): The callback data associated with the button.
         """
         self.text = text
