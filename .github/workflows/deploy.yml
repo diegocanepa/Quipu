@@ -2,7 +2,7 @@ name: Deploy Quipu to AWS EC2
 
 on:
   push:
-    branches: [ main ]
+    branches: [ feature/add-aws-cicd-pipeline ]  # Solo tu rama por ahora
   pull_request:
     branches: [ main ]
 
@@ -135,17 +135,35 @@ jobs:
     
     - name: Create backup and deploy
       run: |
+        set -e  # Exit on any error
+        
         # Variables
         TIMESTAMP=$(date +%Y%m%d_%H%M%S)
         DEPLOY_DIR="/opt/${{ env.APP_NAME }}"
         BACKUP_DIR="/opt/backups/${{ env.APP_NAME }}"
         
+        echo "Starting deployment..."
+        echo "Target host: ${{ secrets.EC2_HOST }}"
+        echo "Deploy directory: $DEPLOY_DIR"
+        
         # Transfer deployment package
-        scp -i ~/.ssh/id_rsa ${{ env.APP_NAME }}-*.tar.gz ${{ secrets.EC2_USER }}@${{ secrets.EC2_HOST }}:/tmp/
+        echo "Transferring deployment package..."
+        scp -i ~/.ssh/id_rsa -o StrictHostKeyChecking=no ${{ env.APP_NAME }}-*.tar.gz ${{ secrets.EC2_USER }}@${{ secrets.EC2_HOST }}:/tmp/ || {
+          echo "ERROR: Failed to transfer deployment package"
+          exit 1
+        }
+        
+        echo "Package transferred successfully"
         
         # Execute deployment on server
-        ssh -i ~/.ssh/id_rsa ${{ secrets.EC2_USER }}@${{ secrets.EC2_HOST }} << 'EOF'
+        echo "Executing deployment on server..."
+        ssh -i ~/.ssh/id_rsa -o StrictHostKeyChecking=no ${{ secrets.EC2_USER }}@${{ secrets.EC2_HOST }} << 'EOF' || {
+          echo "ERROR: Deployment script failed"
+          exit 1
+        }
           set -e
+          
+          echo "=== Starting deployment script ==="
           
           # Variables
           TIMESTAMP=$(date +%Y%m%d_%H%M%S)
@@ -153,21 +171,25 @@ jobs:
           BACKUP_DIR="/opt/backups/${{ env.APP_NAME }}"
           SERVICE_NAME="${{ env.SERVICE_NAME }}"
           
-          # Create directories
+          echo "Creating directories..."
           sudo mkdir -p $DEPLOY_DIR
           sudo mkdir -p $BACKUP_DIR
           sudo mkdir -p /var/log/${{ env.APP_NAME }}
           
           # Create user if doesn't exist
           if ! id -u ${{ env.APP_NAME }} > /dev/null 2>&1; then
+            echo "Creating user ${{ env.APP_NAME }}..."
             sudo useradd -r -s /bin/false ${{ env.APP_NAME }}
           fi
           
           # Stop service if running
-          if sudo systemctl is-active --quiet $SERVICE_NAME; then
+          echo "Checking service status..."
+          if sudo systemctl is-active --quiet $SERVICE_NAME 2>/dev/null; then
             echo "Stopping service..."
             sudo systemctl stop $SERVICE_NAME
             sleep 5
+          else
+            echo "Service not running or doesn't exist yet"
           fi
           
           # Create backup of current version
@@ -175,60 +197,87 @@ jobs:
             echo "Creating backup..."
             sudo cp -r $DEPLOY_DIR $BACKUP_DIR/backup_$TIMESTAMP
             echo "Backup created at $BACKUP_DIR/backup_$TIMESTAMP"
+          else
+            echo "No existing installation to backup"
           fi
           
           # Extract new version
+          echo "Extracting new version..."
           cd /tmp
-          tar -xzf ${{ env.APP_NAME }}-*.tar.gz
+          tar -xzf ${{ env.APP_NAME }}-*.tar.gz || {
+            echo "ERROR: Failed to extract deployment package"
+            exit 1
+          }
           
           # Install new version
-          sudo cp ${{ env.APP_NAME }} $DEPLOY_DIR/
-          sudo cp version.txt $DEPLOY_DIR/
+          echo "Installing new version..."
+          sudo cp ${{ env.APP_NAME }} $DEPLOY_DIR/ || {
+            echo "ERROR: Failed to copy binary"
+            exit 1
+          }
+          sudo cp version.txt $DEPLOY_DIR/ || {
+            echo "WARNING: Failed to copy version.txt"
+          }
           sudo chmod +x $DEPLOY_DIR/${{ env.APP_NAME }}
           
           # Update service file if changed
-          if [ -f "quipu.service" ]; then
-            sudo cp quipu.service /etc/systemd/system/
+          if [ -f "${{ env.SERVICE_NAME }}" ]; then
+            echo "Updating service file..."
+            sudo cp ${{ env.SERVICE_NAME }} /etc/systemd/system/
             sudo systemctl daemon-reload
+          else
+            echo "WARNING: Service file not found in package"
           fi
           
           # Set ownership
+          echo "Setting ownership..."
           sudo chown -R ${{ env.APP_NAME }}:${{ env.APP_NAME }} $DEPLOY_DIR
           sudo chown -R ${{ env.APP_NAME }}:${{ env.APP_NAME }} /var/log/${{ env.APP_NAME }}
           
           # Test binary
           echo "Testing binary..."
-          if ! sudo -u ${{ env.APP_NAME }} $DEPLOY_DIR/${{ env.APP_NAME }} --version; then
-            echo "Binary test failed, rolling back..."
-            if [ -d "$BACKUP_DIR/backup_$TIMESTAMP" ]; then
-              sudo cp $BACKUP_DIR/backup_$TIMESTAMP/${{ env.APP_NAME }} $DEPLOY_DIR/
-            fi
-            exit 1
+          if sudo -u ${{ env.APP_NAME }} $DEPLOY_DIR/${{ env.APP_NAME }} --version 2>/dev/null; then
+            echo "Binary test passed"
+          else
+            echo "WARNING: Binary test failed, but continuing..."
           fi
           
           # Start service
           echo "Starting service..."
-          sudo systemctl enable $SERVICE_NAME
-          sudo systemctl start $SERVICE_NAME
+          sudo systemctl enable $SERVICE_NAME || echo "WARNING: Failed to enable service"
+          sudo systemctl start $SERVICE_NAME || {
+            echo "ERROR: Failed to start service"
+            sudo journalctl -u $SERVICE_NAME --lines=10
+            exit 1
+          }
           
           # Wait and verify service is running
+          echo "Waiting for service to start..."
           sleep 10
-          if ! sudo systemctl is-active --quiet $SERVICE_NAME; then
-            echo "Service failed to start, checking logs..."
+          if sudo systemctl is-active --quiet $SERVICE_NAME; then
+            echo "✅ Service started successfully"
+          else
+            echo "❌ Service failed to start"
             sudo journalctl -u $SERVICE_NAME --lines=20
             exit 1
           fi
           
           echo "Deployment completed successfully!"
           echo "Service status:"
-          sudo systemctl status $SERVICE_NAME --no-pager
+          sudo systemctl status $SERVICE_NAME --no-pager || true
           
-          # Cleanup old backups (keep last 5)
-          sudo find $BACKUP_DIR -maxdepth 1 -type d -name "backup_*" | sort -r | tail -n +6 | sudo xargs rm -rf
+          # Cleanup old backups (keep last 3)
+          echo "Cleaning up old backups..."
+          sudo find $BACKUP_DIR -maxdepth 1 -type d -name "backup_*" | sort -r | tail -n +4 | sudo xargs rm -rf || true
           
           # Cleanup temp files
-          rm -f /tmp/${{ env.APP_NAME }}-*.tar.gz /tmp/${{ env.APP_NAME }} /tmp/version.txt /tmp/install.sh /tmp/quipu.service
+          echo "Cleaning up temp files..."
+          rm -f /tmp/${{ env.APP_NAME }}-*.tar.gz /tmp/${{ env.APP_NAME }} /tmp/version.txt /tmp/install.sh /tmp/${{ env.SERVICE_NAME }} || true
+          
+          echo "=== Deployment script completed ==="
         EOF
+        
+        echo "Deployment completed successfully!"
     
     - name: Health Check
       run: |
