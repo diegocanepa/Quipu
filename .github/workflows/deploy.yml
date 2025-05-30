@@ -4,7 +4,7 @@ on:
   push:
     branches: [ feature/add-aws-cicd-pipeline ]  # Solo tu rama por ahora
   pull_request:
-    branches: [ feature/add-aws-cicd-pipeline ]
+    branches: [ main ]
 
 env:
   PYTHON_VERSION: '3.11'
@@ -41,7 +41,7 @@ jobs:
   build:
     needs: test
     runs-on: ubuntu-latest
-    #if: github.ref == 'refs/heads/main'
+    if: github.ref == 'refs/heads/main'
     
     steps:
     - uses: actions/checkout@v4
@@ -109,7 +109,7 @@ jobs:
   deploy:
     needs: build
     runs-on: ubuntu-latest
-    #if: github.ref == 'refs/heads/main'
+    if: github.ref == 'refs/heads/main'
     
     steps:
     - uses: actions/checkout@v4
@@ -157,7 +157,7 @@ jobs:
         
         # Execute deployment on server
         echo "Executing deployment on server..."
-        ssh -i ~/.ssh/id_rsa -o StrictHostKeyChecking=no ${{ secrets.EC2_USER }}@${{ secrets.EC2_HOST }} << 'EOF' || {
+        ssh -i ~/.ssh/id_rsa -o StrictHostKeyChecking=no ${{ secrets.EC2_USER }}@${{ secrets.EC2_HOST }} 'bash -s' << 'EOF' || {
           echo "ERROR: Deployment script failed"
           exit 1
         }
