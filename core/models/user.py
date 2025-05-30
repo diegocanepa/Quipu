@@ -2,6 +2,7 @@ from dataclasses import dataclass
 from datetime import datetime
 from typing import Optional
 from uuid import UUID
+from core.utils.datetime_utils import parse_datetime
 
 @dataclass
 class User:
@@ -28,8 +29,8 @@ class User:
         Handles datetime conversion from ISO strings and UUID conversion.
         """
         # Convert ISO datetime strings to datetime objects
-        created_at = datetime.fromisoformat(data['created_at'].replace('Z', '+00:00'))
-        last_interaction = datetime.fromisoformat(data['last_interaction_at'].replace('Z', '+00:00'))
+        created_at = parse_datetime(data['created_at'])
+        last_interaction = parse_datetime(data['last_interaction_at'])
         
         # Convert string to UUID if it's a string
         id_value = UUID(data['id']) if isinstance(data['id'], str) else data['id']
