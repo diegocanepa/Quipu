@@ -174,3 +174,36 @@ cython_debug/
 # PyPI configuration file
 .pypirc
 .DS_Store
+
+# Additional environment files
+.env.*
+!.env.template
+
+# Credentials and secrets
+*.pem
+*.key
+*.cert
+*.p12
+*.pfx
+*.crt
+secrets/
+credentials/
+
+# Database files
+*.db
+*.sqlite
+
+# Logs that might contain sensitive data
+logs/
+*.log.*
+
+# Local configuration
+config.local.yaml
+config.local.yml
+config.local.json
+
+# VSCode
+.vscode/
+
+# AWS
+.aws/
