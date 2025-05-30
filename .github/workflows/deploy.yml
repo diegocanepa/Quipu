@@ -221,7 +221,13 @@ jobs:
           
           # Transfer and execute deployment script
           scp -i ~/.ssh/id_rsa -o StrictHostKeyChecking=no deploy.sh ${{ secrets.EC2_USER }}@${{ secrets.EC2_HOST }}:/tmp/
-          ssh -i ~/.ssh/id_rsa -o StrictHostKeyChecking=no ${{ secrets.EC2_USER }}@${{ secrets.EC2_HOST }} "chmod +x /tmp/deploy.sh && /tmp/deploy.sh"
+          
+          echo "Executing deployment script..."
+          ssh -i ~/.ssh/id_rsa -o StrictHostKeyChecking=no ${{ secrets.EC2_USER }}@${{ secrets.EC2_HOST }} "chmod +x /tmp/deploy.sh && /tmp/deploy.sh" || {
+            echo "Deployment script failed, checking logs..."
+            ssh -i ~/.ssh/id_rsa -o StrictHostKeyChecking=no ${{ secrets.EC2_USER }}@${{ secrets.EC2_HOST }} "sudo journalctl -u quipu.service --lines=20 --no-pager || true"
+            exit 1
+          }
       
       - name: Health Check
         run: |
