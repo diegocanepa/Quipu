@@ -2,7 +2,7 @@ name: Deploy Quipu to AWS EC2
 
 on:
   push:
-    branches: [ feature/add-aws-cicd-pipeline ]  # Solo tu rama por ahora
+    branches: [ feature/add-aws-cicd-pipeline ]
   pull_request:
     branches: [ main ]
 
@@ -17,323 +17,243 @@ jobs:
   test:
     runs-on: ubuntu-latest
     steps:
-    - uses: actions/checkout@v4
-    
-    - name: Set up Python
-      uses: actions/setup-python@v4
-      with:
-        python-version: ${{ env.PYTHON_VERSION }}
-    
-    - name: Install dependencies
-      run: |
-        python -m pip install --upgrade pip
-        pip install -r requirements.txt
-        pip install pytest pytest-cov
-    
-    - name: Run tests (if they exist)
-      run: |
-        if [ -d "tests" ]; then
-          pytest tests/ --cov=. --cov-report=xml
-        else
-          echo "No tests directory found, skipping tests"
-        fi
+      - uses: actions/checkout@v4
+      
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+      
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+          pip install pytest pytest-cov
+      
+      - name: Run tests (if they exist)
+        run: |
+          if [ -d "tests" ]; then
+            pytest tests/ --cov=. --cov-report=xml
+          else
+            echo "No tests directory found, skipping tests"
+          fi
 
   build:
     needs: test
     runs-on: ubuntu-latest
-    #if: github.ref == 'refs/heads/main'
+    if: github.ref == 'refs/heads/feature/add-aws-cicd-pipeline'
     
     steps:
-    - uses: actions/checkout@v4
-    
-    - name: Set up Python
-      uses: actions/setup-python@v4
-      with:
-        python-version: ${{ env.PYTHON_VERSION }}
-    
-    - name: Install build dependencies
-      run: |
-        python -m pip install --upgrade pip
-        pip install pyinstaller
-        pip install -r requirements.txt
-    
-    - name: Create version file
-      run: |
-        echo "VERSION=$(date +%Y%m%d-%H%M%S)-$(git rev-parse --short HEAD)" >> $GITHUB_ENV
-        echo ${{ env.VERSION }} > version.txt
-    
-    - name: Build binary with PyInstaller
-      run: |
-        pyinstaller \
-          --onefile \
-          --name ${{ env.APP_NAME }} \
-          --add-data "core:core" \
-          --add-data "api:api" \
-          --add-data "integrations:integrations" \
-          --add-data "config.py:." \
-          --hidden-import=telegram \
-          --hidden-import=telegram.ext \
-          --hidden-import=uvicorn \
-          --hidden-import=flask \
-          --hidden-import=supabase \
-          --hidden-import=redis \
-          --hidden-import=gspread \
-          --hidden-import=oauth2client \
-          --hidden-import=langchain_openai \
-          --collect-all telegram \
-          --collect-all uvicorn \
-          --collect-all flask \
-          --distpath dist \
-          --workpath build \
-          --specpath . \
-          ${{ env.MAIN_FILE }}
-    
-    - name: Create deployment package
-      run: |
-        mkdir -p deploy
-        cp dist/${{ env.APP_NAME }} deploy/
-        cp version.txt deploy/
-        cp deploy_scripts/install.sh deploy/
-        cp deploy_scripts/quipu.service deploy/
-        chmod +x deploy/${{ env.APP_NAME }}
-        chmod +x deploy/install.sh
-        tar -czf ${{ env.APP_NAME }}-${{ env.VERSION }}.tar.gz -C deploy .
-    
-    - name: Upload artifact
-      uses: actions/upload-artifact@v4
-      with:
-        name: quipu-binary
-        path: ${{ env.APP_NAME }}-${{ env.VERSION }}.tar.gz
-        retention-days: 30
+      - uses: actions/checkout@v4
+      
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+      
+      - name: Install build dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install pyinstaller
+          pip install -r requirements.txt
+      
+      - name: Create version file
+        run: |
+          echo "VERSION=$(date +%Y%m%d-%H%M%S)-$(git rev-parse --short HEAD)" >> $GITHUB_ENV
+          echo ${{ env.VERSION }} > version.txt
+      
+      - name: Build binary with PyInstaller
+        run: |
+          pyinstaller \
+            --onefile \
+            --name ${{ env.APP_NAME }} \
+            --strip \
+            --optimize=2 \
+            --add-data "core:core" \
+            --add-data "api:api" \
+            --add-data "integrations:integrations" \
+            --add-data "config.py:." \
+            --hidden-import=telegram \
+            --hidden-import=telegram.ext \
+            --hidden-import=uvicorn \
+            --hidden-import=flask \
+            --hidden-import=supabase \
+            --hidden-import=redis \
+            --hidden-import=gspread \
+            --hidden-import=oauth2client \
+            --hidden-import=langchain_openai \
+            --collect-all telegram \
+            --collect-all uvicorn \
+            --collect-all flask \
+            --exclude-module=matplotlib \
+            --exclude-module=numpy \
+            --exclude-module=pandas \
+            --exclude-module=scipy \
+            --distpath dist \
+            --workpath build \
+            --specpath . \
+            ${{ env.MAIN_FILE }}
+      
+      - name: Create deployment package
+        run: |
+          mkdir -p deploy
+          cp dist/${{ env.APP_NAME }} deploy/
+          cp version.txt deploy/
+          cp deploy_scripts/install.sh deploy/
+          cp deploy_scripts/quipu-freetier.service deploy/quipu.service
+          chmod +x deploy/${{ env.APP_NAME }}
+          chmod +x deploy/install.sh
+          tar -czf ${{ env.APP_NAME }}-${{ env.VERSION }}.tar.gz -C deploy .
+      
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: quipu-binary
+          path: ${{ env.APP_NAME }}-${{ env.VERSION }}.tar.gz
+          retention-days: 30
 
   deploy:
     needs: build
     runs-on: ubuntu-latest
-    #if: github.ref == 'refs/heads/main'
+    if: github.ref == 'refs/heads/feature/add-aws-cicd-pipeline'
     
     steps:
-    - uses: actions/checkout@v4
-    
-    - name: Download artifact
-      uses: actions/download-artifact@v4
-      with:
-        name: quipu-binary
-    
-    - name: Setup SSH
-      run: |
-        mkdir -p ~/.ssh
-        echo "${{ secrets.EC2_SSH_KEY }}" > ~/.ssh/id_rsa
-        chmod 600 ~/.ssh/id_rsa
-        
-        # Skip strict host key checking for first connection
-        echo "Host ${{ secrets.EC2_HOST }}" >> ~/.ssh/config
-        echo "  StrictHostKeyChecking no" >> ~/.ssh/config
-        echo "  UserKnownHostsFile /dev/null" >> ~/.ssh/config
-        
-        # Test SSH connection
-        ssh -i ~/.ssh/id_rsa ${{ secrets.EC2_USER }}@${{ secrets.EC2_HOST }} "echo 'SSH connection successful'"
-    
-    - name: Create backup and deploy
-      run: |
-        set -e  # Exit on any error
-        
-        # Variables
-        TIMESTAMP=$(date +%Y%m%d_%H%M%S)
-        DEPLOY_DIR="/opt/${{ env.APP_NAME }}"
-        BACKUP_DIR="/opt/backups/${{ env.APP_NAME }}"
-        
-        echo "Starting deployment..."
-        echo "Target host: ${{ secrets.EC2_HOST }}"
-        echo "Deploy directory: $DEPLOY_DIR"
-        
-        # Transfer deployment package
-        echo "Transferring deployment package..."
-        scp -i ~/.ssh/id_rsa -o StrictHostKeyChecking=no ${{ env.APP_NAME }}-*.tar.gz ${{ secrets.EC2_USER }}@${{ secrets.EC2_HOST }}:/tmp/ || {
-          echo "ERROR: Failed to transfer deployment package"
-          exit 1
-        }
-        
-        echo "Package transferred successfully"
-        
-        # Execute deployment on server
-        echo "Executing deployment on server..."
-        ssh -i ~/.ssh/id_rsa -o StrictHostKeyChecking=no ${{ secrets.EC2_USER }}@${{ secrets.EC2_HOST }} 'bash -s' << 'EOF' || {
-          echo "ERROR: Deployment script failed"
-          exit 1
-        }
+      - uses: actions/checkout@v4
+      
+      - name: Download artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: quipu-binary
+      
+      - name: Setup SSH
+        run: |
+          mkdir -p ~/.ssh
+          echo "${{ secrets.EC2_SSH_KEY }}" > ~/.ssh/id_rsa
+          chmod 600 ~/.ssh/id_rsa
+          
+          echo "Host ${{ secrets.EC2_HOST }}" >> ~/.ssh/config
+          echo "  StrictHostKeyChecking no" >> ~/.ssh/config
+          echo "  UserKnownHostsFile /dev/null" >> ~/.ssh/config
+          
+          ssh -i ~/.ssh/id_rsa ${{ secrets.EC2_USER }}@${{ secrets.EC2_HOST }} "echo 'SSH connection successful'"
+      
+      - name: Deploy to server
+        run: |
           set -e
           
-          echo "=== Starting deployment script ==="
+          echo "Starting deployment to ${{ secrets.EC2_HOST }}"
           
-          # Variables
+          # Transfer package
+          scp -i ~/.ssh/id_rsa -o StrictHostKeyChecking=no ${{ env.APP_NAME }}-*.tar.gz ${{ secrets.EC2_USER }}@${{ secrets.EC2_HOST }}:/tmp/
+          
+          # Create deployment script
+          cat > deploy.sh << 'DEPLOY_EOF'
+          #!/bin/bash
+          set -e
+          
+          echo "=== Starting deployment ==="
+          
+          APP_NAME="quipu"
+          SERVICE_NAME="quipu.service"
+          DEPLOY_DIR="/opt/quipu"
+          BACKUP_DIR="/opt/backups/quipu"
           TIMESTAMP=$(date +%Y%m%d_%H%M%S)
-          DEPLOY_DIR="/opt/${{ env.APP_NAME }}"
-          BACKUP_DIR="/opt/backups/${{ env.APP_NAME }}"
-          SERVICE_NAME="${{ env.SERVICE_NAME }}"
           
-          echo "Creating directories..."
-          sudo mkdir -p $DEPLOY_DIR
-          sudo mkdir -p $BACKUP_DIR
-          sudo mkdir -p /var/log/${{ env.APP_NAME }}
+          # Create directories
+          sudo mkdir -p $DEPLOY_DIR $BACKUP_DIR /var/log/quipu
           
-          # Create user if doesn't exist
-          if ! id -u ${{ env.APP_NAME }} > /dev/null 2>&1; then
-            echo "Creating user ${{ env.APP_NAME }}..."
-            sudo useradd -r -s /bin/false ${{ env.APP_NAME }}
+          # Create user if needed
+          if ! id -u quipu > /dev/null 2>&1; then
+            sudo useradd -r -s /bin/false quipu
           fi
           
           # Stop service if running
-          echo "Checking service status..."
           if sudo systemctl is-active --quiet $SERVICE_NAME 2>/dev/null; then
             echo "Stopping service..."
             sudo systemctl stop $SERVICE_NAME
             sleep 5
-          else
-            echo "Service not running or doesn't exist yet"
           fi
           
-          # Create backup of current version
-          if [ -f "$DEPLOY_DIR/${{ env.APP_NAME }}" ]; then
+          # Backup current version
+          if [ -f "$DEPLOY_DIR/quipu" ]; then
             echo "Creating backup..."
             sudo cp -r $DEPLOY_DIR $BACKUP_DIR/backup_$TIMESTAMP
-            echo "Backup created at $BACKUP_DIR/backup_$TIMESTAMP"
-          else
-            echo "No existing installation to backup"
           fi
           
-          # Extract new version
-          echo "Extracting new version..."
+          # Extract and install new version
           cd /tmp
-          tar -xzf ${{ env.APP_NAME }}-*.tar.gz || {
-            echo "ERROR: Failed to extract deployment package"
-            exit 1
-          }
+          tar -xzf quipu-*.tar.gz
+          sudo cp quipu $DEPLOY_DIR/
+          sudo cp version.txt $DEPLOY_DIR/ 2>/dev/null || true
+          sudo chmod +x $DEPLOY_DIR/quipu
           
-          # Install new version
-          echo "Installing new version..."
-          sudo cp ${{ env.APP_NAME }} $DEPLOY_DIR/ || {
-            echo "ERROR: Failed to copy binary"
-            exit 1
-          }
-          sudo cp version.txt $DEPLOY_DIR/ || {
-            echo "WARNING: Failed to copy version.txt"
-          }
-          sudo chmod +x $DEPLOY_DIR/${{ env.APP_NAME }}
-          
-          # Update service file if changed
-          if [ -f "${{ env.SERVICE_NAME }}" ]; then
-            echo "Updating service file..."
-            sudo cp ${{ env.SERVICE_NAME }} /etc/systemd/system/
+          # Install service file
+          if [ -f "quipu.service" ]; then
+            sudo cp quipu.service /etc/systemd/system/
             sudo systemctl daemon-reload
-          else
-            echo "WARNING: Service file not found in package"
           fi
           
           # Set ownership
-          echo "Setting ownership..."
-          sudo chown -R ${{ env.APP_NAME }}:${{ env.APP_NAME }} $DEPLOY_DIR
-          sudo chown -R ${{ env.APP_NAME }}:${{ env.APP_NAME }} /var/log/${{ env.APP_NAME }}
-          
-          # Test binary
-          echo "Testing binary..."
-          if sudo -u ${{ env.APP_NAME }} $DEPLOY_DIR/${{ env.APP_NAME }} --version 2>/dev/null; then
-            echo "Binary test passed"
-          else
-            echo "WARNING: Binary test failed, but continuing..."
-          fi
+          sudo chown -R quipu:quipu $DEPLOY_DIR /var/log/quipu
           
           # Start service
           echo "Starting service..."
-          sudo systemctl enable $SERVICE_NAME || echo "WARNING: Failed to enable service"
-          sudo systemctl start $SERVICE_NAME || {
-            echo "ERROR: Failed to start service"
-            sudo journalctl -u $SERVICE_NAME --lines=10
-            exit 1
-          }
+          sudo systemctl enable $SERVICE_NAME
+          sudo systemctl start $SERVICE_NAME
           
-          # Wait and verify service is running
-          echo "Waiting for service to start..."
-          sleep 10
+          # Wait and verify
+          sleep 15
           if sudo systemctl is-active --quiet $SERVICE_NAME; then
             echo "✅ Service started successfully"
+            sudo systemctl status $SERVICE_NAME --no-pager
           else
             echo "❌ Service failed to start"
-            sudo journalctl -u $SERVICE_NAME --lines=20
+            sudo journalctl -u $SERVICE_NAME --lines=30 --no-pager
             exit 1
           fi
           
-          echo "Deployment completed successfully!"
-          echo "Service status:"
-          sudo systemctl status $SERVICE_NAME --no-pager || true
+          # Cleanup
+          rm -f /tmp/quipu-*.tar.gz /tmp/quipu /tmp/version.txt /tmp/quipu.service /tmp/deploy.sh
           
-          # Cleanup old backups (keep last 3)
-          echo "Cleaning up old backups..."
-          sudo find $BACKUP_DIR -maxdepth 1 -type d -name "backup_*" | sort -r | tail -n +4 | sudo xargs rm -rf || true
+          echo "=== Deployment completed ==="
+          DEPLOY_EOF
           
-          # Cleanup temp files
-          echo "Cleaning up temp files..."
-          rm -f /tmp/${{ env.APP_NAME }}-*.tar.gz /tmp/${{ env.APP_NAME }} /tmp/version.txt /tmp/install.sh /tmp/${{ env.SERVICE_NAME }} || true
+          # Transfer and execute deployment script
+          scp -i ~/.ssh/id_rsa -o StrictHostKeyChecking=no deploy.sh ${{ secrets.EC2_USER }}@${{ secrets.EC2_HOST }}:/tmp/
+          ssh -i ~/.ssh/id_rsa -o StrictHostKeyChecking=no ${{ secrets.EC2_USER }}@${{ secrets.EC2_HOST }} "chmod +x /tmp/deploy.sh && /tmp/deploy.sh"
+      
+      - name: Health Check
+        run: |
+          sleep 30
           
-          echo "=== Deployment script completed ==="
-        EOF
-        
-        echo "Deployment completed successfully!"
-    
-    - name: Health Check
-      run: |
-        # Wait a bit more and do final health check
-        sleep 30
-        ssh -i ~/.ssh/id_rsa ${{ secrets.EC2_USER }}@${{ secrets.EC2_HOST }} << 'EOF'
-          if sudo systemctl is-active --quiet ${{ env.SERVICE_NAME }}; then
-            echo "✅ Service is running successfully"
-            
-            # Check if port is listening
-            if netstat -tuln | grep -q ":${{ env.SERVICE_PORT }}"; then
-              echo "✅ Port ${{ env.SERVICE_PORT }} is listening"
+          # Create health check script
+          cat > health.sh << 'HEALTH_EOF'
+          #!/bin/bash
+          if sudo systemctl is-active --quiet quipu.service; then
+            echo "✅ Service is running"
+            if netstat -tuln | grep -q ":8080"; then
+              echo "✅ Port 8080 is listening"
             else
-              echo "⚠️ Port ${{ env.SERVICE_PORT }} is not listening"
+              echo "⚠️ Port 8080 not listening"
             fi
-            
             echo "Recent logs:"
-            sudo journalctl -u ${{ env.SERVICE_NAME }} --since "5 minutes ago" --no-pager
+            sudo journalctl -u quipu.service --since "5 minutes ago" --no-pager | tail -10
           else
-            echo "❌ Service health check failed"
-            sudo journalctl -u ${{ env.SERVICE_NAME }} --lines=50 --no-pager
+            echo "❌ Service failed"
+            sudo journalctl -u quipu.service --lines=20 --no-pager
             exit 1
           fi
-        EOF
-    
-    - name: Notify deployment status
-      if: always()
-      run: |
-        if [ "${{ job.status }}" == "success" ]; then
-          echo "✅ Quipu deployment successful"
-        else
-          echo "❌ Quipu deployment failed"
-        fi
-
-  rollback:
-    runs-on: ubuntu-latest
-    #if: failure() && github.ref == 'refs/heads/main'
-    needs: [deploy]
-    
-    steps:
-    - name: Rollback deployment
-      run: |
-        ssh -i ~/.ssh/id_rsa ${{ secrets.EC2_USER }}@${{ secrets.EC2_HOST }} << 'EOF'
-          BACKUP_DIR="/opt/backups/${{ env.APP_NAME }}"
-          DEPLOY_DIR="/opt/${{ env.APP_NAME }}"
+          HEALTH_EOF
           
-          # Find latest backup
-          LATEST_BACKUP=$(sudo ls -1t $BACKUP_DIR/ | grep backup_ | head -1)
-          
-          if [ -n "$LATEST_BACKUP" ]; then
-            echo "Rolling back to $LATEST_BACKUP"
-            sudo systemctl stop ${{ env.SERVICE_NAME }}
-            sudo cp $BACKUP_DIR/$LATEST_BACKUP/${{ env.APP_NAME }} $DEPLOY_DIR/
-            sudo systemctl start ${{ env.SERVICE_NAME }}
-            echo "Rollback completed"
+          # Transfer and execute health check
+          scp -i ~/.ssh/id_rsa -o StrictHostKeyChecking=no health.sh ${{ secrets.EC2_USER }}@${{ secrets.EC2_HOST }}:/tmp/
+          ssh -i ~/.ssh/id_rsa -o StrictHostKeyChecking=no ${{ secrets.EC2_USER }}@${{ secrets.EC2_HOST }} "chmod +x /tmp/health.sh && /tmp/health.sh"
+      
+      - name: Deployment result
+        if: always()
+        run: |
+          if [ "${{ job.status }}" == "success" ]; then
+            echo "✅ Deployment successful"
           else
-            echo "No backup found for rollback"
+            echo "❌ Deployment failed"
           fi
-        EOF
