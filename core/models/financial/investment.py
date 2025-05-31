@@ -22,19 +22,21 @@ class Investment(BaseModel, FinancialModel):
     currency: str = Field(description="Currency of the operation")
     
     def to_presentation_string(self) -> str:
-        """Returns a formatted string representation for user presentation."""
+        """
+        Returns a formatted string representation of the investment for presentation.
+        """
         action_emoji = "📈" if self.action == InvestmentAction.BUY else "📉"
-        return (
-            f"*Operación de Inversión* {action_emoji}\n\n"
-            f"📝 *Descripción:* {self._escape_markdown(self.description)}\n"
-            f"📂 *Categoría:* {self._escape_markdown(self.category)}\n"
-            f"➡️ *Acción:* {self._escape_markdown(self.action.value)}\n"
-            f"🏢 *Plataforma:* {self._escape_markdown(self.platform)}\n"
-            f"🔢 *Cantidad:* `{self.amount:.4f}`\n"
-            f"💲 *Precio por Unidad:* `{self.price:.4f}` {self._escape_markdown(self.currency)}\n"
-            f"💸 *Monto Total:* `{self.amount * self.price:.2f}` {self._escape_markdown(self.currency)}\n"
-            f"🗓️ *Fecha:* `{self.date.strftime('%Y-%m-%d %H:%M')}`"
-        )
+        return f"""
+            <b>{action_emoji} Inversión</b>
+            <b>📝 Descripción:</b> {self.description}
+            <b>🏷️ Categoría:</b> {self.category}
+            <b>➡️ Acción:</b> {self.action.value}
+            <b>🏢 Plataforma:</b> {self.platform}
+            <b>🔢 Cantidad:</b> <code>{self.format_money_data(self.amount)}</code>
+            <b>💲 Precio por Unidad:</b> <code>{self.format_money_data(self.price)}</code> {self.currency}
+            <b>💸 Monto Total:</b> <code>{self.format_money_data(self.amount * self.price)}</code> {self.currency}
+            <b>🗓️ Fecha:</b> <code>{self.date.strftime('%d/%m/%Y %H:%M')}</code>
+        """
 
     def to_sheet_row(self) -> List[Any]:
         """Returns data formatted for spreadsheet storage."""

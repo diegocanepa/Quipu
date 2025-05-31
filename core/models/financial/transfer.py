@@ -17,25 +17,29 @@ class Transfer(BaseModel, FinancialModel):
     currency: str = Field(description="Currency of the operation")
 
     def to_presentation_string(self) -> str:
-        """Returns a formatted string representation for user presentation."""
-        wallet_to_str = self._escape_markdown(self.wallet_to) if self.wallet_to is not None else "N/A"
+        """
+        Returns a formatted string representation of the transfer for presentation.
+        """
+        wallet_to_str = self.wallet_to if self.wallet_to is not None else "N/A"
+        commission = self.initial_amount - self.final_amount
+        
         lines = [
-            "*Transferencia de Fondos*\n",
-            f"📝 *Descripción:* {self._escape_markdown(self.description)}",
-            f"📂 *Categoría:* {self._escape_markdown(self.category)}",
-            f"➡️ *Acción:* {self._escape_markdown(self.action)}",
-            f"🏦 *Desde:* {self._escape_markdown(self.wallet_from)}",
-            f"➡️ *Hacia:* {wallet_to_str}",
-            f"📤 *Monto Inicial:* `{self.initial_amount:.2f}` {self._escape_markdown(self.currency)}",
-            f"📥 *Monto Final:* `{self.final_amount:.2f}` {self._escape_markdown(self.currency)}",
+            "<b>💱 Transferencia</b>",
+            "",
+            f"<b>📝 Descripción:</b> {self.description}",
+            f"<b>🏷️ Categoría:</b> {self.category}",
+            f"<b>➡️ Acción:</b> {self.action}",
+            f"<b>🏦 Desde:</b> {self.wallet_from}",
+            f"<b>➡️ Hacia:</b> {wallet_to_str}",
+            f"<b>📤 Monto Inicial:</b> <code>{self.format_money_data(self.initial_amount)}</code> {self.currency}",
+            f"<b>📥 Monto Final:</b> <code>{self.format_money_data(self.final_amount)}</code> {self.currency}",
         ]
-
-        if self.final_amount != 0:
-            commission = self.initial_amount - self.final_amount
-            lines.append(f"➖ *Comisión:* `{commission:.2f}` {self._escape_markdown(self.currency)}")
-
-        lines.append(f"🗓️ *Fecha:* `{self.date.strftime('%Y-%m-%d %H:%M')}`")
-
+        
+        if commission != 0:
+            lines.append(f"<b>➖ Comisión:</b> <code>{self.format_money_data(commission)}</code> {self.currency}")
+            
+        lines.append(f"<b>🗓️ Fecha:</b> <code>{self.date.strftime('%d/%m/%Y %H:%M')}</code>")
+        
         return "\n".join(lines)
 
     def to_sheet_row(self) -> List[Any]:

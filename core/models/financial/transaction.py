@@ -21,18 +21,18 @@ class Transaction(BaseModel, FinancialModel):
     
     def to_presentation_string(self) -> str:
         """
-        Returns a formatted string representation for user presentation.
-        This is a pure domain method that doesn't depend on external services.
+        Returns a formatted string representation of the transaction for presentation.
         """
         action_emoji = "💸" if self.action == TransactionType.EXPENSE else "💰"
-        return (
-            f"*Transacción* {action_emoji}\n\n"
-            f"📝 *Descripción:* {self._escape_markdown(self.description)}\n"
-            f"🏷️ *Categoría:* {self._escape_markdown(self.category)}\n"
-            f"➡️ *Tipo:* {self._escape_markdown(self.action.value)}\n"
-            f"🔢 *Monto:* `{self.amount:.2f}` {self._escape_markdown(self.currency)}\n"
-            f"🗓️ *Fecha:* `{self.date.strftime('%Y-%m-%d %H:%M')}`"
-        )
+        return f"""
+        <b>{action_emoji} Transacción</b>
+
+        <b>📝 Descripción:</b> {self.description}
+        <b>🏷️ Categoría:</b> {self.category}
+        <b>➡️ Tipo:</b> {self.action.value}
+        <b>🔢 Monto:</b> <code>{self.format_money_data(self.amount)}</code> {self.currency}
+        <b>🗓️ Fecha:</b> <code>{self.date.strftime('%d/%m/%Y %H:%M')}</code>
+        """
 
     def to_sheet_row(self) -> List[Any]:
         """

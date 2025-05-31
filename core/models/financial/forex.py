@@ -15,16 +15,19 @@ class Forex(BaseModel, FinancialModel):
     action: str = Field(description="Action type")
     
     def to_presentation_string(self) -> str:
-        """Returns a formatted string representation for user presentation."""
-        return (
-            f"*Operación Cambio de Divisas*\n\n"
-            f"📝 *Descripción:* {self._escape_markdown(self.description)}\n"
-            f"🔄 *Acción:* {self._escape_markdown(self.action)}\n"
-            f"📤 *Cantidad Enviada:* `{self.amount:.2f}` {self._escape_markdown(self.currency_from)}\n"
-            f"📥 *Cantidad Recibida:* `{self.amount * self.price:.2f}` {self._escape_markdown(self.currency_to)}\n"
-            f"💰 *Precio de Cambio:* `{self.price:.4f}` {self._escape_markdown(f'{self.currency_from}/{self.currency_to}')}\n"
-            f"🗓️ *Fecha:* `{self.date.strftime('%Y-%m-%d %H:%M')}`"
-        )
+        """
+        Returns a formatted string representation of the forex operation for presentation.
+        """
+        return f"""
+            <b>💱 Operación Forex</b>
+            
+        <b>📝 Descripción:</b> {self.description}
+        <b>🔄 Acción:</b> {self.action}
+        <b>📤 Cantidad Enviada:</b> <code>{self.format_money_data(self.amount)}</code> {self.currency_from}
+        <b>📥 Cantidad Recibida:</b> <code>{self.format_money_data(self.amount * self.price)} </code> {self.currency_to}
+        <b>💰 Precio de Cambio:</b> <code>{self.format_money_data(self.price)}</code> {self.currency_from}/{self.currency_to}
+        <b>🗓️ Fecha:</b> <code>{self.date.strftime('%d/%m/%Y %H:%M')}</code> 
+        """
 
     def to_sheet_row(self) -> List[Any]:
         """Returns data formatted for spreadsheet storage."""

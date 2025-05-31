@@ -1,3 +1,8 @@
+"""
+Onboarding messages.
+All messages are formatted in HTML for better presentation.
+"""
+
 MSG_WELCOME = (
     "¡Hola! 👋 Bienvenido/a a FinMate, tu copiloto financiero personal. Me alegra tenerte aquí "
     "y estoy listo para ayudarte a tomar el control de tus finanzas. 💰\n\n"
@@ -237,3 +242,22 @@ BTN_RETRY_WEBAPP_LINK = "🔄 Reintentar vinculación"
 BTN_SWITCH_TO_SHEET = "📊 Usar Google Sheet"
 BTN_CANCEL_ONBOARDING = "❌ Cancelar"
 
+
+"""
+General messages used across the application.
+All messages are formatted in HTML for better presentation.
+"""
+
+# Error messages
+UNEXPECTED_ERROR = "❌ Hubo un error inesperado durante el procesamiento."
+MESSAGE_NOT_FOUND = "❌ No se encontró el mensaje original."
+USER_NOT_FOUND = "❌ Ocurrió un error inesperado al buscar el usuario."
+SAVE_ERROR = "❌ Error al guardar"
+CANCEL_MESSAGE = "❌ Acción cancelada."
+
+# Success messages
+SAVE_SUCCESS = "✅ Guardado correctamente"
+
+# Button texts
+CONFIRM_BUTTON = "✅ Confirmar"
+CANCEL_BUTTON = "❌ Cancelar"
