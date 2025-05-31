@@ -53,10 +53,12 @@ async def handle_audio_message(
         # Process audio
         transcription_result = await audio_processor.process_audio(filename)
         os.remove(filename)
+        
+        message = telegram_adapter.build_receive_message(message_text=transcription_result)
 
         if transcription_result:
             await message_processor.process_and_respond(
-                user_message=transcription_result,
+                user_message=message,
                 platform=telegram_adapter,
                 context=context,
             )

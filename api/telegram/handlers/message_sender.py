@@ -1,8 +1,6 @@
 import logging
 from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup
-from telegram.ext import ContextTypes
 from core import messages
-from config import config
 
 logger = logging.getLogger(__name__)
 

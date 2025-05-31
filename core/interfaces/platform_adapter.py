@@ -1,7 +1,7 @@
 from abc import ABC, abstractmethod
 
 from core.models.common.command_button import CommandButton
-
+from core.models.message import Message
 
 class PlatformAdapter(ABC):
     """
@@ -9,6 +9,16 @@ class PlatformAdapter(ABC):
     This class defines the interface that all platform adapters must implement.
     """
 
+    @abstractmethod
+    def get_platform_name(self) -> str:
+        """
+        Return the name of the platform.
+
+        Returns:
+            str: The platform name
+        """
+        pass
+    
     @abstractmethod
     def get_message_id(self) -> str:
         """
@@ -18,7 +28,18 @@ class PlatformAdapter(ABC):
             str: The message ID.
         """
         pass
+    
+    
+    @abstractmethod
+    def build_receive_message(self, message_text: str = None) -> Message:
+        """
+        Returns message model
 
+        Returns:
+            Message model.
+        """
+        pass
+    
     @abstractmethod
     def get_message_text(self) -> str:
         """
