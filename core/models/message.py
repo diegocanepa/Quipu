@@ -1,6 +1,7 @@
 from dataclasses import dataclass, field
 from enum import Enum
-from typing import Any  # Assuming FinancialModel is a custom type, use Any if not defined here
+from typing import Optional
+from core.models.base_model import FinancialModel 
 
 class Source(str, Enum):
     """Defines possible message sources."""
@@ -15,5 +16,5 @@ class Message:
     user_id: str = field(metadata={"description": "User ID from Supabase. Not telegram, not whatsapp, not webapp"})
     message_id: str = field(metadata={"description": "Message ID"})
     message_text: str = field(metadata={"description": "Message text"})
-    message_object: Any = field(metadata={"description": "Financial model associated with the message"})
     source: Source = field(metadata={"description": "Source of the message (Telegram, WhatsApp)"})
+    message_object: Optional[FinancialModel] = field(default=None, metadata={"description": "Financial model associated with the message. It's optional because receive message don't have this attribute yet."})

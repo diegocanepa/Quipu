@@ -37,7 +37,7 @@ class RedisCacheClient(CacheService):
                 port=self.port,
                 password=self.password,
                 db=self.db,
-                decode_responses=True  # To get strings instead of bytes
+                decode_responses=False
             )
             self.redis_client.ping()
             logger.info(f"Successfully connected to Redis (or Valkey) at {self.host}:{self.port}, DB: {self.db}")
@@ -46,39 +46,43 @@ class RedisCacheClient(CacheService):
             self.redis_client = None # :TODO Raise an error when this happen otherwise it's a silence error. 
 
 
-    def get(self, key: str) -> Optional[Any]:
+    def get(self, key: str) -> Any:
         """
-        Retrieves a value from the Redis cache based on the prefix, key, and version.
+        Retrieves a value from the cache.
 
         Args:
-            prefix (str): The key prefix.
-            key (str): The unique key.
-            version (int): The version.
+            key (str): The key to retrieve.
 
         Returns:
-            Optional[Any]: The retrieved value if it exists, None otherwise.
+            Any: The value if found, None otherwise.
         """
-        if self.redis_client:
-            return self.redis_client.get(key)
-        return None
+        try:
+            value = self.redis_client.get(key)
+            if value is None:
+                return None
+            return value 
+        except Exception as e:
+            logger.error(f"Error retrieving value from cache: {e}")
+            return None
 
-    def set(self,  key: str, value: Any, expiry: Optional[int] = None) -> bool:
+    def set(self, key: str, value: Any, expiry: Optional[int] = None) -> bool:
         """
-        Stores a value in the Redis cache under the specified versioned key.
+        Sets a value in the cache.
 
         Args:
-            prefix (str): The key prefix.
-            key (str): The unique key.
-            value (Any): The value to store.
-            version (int): The version.
-            expiry (Optional[int]): Time-to-live in seconds.
+            key (str): The key to set.
+            value (Any): The value to set.
+            expiry (Optional[int]): The expiry time in seconds.
 
         Returns:
-            bool: True if the operation was successful, False otherwise.
+            bool: True if the value was set successfully, False otherwise.
         """
-        if self.redis_client:
-            return self.redis_client.set(key, value, ex=expiry)
-        return False
+        try:
+            self.redis_client.set(key, value, ex=expiry)
+            return True
+        except Exception as e:
+            logger.error(f"Error setting value in cache: {e}")
+            return False
 
     def delete(self, key: str) -> bool:
         """

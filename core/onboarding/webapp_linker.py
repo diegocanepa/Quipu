@@ -1,8 +1,6 @@
 # webapp_linker.py
-import requests
 import logging
 # from .config import WEBAPP_API_LINK_URL, WEBAPP_BASE_URL # Import URLs
-import json # Import json for better error logging of response body
 
 logger = logging.getLogger(__name__)
 

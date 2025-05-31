@@ -1,6 +1,5 @@
 import gspread
 from oauth2client.service_account import ServiceAccountCredentials
-from abc import ABC, abstractmethod
 from config import config
 import base64
 import json

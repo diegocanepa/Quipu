@@ -1,7 +1,6 @@
-from uuid import UUID
 from pydantic import BaseModel, Field
 from datetime import datetime
-from typing import Optional, List, Any, Dict
+from typing import List, Any, Dict
 from enum import Enum
 from core.models.base_model import FinancialModel
 from core.models.user import User
