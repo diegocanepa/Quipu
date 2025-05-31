@@ -40,8 +40,6 @@ class FinancialModel(ABC):
         base_name = self.get_base_table_name()
         is_test = os.getenv('ENVIRONMENT', 'prod').lower() == 'test'
         return f"{base_name}_test" if is_test else base_name
-
-    def _escape_markdown(self, text: str) -> str:
-        """Escapes special characters for MarkdownV2."""
-        escape_chars = r'_*[]()~`>#+-=|{}.!'
-        return ''.join('\\' + char if char in escape_chars else char for char in str(text)) 
+    
+    def format_money_data(self, number: float) -> str:
+        return f"{number:,.2f}".replace(",", "X").replace(".", ",").replace("X", ".")
