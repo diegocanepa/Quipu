@@ -2,7 +2,7 @@ name: Deploy Quipu to AWS EC2
 
 on:
   push:
-    branches: [ feature/add-aws-cicd-pipeline ]
+    branches: [ main ]
   pull_request:
     branches: [ main ]
 
@@ -41,7 +41,7 @@ jobs:
   build:
     needs: test
     runs-on: ubuntu-latest
-    if: github.ref == 'refs/heads/feature/add-aws-cicd-pipeline'
+    if: github.ref == 'refs/heads/main'
     
     steps:
       - uses: actions/checkout@v4
@@ -115,7 +115,7 @@ jobs:
   deploy:
     needs: build
     runs-on: ubuntu-latest
-    if: github.ref == 'refs/heads/feature/add-aws-cicd-pipeline'
+    if: github.ref == 'refs/heads/main'
     
     steps:
       - uses: actions/checkout@v4
