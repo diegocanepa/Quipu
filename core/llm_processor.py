@@ -93,10 +93,10 @@ class LLMProcessor:
             ]
 
             if not llm_request_models:
-                logger.warning(f"Failed to create LLM request models for action:")
+                logger.warning("Failed to create LLM request models for action:")
                 processing_results.append(
                     ProcessingResult(
-                        error=f"Se identifico la accion pero no fue posible procesar el mensaje."
+                        error="Se identifico la accion pero no fue posible procesar el mensaje."
                     )
                 )
                 return processing_results

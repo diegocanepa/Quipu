@@ -1,10 +1,13 @@
 # core/message_processor.py
 import logging
 from typing import List
-from telegram import Update, InlineKeyboardMarkup, InlineKeyboardButton
-from telegram.ext import ContextTypes, ConversationHandler
-
+from core.data_server import DataSaver
+from core.interfaces.platform_adapter import PlatformAdapter
 from core.llm_processor import LLMProcessor, ProcessingResult
+from core.models.common.command_button import CommandButton
+from core.models.message import Message
+from core.services.message_service import MessageService
+from core.user_data_manager import UserDataManager
 
 logger = logging.getLogger(__name__)
 
@@ -12,9 +15,17 @@ CONFIRM_SAVE = 1
 
 class MessageProcessor:
     def __init__(self):
-        self.llm_processor = LLMProcessor()
+        # TODO: Implement dependency injection and singleton pattern.
+        self.llm_processor = LLMProcessor() 
+        self.message_service = MessageService()
+        self.data_saver = DataSaver()
+        self.user_data_manager = UserDataManager()
 
-    async def process_and_respond(self, user_message: str, update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
+    async def process_and_respond(
+        self,
+        user_message: Message,
+        platform: PlatformAdapter,
+    ) -> int:
         """
         Processes the user's message using the LLMProcessor and sends responses
         with confirmation options.
@@ -26,28 +37,134 @@ class MessageProcessor:
         Returns:
             int: The state for the conversation handler (CONFIRM_SAVE).
         """
-        results: List[ProcessingResult] = await self.llm_processor.process_content(user_message)
+        results: List[ProcessingResult] = await self.llm_processor.process_content(
+            user_message.message_text
+        )
 
         if not results:
-            await update.message.reply_text("❌ Hubo un error inesperado durante el procesamiento.", parse_mode='MarkdownV2')
-            return ConversationHandler.END
+            await platform.reply_text(
+                "❌ Hubo un error inesperado durante el procesamiento.",
+                parse_mode="MarkdownV2",
+            )
+            return -1 # Means conversations END but we have to check how whatsapp works
 
         for idx, result in enumerate(results):
             if result.error:
-                await update.message.reply_text(f"❌ {result.error}", parse_mode='MarkdownV2')
+                await platform.reply_text(f"❌ {result.error}", parse_mode="MarkdownV2")
             else:
                 response_text = result.data_object.to_presentation_string()
-                callback_id = f"{update.message.message_id}_{idx}"
+                callback_id = f"{platform.get_message_id()}_{idx}"
 
-                keyboard = [
-                    [InlineKeyboardButton("✅ Confirmar", callback_data=f"confirm#{callback_id}")],
-                    [InlineKeyboardButton("❌ Cancelar", callback_data=f"cancel#{callback_id}")],
+                buttons: list[CommandButton] = [
+                    CommandButton(
+                        text="✅ Confirmar", callback_data=f"confirm#{callback_id}"
+                    ),
+                    CommandButton(
+                        text="❌ Cancelar", callback_data=f"cancel#{callback_id}"
+                    ),
                 ]
-                reply_markup = InlineKeyboardMarkup(keyboard)
 
-                sent_message = await update.message.reply_text(response_text, parse_mode='MarkdownV2', reply_markup=reply_markup)
+                await platform.reply_with_buttons(
+                    text=response_text, parse_mode="MarkdownV2", buttons=buttons
+                )
+                
+                response_message = Message(
+                    user_id=user_message.user_id,
+                    message_id=callback_id,
+                    message_text=response_text,
+                    message_object=result.data_object,
+                    source=user_message.source
+                )
+                
+                self.message_service.save_message(message=response_message)
 
-                context.user_data[f'pendingsave#{callback_id}'] = result.data_object
-                context.user_data[f'messageid#{callback_id}'] = sent_message.message_id
+        return CONFIRM_SAVE
 
-        return CONFIRM_SAVE 
+    def save_and_response(self, user_id: str, message_id: str, platform: PlatformAdapter) -> str:
+        """
+        Process and save a message for a specific user.
+        
+        Args:
+            user_id (str): The ID of the user
+            message_id (str): The ID of the message to process
+            platform (PlatformAdapter): The platform adapter instance
+            
+        Returns:
+            str: Response message
+        """
+        recovery_message = self.message_service.get_message(user_id=user_id, message_id=message_id, platform=platform.get_platform_name())
+        user = self.user_data_manager.get_user_data(user_id)
+        
+        if not recovery_message:
+            logger.warning("Message not found", extra={
+                "user_id": user_id,
+                "message_id": message_id,
+                "platform": platform.get_platform_name()
+            })
+            return "❌ No se encontró el mensaje original."
+            
+        if not user:
+            logger.warning("User not found", extra={
+                "user_id": user_id,
+                "message_id": message_id,
+                "platform": platform.get_platform_name()
+            })
+            return "Ocurrio un error inesperado."
+        
+        print(recovery_message)
+        success = self.data_saver.save_content(recovery_message.message_object, user=user)
+            
+        if success:
+            logger.info("Message saved successfully", extra={
+                "user_id": user_id,
+                "message_id": message_id,
+                "platform": platform.get_platform_name()
+                })
+            
+            self._delete_message(recovery_message)
+            
+            return f"{recovery_message.message_text}\n\n✅ Guardado correctamente"
+        else:
+            logger.error("Failed to save message", extra={
+                "user_id": user_id,
+                "message_id": message_id,
+                "platform": platform.get_platform_name()
+            })
+            
+            self._delete_message(recovery_message)
+            
+            return f"{recovery_message.message_text}\n\n❌ Error al guardar"
+            
+            
+    def cancel_and_response(self, user_id: str, message_id: str, platform: PlatformAdapter) -> str:
+        """
+        Process a cancellation request for a message. This function retrieves the message,
+        deletes it if found, and returns a cancellation response.
+
+        Args:
+            user_id (str): The unique identifier of the user who owns the message
+            message_id (str): The unique identifier of the message to cancel
+            platform (PlatformAdapter): The platform adapter instance used to interact with the messaging platform
+
+        Returns:
+            str: A message indicating that the action was cancelled
+        """
+        recovery_message = self.message_service.get_message(user_id=user_id, message_id=message_id, platform=platform.get_platform_name())
+        
+        if recovery_message:
+            self._delete_message(recovery_message)
+        
+        return "❌ Acción cancelada."
+    
+        
+    def _delete_message(self, message: Message):
+        """
+        Delete a message from storage. This is an internal helper method that handles the
+        actual deletion of messages from the message service.
+
+        Args:
+            message (Message): The message object to be deleted. 
+
+        """
+        self.message_service.delete_message(user_id=message.user_id, message_id=message.message_id, platform=message.source)
+               

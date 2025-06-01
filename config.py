@@ -10,7 +10,7 @@ class Config:
 
     AKASH_API_BASE_URL: str = os.getenv("AKASH_API_BASE_URL")
     AKASH_API_KEY: str = os.getenv("AKASH_API_KEY")
-    LLM_MODEL_NAME: str = os.getenv("LLM_MODEL_NAME", "default-model")
+    LLM_MODEL_NAME: str = os.getenv("LLM_MODEL_NAME", "DeepSeek-R1-Distill-Qwen-32B")
     LLM_TEMPERATURE: float = float(os.getenv("LLM_TEMPERATURE", "0.7"))
     TELEGRAM_BOT_TOKEN: str = os.getenv("TELEGRAM_BOT_TOKEN")
     GOOGLE_CREDENTIALS: str = os.getenv("GOOGLE_CREDENTIALS")
