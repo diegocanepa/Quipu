@@ -16,7 +16,7 @@ CONFIRM_SAVE = 1
 class MessageProcessor:
     def __init__(self):
         # TODO: Implement dependency injection and singleton pattern.
-        self.llm_processor = LLMProcessor() 
+        self.llm_processor = LLMProcessor()
         self.message_service = MessageService()
         self.data_saver = DataSaver()
         self.user_data_manager = UserDataManager()
@@ -67,7 +67,7 @@ class MessageProcessor:
                 await platform.reply_with_buttons(
                     text=response_text, parse_mode="MarkdownV2", buttons=buttons
                 )
-                
+
                 response_message = Message(
                     user_id=user_message.user_id,
                     message_id=callback_id,
@@ -75,34 +75,34 @@ class MessageProcessor:
                     message_object=result.data_object,
                     source=user_message.source
                 )
-                
+
                 self.message_service.save_message(message=response_message)
 
         return CONFIRM_SAVE
 
-    def save_and_response(self, user_id: str, message_id: str, platform: PlatformAdapter) -> str:
+    def save_and_respond(self, user_id: str, message_id: str, platform: PlatformAdapter) -> str:
         """
         Process and save a message for a specific user.
-        
+
         Args:
             user_id (str): The ID of the user
             message_id (str): The ID of the message to process
             platform (PlatformAdapter): The platform adapter instance
-            
+
         Returns:
             str: Response message
         """
-        recovery_message = self.message_service.get_message(user_id=user_id, message_id=message_id, platform=platform.get_platform_name())
+        recovered_message = self.message_service.get_message(user_id=user_id, message_id=message_id, platform=platform.get_platform_name())
         user = self.user_data_manager.get_user_data(user_id)
-        
-        if not recovery_message:
+
+        if not recovered_message:
             logger.warning("Message not found", extra={
                 "user_id": user_id,
                 "message_id": message_id,
                 "platform": platform.get_platform_name()
             })
             return "❌ No se encontró el mensaje original."
-            
+
         if not user:
             logger.warning("User not found", extra={
                 "user_id": user_id,
@@ -110,32 +110,30 @@ class MessageProcessor:
                 "platform": platform.get_platform_name()
             })
             return "Ocurrio un error inesperado."
-        
-        print(recovery_message)
-        success = self.data_saver.save_content(recovery_message.message_object, user=user)
-            
+        success = self.data_saver.save_content(recovered_message.message_object, user=user)
+
         if success:
             logger.info("Message saved successfully", extra={
                 "user_id": user_id,
                 "message_id": message_id,
                 "platform": platform.get_platform_name()
                 })
-            
-            self._delete_message(recovery_message)
-            
-            return f"{recovery_message.message_text}\n\n✅ Guardado correctamente"
+
+            self._delete_message(recovered_message)
+
+            return f"{recovered_message.message_text}\n\n✅ Guardado correctamente"
         else:
             logger.error("Failed to save message", extra={
                 "user_id": user_id,
                 "message_id": message_id,
                 "platform": platform.get_platform_name()
             })
-            
-            self._delete_message(recovery_message)
-            
-            return f"{recovery_message.message_text}\n\n❌ Error al guardar"
-            
-            
+
+            self._delete_message(recovered_message)
+
+            return f"{recovered_message.message_text}\n\n❌ Error al guardar"
+
+
     def cancel_and_response(self, user_id: str, message_id: str, platform: PlatformAdapter) -> str:
         """
         Process a cancellation request for a message. This function retrieves the message,
@@ -149,22 +147,21 @@ class MessageProcessor:
         Returns:
             str: A message indicating that the action was cancelled
         """
-        recovery_message = self.message_service.get_message(user_id=user_id, message_id=message_id, platform=platform.get_platform_name())
-        
-        if recovery_message:
-            self._delete_message(recovery_message)
-        
+        recovered_message = self.message_service.get_message(user_id=user_id, message_id=message_id, platform=platform.get_platform_name())
+
+        if recovered_message:
+            self._delete_message(recovered_message)
+
         return "❌ Acción cancelada."
-    
-        
+
+
     def _delete_message(self, message: Message):
         """
         Delete a message from storage. This is an internal helper method that handles the
         actual deletion of messages from the message service.
 
         Args:
-            message (Message): The message object to be deleted. 
+            message (Message): The message object to be deleted.
 
         """
         self.message_service.delete_message(user_id=message.user_id, message_id=message.message_id, platform=message.source)
-               
