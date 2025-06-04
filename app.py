@@ -23,23 +23,10 @@ def get_version():
 
 def setup_logging():
     """Configure logging for the application"""
-    log_dir = Path("/var/log/quipu")
-    log_dir.mkdir(exist_ok=True)
-    
-    handlers = [logging.StreamHandler(sys.stdout)]
-    
-    # Only add file handler if running in production
-    if log_dir.exists() and log_dir.is_dir():
-        try:
-            handlers.append(logging.FileHandler(log_dir / "quipu.log"))
-        except PermissionError:
-            # If we can't write to /var/log/quipu, just use stdout
-            pass
-    
     logging.basicConfig(
         level=logging.INFO,
         format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
-        handlers=handlers
+        handlers=[logging.StreamHandler(sys.stdout)]
     )
 
 setup_logging()
@@ -118,19 +105,19 @@ async def main():
 def main_cli():
     """CLI entry point with argument parsing"""
     parser = argparse.ArgumentParser(description='Quipu Multi-Service Financial Bot')
-    parser.add_argument('--version', action='version', 
+    parser.add_argument('--version', action='version',
                        version=f'Quipu {get_version()}')
     parser.add_argument('--port', type=int, default=8080,
                        help='Port to run the server on (default: 8080)')
     parser.add_argument('--host', default='0.0.0.0',
                        help='Host to bind to (default: 0.0.0.0)')
-    
+
     args = parser.parse_args()
-    
+
     # Update uvicorn config with CLI args
     global main
     original_main = main
-    
+
     async def main_with_args():
         await setup_webhook()
         server = uvicorn.Server(
@@ -149,7 +136,7 @@ def main_cli():
             await application.start()
             await server.serve()
             await application.stop()
-    
+
     asyncio.run(main_with_args())
 
 if __name__ == '__main__':

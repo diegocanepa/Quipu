@@ -1,12 +1,8 @@
-import asyncio
 from dataclasses import dataclass
 import logging
-import os
-from typing import Dict, Any, TypedDict
 from config import config
 
 import aiohttp
-from aiohttp import ClientResponse
 
 # Configure logging
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(module)s - %(message)s')

@@ -1,5 +1,5 @@
-import json
 import logging
+import pickle
 from typing import Optional
 from core.interfaces.cache_service import CacheService
 from integrations.cache.redis_client import cache_client
@@ -55,31 +55,27 @@ class MessageService:
         cached_data = self.cache_service.get(cache_key)
         if cached_data:
             logger.info(f"Message (ID: {message_id}, User: {user_id}, Platform: {platform.value}) retrieved from cache.")
-            return Message(**json.loads(cached_data))
+            return pickle.loads(cached_data) # TODO: pickle is not secure and fast, we could implement an alternative with pydantic or manual serialization.
         else:
             logger.info(f"Message (ID: {message_id}, User: {user_id}, Platform: {platform.value}) not found in cache.")
             # here we can implement a fallback logic (not needed for now)
             return None
 
-
-    def save_message(self, user_id: str, message: Message) -> bool:
+    def save_message(self, message: Message) -> bool:
         """
         Saves a message to the cache.
 
         Args:
-            user_id (str): The ID of the user who sent the message.
             message (Message): The Message object to save.
 
         Returns:
             bool: True if the message was saved to the cache successfully, False otherwise.
         """
-        cache_key = self._generate_message_key(user_id, message.message_id, message.source)
+        cache_key = self._generate_message_key(message.user_id, message.message_id, message.source)
         try:
-            message_dict = message.__dict__.copy()
-            message_dict['message_object'] = message.message_object.model_dump(mode='json')
-            data_to_save = json.dumps(message_dict)
+            data_to_save = pickle.dumps(message)  # TODO: pickle is not secure and fast, we could implement an alternative with pydantic or manual serialization.
             self.cache_service.set(cache_key, data_to_save, expiry=self.CACHE_EXPIRY_SECONDS)
-            logger.info(f"Message (ID: {message.message_id}, User: {user_id}, Platform: {message.source.value}) saved to cache.")
+            logger.info(f"Message (ID: {message.message_id}, User: {message.user_id}, Platform: {message.source.value}) saved to cache.")
             return True
         except Exception as e:
             logger.info(f"Error saving message to cache: {e}")

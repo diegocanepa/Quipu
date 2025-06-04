@@ -1,5 +1,4 @@
 import logging
-from typing import Union
 
 from core.models.user import User
 from core.models.base_model import FinancialModel
@@ -19,6 +18,7 @@ class DataSaver:
         Initializes the DataSaver with instances of the spreadsheet and
         database clients. Logs the initialization.
         """
+        # TODO: Apply dependency injection and singleton pattern
         self.spreadsheet_client = SpreadsheetManager()
         self.supabase_client = SupaManager()
         logger.info("DataSaver initialized.")

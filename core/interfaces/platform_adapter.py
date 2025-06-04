@@ -1,7 +1,7 @@
 from abc import ABC, abstractmethod
 
 from core.models.common.command_button import CommandButton
-
+from core.models.message import Message
 
 class PlatformAdapter(ABC):
     """
@@ -10,12 +10,33 @@ class PlatformAdapter(ABC):
     """
 
     @abstractmethod
+    def get_platform_name(self) -> str:
+        """
+        Return the name of the platform.
+
+        Returns:
+            str: The platform name
+        """
+        pass
+
+    @abstractmethod
     def get_message_id(self) -> str:
         """
         Returns the unique identifier of the message.
 
         Returns:
             str: The message ID.
+        """
+        pass
+
+
+    @abstractmethod
+    def map_to_message(self, message_text: str = None) -> Message:
+        """
+        Returns message model
+
+        Returns:
+            Message model.
         """
         pass
 
