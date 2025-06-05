@@ -4,7 +4,7 @@ All messages are formatted in HTML for better presentation.
 """
 
 MSG_WELCOME = (
-    "¡Hola! 👋 Bienvenido/a a FinMate, tu copiloto financiero personal. Me alegra tenerte aquí "
+    "¡Hola! 👋 Bienvenido/a a Quipu, tu copiloto financiero personal. Me alegra tenerte aquí "
     "y estoy listo para ayudarte a tomar el control de tus finanzas. 💰\n\n"
     "¿Qué podemos hacer juntos?\n"
     "• Registrar tus <b>gastos diarios</b> de forma sencilla 🛒\n"
