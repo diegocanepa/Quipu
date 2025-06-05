@@ -1,0 +1,41 @@
+[Unit]
+Description=Quipu Multi-Service Bot (Free Tier Optimized)
+After=network.target
+Wants=network.target
+
+[Service]
+Type=simple
+User=quipu
+Group=quipu
+WorkingDirectory=/opt/quipu
+ExecStart=/opt/quipu/quipu --port 8080 --host 0.0.0.0
+ExecReload=/bin/kill -HUP $MAINPID
+KillMode=mixed
+KillSignal=SIGINT
+TimeoutStopSec=30
+Restart=always
+RestartSec=15
+
+# Memory optimization for t2.micro
+MemoryLimit=800M
+OOMScoreAdjust=-500
+
+# Security settings (lighter for free tier)
+NoNewPrivileges=yes
+ProtectSystem=strict
+ProtectHome=yes
+ReadWritePaths=/opt/quipu /var/log/quipu
+PrivateTmp=yes
+
+# Environment
+Environment=PYTHONUNBUFFERED=1
+Environment=PYTHONDONTWRITEBYTECODE=1
+EnvironmentFile=-/opt/quipu/.env
+
+# Logging (optimized)
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=quipu
+
+[Install]
+WantedBy=multi-user.target

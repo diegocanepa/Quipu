@@ -31,7 +31,7 @@ class PlatformAdapter(ABC):
     
     
     @abstractmethod
-    def build_receive_message(self, message_text: str = None) -> Message:
+    def map_to_message(self, message_text: str = None) -> Message:
         """
         Returns message model
 

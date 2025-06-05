@@ -1,0 +1,39 @@
+[Unit]
+Description=Quipu Multi-Service Bot
+After=network.target
+Wants=network.target
+
+[Service]
+Type=simple
+User=quipu
+Group=quipu
+WorkingDirectory=/opt/quipu
+ExecStart=/opt/quipu/quipu
+ExecReload=/bin/kill -HUP $MAINPID
+KillMode=mixed
+KillSignal=SIGINT
+TimeoutStopSec=30
+Restart=always
+RestartSec=10
+
+# Security settings
+NoNewPrivileges=yes
+ProtectSystem=strict
+ProtectHome=yes
+ReadWritePaths=/opt/quipu /var/log/quipu
+PrivateTmp=yes
+ProtectKernelTunables=yes
+ProtectKernelModules=yes
+ProtectControlGroups=yes
+
+# Environment
+Environment=PYTHONUNBUFFERED=1
+EnvironmentFile=-/opt/quipu/.env
+
+# Logging
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=quipu
+
+[Install]
+WantedBy=multi-user.target

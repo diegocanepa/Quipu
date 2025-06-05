@@ -75,7 +75,7 @@ class MessageService:
         try:
             data_to_save = pickle.dumps(message)  # TODO: pickle is not secure and fast, we could implement an alternative with pydantic or manual serialization.
             self.cache_service.set(cache_key, data_to_save, expiry=self.CACHE_EXPIRY_SECONDS)
-            logger.info(f"Message (ID: {message.message_id}, User: {message.user_id,}, Platform: {message.source.value}) saved to cache.")
+            logger.info(f"Message (ID: {message.message_id}, User: {message.user_id}, Platform: {message.source.value}) saved to cache.")
             return True
         except Exception as e:
             logger.info(f"Error saving message to cache: {e}")

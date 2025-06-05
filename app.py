@@ -1,6 +1,9 @@
 # app.py
+import argparse
+import sys
 import logging
 import asyncio
+from pathlib import Path
 from flask import Flask, Response, request, make_response
 from asgiref.wsgi import WsgiToAsgi
 import uvicorn
@@ -8,12 +11,33 @@ from http import HTTPStatus
 from telegram import Update
 from api.telegram.bot import register_handlers, get_application, setup_webhook
 
-logging.basicConfig(level=logging.DEBUG, format='%(asctime)s - %(levelname)s - %(message)s')
+def get_version():
+    """Get version from version.txt file"""
+    try:
+        version_file = Path(__file__).parent / "version.txt"
+        if version_file.exists():
+            return version_file.read_text().strip()
+        return "development"
+    except Exception:
+        return "unknown"
+
+def setup_logging():
+    """Configure logging for the application"""
+    logging.basicConfig(
+        level=logging.INFO,
+        format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
+        handlers=[logging.StreamHandler(sys.stdout)]
+    )
+
+setup_logging()
 logger = logging.getLogger(__name__)
 
+# Initialize Flask app and Telegram application
 app = Flask(__name__)
 application = get_application()
 register_handlers(application)
+
+logger.info(f"Starting Quipu version {get_version()}")
 
 async def process_updates():
     async with application:
@@ -44,8 +68,20 @@ async def telegram_webhook() -> Response:
 
 @app.get("/healthcheck")
 async def healthcheck():
-    """Simple health check"""
-    return make_response("Bot is running", HTTPStatus.OK)
+    """Health check endpoint with version info"""
+    version = get_version()
+    status = {
+        "status": "healthy",
+        "service": "quipu",
+        "version": version,
+        "timestamp": asyncio.get_event_loop().time()
+    }
+    return make_response(status, HTTPStatus.OK)
+
+@app.get("/version")
+async def version_endpoint():
+    """Version endpoint"""
+    return make_response({"version": get_version()}, HTTPStatus.OK)
 
 async def main():
     await setup_webhook()
@@ -66,5 +102,42 @@ async def main():
         await server.serve()
         await application.stop()
 
+def main_cli():
+    """CLI entry point with argument parsing"""
+    parser = argparse.ArgumentParser(description='Quipu Multi-Service Financial Bot')
+    parser.add_argument('--version', action='version',
+                       version=f'Quipu {get_version()}')
+    parser.add_argument('--port', type=int, default=8080,
+                       help='Port to run the server on (default: 8080)')
+    parser.add_argument('--host', default='0.0.0.0',
+                       help='Host to bind to (default: 0.0.0.0)')
+
+    args = parser.parse_args()
+
+    # Update uvicorn config with CLI args
+    global main
+    original_main = main
+
+    async def main_with_args():
+        await setup_webhook()
+        server = uvicorn.Server(
+            config=uvicorn.Config(
+                app=WsgiToAsgi(app),
+                port=args.port,
+                host=args.host,
+                use_colors=True,
+                log_level="info",
+                reload=False
+            )
+        )
+
+        async with application:
+            asyncio.create_task(process_updates())
+            await application.start()
+            await server.serve()
+            await application.stop()
+
+    asyncio.run(main_with_args())
+
 if __name__ == '__main__':
-    asyncio.run(main())
+    main_cli()

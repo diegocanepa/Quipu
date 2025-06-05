@@ -38,8 +38,8 @@ class TelegramAdapter(PlatformAdapter):
             str: The message ID.
         """
         return str(self.update.message.message_id)
-    
-    def build_receive_message(self, message_text: str = None) -> Message:
+
+    def map_to_message(self, message_text: str = None) -> Message:
         """
         Builds a Message object with the current message data.
 
