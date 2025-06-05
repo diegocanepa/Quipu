@@ -66,7 +66,7 @@ async def confirm_save(update: Update, context: ContextTypes.DEFAULT_TYPE) -> in
         platform=telegram_adapter
     )
 
-    await query.edit_message_text(text=response)
+    await query.edit_message_text(text=response, parse_mode='HTML') # :TODO This is a edit message so I can't use the platform adapter
     return ConversationHandler.END
 
 
@@ -92,5 +92,5 @@ async def cancel_save(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int
 
     response = message_processor.cancel_and_respond(user_id=user_id, message_id=callback_id, platform=telegram_adapter)
 
-    await query.edit_message_text(text=response)
+    await query.edit_message_text(text=response, parse_mode='HTML') # :TODO This is a edit message so I can't use the platform adapter
     return ConversationHandler.END
