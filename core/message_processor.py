@@ -140,7 +140,7 @@ class MessageProcessor:
             return self._format_save_response(recovered_message.message_text, False)
             
             
-    def cancel_and_response(self, user_id: str, message_id: str, platform: PlatformAdapter) -> str:
+    def cancel_and_respond(self, user_id: str, message_id: str, platform: PlatformAdapter) -> str:
         """
         Process a cancellation request for a message. This function retrieves the message,
         deletes it if found, and returns a cancellation response.
