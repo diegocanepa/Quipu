@@ -53,6 +53,8 @@ async def handle_audio_message(
         # Process audio
         transcription_result = await audio_processor.process_audio(filename)
         os.remove(filename)
+        
+        message = telegram_adapter.build_receive_message(message_text=transcription_result)
 
         message = telegram_adapter.map_to_message(message_text=transcription_result)
 

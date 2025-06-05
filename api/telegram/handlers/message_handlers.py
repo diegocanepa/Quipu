@@ -45,7 +45,6 @@ async def confirm_save(update: Update, context: ContextTypes.DEFAULT_TYPE) -> in
     telegram_adapter = TelegramAdapter(update)
     query = telegram_adapter.get_callback_query()
     user_id = telegram_adapter.get_user_id()
-
     logger.info("Processing confirm save callback", extra={
         "user_id": user_id,
         "callback_data": query.data,
@@ -84,7 +83,6 @@ async def cancel_save(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int
         "callback_data": query.data,
         "message_id": query.message.message_id
     })
-
     # Extract callback_id
     callback_id = query.data.split("#")[1]
     logger.debug("Extracted callback_id", extra={
@@ -92,7 +90,7 @@ async def cancel_save(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int
         "user_id": user_id
     })
 
-    response = message_processor.cancel_and_response(user_id=user_id, message_id=callback_id, platform=telegram_adapter)
+    response = message_processor.cancel_and_respond(user_id=user_id, message_id=callback_id, platform=telegram_adapter)
 
     await query.edit_message_text(text=response)
     return ConversationHandler.END

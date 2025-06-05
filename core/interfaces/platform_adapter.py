@@ -18,7 +18,7 @@ class PlatformAdapter(ABC):
             str: The platform name
         """
         pass
-
+    
     @abstractmethod
     def get_message_id(self) -> str:
         """
@@ -28,8 +28,8 @@ class PlatformAdapter(ABC):
             str: The message ID.
         """
         pass
-
-
+    
+    
     @abstractmethod
     def map_to_message(self, message_text: str = None) -> Message:
         """
@@ -39,7 +39,7 @@ class PlatformAdapter(ABC):
             Message model.
         """
         pass
-
+    
     @abstractmethod
     def get_message_text(self) -> str:
         """

@@ -20,7 +20,7 @@ class TelegramAdapter(PlatformAdapter):
         """
         self.update = update
         self.name = Source.TELEGRAM
-
+        
     def get_platform_name(self) -> str:
         """
         Returns the platform name.
