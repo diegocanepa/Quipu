@@ -58,6 +58,25 @@ class TelegramAdapter(PlatformAdapter):
         )
         return message
 
+    def map_to_message(self, message_text: str = None) -> Message:
+        """
+        Builds a Message object with the current message data.
+
+        Args:
+            message_text (str, optional): The text to use for the message. If None, uses the current message text.
+                                          This is used for transcription where we pass the transcripted text from the audio.
+
+        Returns:
+            Message: A Message object containing the message data.
+        """
+        message = Message(
+            user_id=self.get_user_id(),
+            message_id=self.get_message_id(),
+            message_text=message_text if message_text is not None else self.get_message_text(),
+            source=self.name
+        )
+        return message
+
     def get_message_text(self) -> str:
         """
         Returns the text of the message from the update.

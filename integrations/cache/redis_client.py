@@ -8,7 +8,7 @@ logger = logging.getLogger(__name__)
 
 class RedisCacheClient(CacheService):
     """
-    Implementation of the cache service using Valkey (replacing Redis).
+    Implementation of the cache service using Redis.
     """
     def __init__(self, host: Optional[str] = None, port: int = 6379, password: Optional[str] = None, db: int = 0) -> None:
         """
@@ -37,14 +37,23 @@ class RedisCacheClient(CacheService):
                 port=self.port,
                 password=self.password,
                 db=self.db,
-                decode_responses=False
+                decode_responses=False,
+                socket_timeout=5,  # 5 seconds timeout
+                socket_connect_timeout=5,  # 5 seconds connection timeout
+                retry_on_timeout=True,
+                health_check_interval=30,  # Check connection every 30 seconds
+                ssl=True,  # Enable SSL for encryption in transit
+                ssl_cert_reqs=None  # Don't verify SSL certificate
             )
+            # Try to ping with a short timeout
             self.redis_client.ping()
-            logger.info(f"Successfully connected to Redis (or Valkey) at {self.host}:{self.port}, DB: {self.db}")
-        except redis.exceptions.ConnectionError as e:
-            logger.info(f"Error connecting to Redis (or Valkey): {e}")
-            self.redis_client = None # :TODO Raise an error when this happen otherwise it's a silence error. 
-
+            logger.info(f"Successfully connected to Redis at {self.host}:{self.port}, DB: {self.db}")
+        except (redis.exceptions.ConnectionError, redis.exceptions.TimeoutError) as e:
+            logger.warning(f"Could not connect to Redis: {e}. Cache will be disabled.")
+            self.redis_client = None
+        except Exception as e:
+            logger.error(f"Unexpected error connecting to Redis: {e}")
+            self.redis_client = None
 
     def get(self, key: str) -> Any:
         """
@@ -54,15 +63,16 @@ class RedisCacheClient(CacheService):
             key (str): The key to retrieve.
 
         Returns:
-            Any: The value if found, None otherwise.
+            Optional[Any]: The value if found, None otherwise.
         """
+        if not self.redis_client:
+            logger.warning("Redis client not available. Cache disabled.")
+            return None
+            
         try:
-            value = self.redis_client.get(key)
-            if value is None:
-                return None
-            return value 
-        except Exception as e:
-            logger.error(f"Error retrieving value from cache: {e}")
+            return self.redis_client.get(key)
+        except redis.RedisError as e:
+            logger.error(f"Error getting key {key} from Redis: {e}")
             return None
 
     def set(self, key: str, value: Any, expiry: Optional[int] = None) -> bool:
@@ -71,34 +81,41 @@ class RedisCacheClient(CacheService):
 
         Args:
             key (str): The key to set.
-            value (Any): The value to set.
+            value (Any): The value to store.
             expiry (Optional[int]): The expiry time in seconds.
 
         Returns:
-            bool: True if the value was set successfully, False otherwise.
+            bool: True if successful, False otherwise.
         """
+        if not self.redis_client:
+            logger.warning("Redis client not available. Cache disabled.")
+            return False
+            
         try:
-            self.redis_client.set(key, value, ex=expiry)
-            return True
-        except Exception as e:
-            logger.error(f"Error setting value in cache: {e}")
+            return self.redis_client.set(key, value, ex=expiry)
+        except redis.RedisError as e:
+            logger.error(f"Error setting key {key} in Redis: {e}")
             return False
 
     def delete(self, key: str) -> bool:
         """
-        Deletes a value from the Redis cache based on the prefix, key, and version.
+        Deletes a value from the cache.
 
         Args:
-            prefix (str): The key prefix.
-            key (str): The unique key.
-            version (int): The version.
+            key (str): The key to delete.
 
         Returns:
-            bool: True if the operation was successful, False otherwise.
+            bool: True if successful, False otherwise.
         """
-        if self.redis_client:
-            return self.redis_client.delete(key) > 0
-        return False
+        if not self.redis_client:
+            logger.warning("Redis client not available. Cache disabled.")
+            return False
+            
+        try:
+            return bool(self.redis_client.delete(key))
+        except redis.RedisError as e:
+            logger.error(f"Error deleting key {key} from Redis: {e}")
+            return False
 
-# Create a global instance of the cache client when importing the module
-cache_client: Optional[CacheService] = RedisCacheClient()
+# Create a global instance
+cache_client = RedisCacheClient()
