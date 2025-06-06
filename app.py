@@ -116,6 +116,7 @@ def main_cli():
 
     # Update uvicorn config with CLI args
     global main
+    original_main = main
 
     async def main_with_args():
         await setup_webhook()
