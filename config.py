@@ -14,6 +14,8 @@ class Config:
     LLM_TEMPERATURE: float = float(os.getenv("LLM_TEMPERATURE", "0.7"))
     TELEGRAM_BOT_TOKEN: str = os.getenv("TELEGRAM_BOT_TOKEN")
     GOOGLE_CREDENTIALS: str = os.getenv("GOOGLE_CREDENTIALS")
+    GOOGLE_SHEET_TEMPLATE_URL: str = os.getenv("GOOGLE_SHEET_TEMPLATE_URL")
+    GOOGLE_SERVICE_ACCOUNT_EMAIL: str = os.getenv("GOOGLE_SERVICE_ACCOUNT_EMAIL")
     SUPABASE_URL: str = os.getenv("SUPABASE_URL")
     SUPABASE_KEY: str = os.getenv("SUPABASE_KEY")
     ENVIRONMENT: str = os.getenv("ENVIRONMENT")
@@ -45,6 +47,10 @@ class Config:
             raise ValueError("TELEGRAM_BOT_TOKEN must be set in the .env file.")
         if not self.GOOGLE_CREDENTIALS:
             raise ValueError("GOOGLE_CREDENTIALS must be set in the .env file.")
+        if not self.GOOGLE_SHEET_TEMPLATE_URL:
+            raise ValueError("GOOGLE_SHEET_TEMPLATE_URL must be set in the .env file.")
+        if not self.GOOGLE_SERVICE_ACCOUNT_EMAIL:
+            raise ValueError("GOOGLE_SERVICE_ACCOUNT_EMAIL must be set in the .env file.")
         if not self.SUPABASE_URL:
             raise ValueError("SUPABASE_URL must be set in the .env file.")
         if not self.SUPABASE_KEY:
