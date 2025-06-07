@@ -1,4 +1,5 @@
 import logging
+from dataclasses import dataclass
 from telegram import Update
 from telegram.ext import (
     ContextTypes,
@@ -9,251 +10,239 @@ from telegram.ext import (
     filters,
 )
 
-from api.telegram.handlers.command_handlers import show_info
-from api.telegram.handlers.message_sender import MessageSender
-from api.telegram.handlers.state_manager import StateManager
-from core import messages
-from core.onboarding import states
-from core.user_data_manager import UserDataManager
-from integrations.spreadsheet.spreadsheet import SpreadsheetManager
-from config import config
+from integrations.platforms.telegram_adapter import TelegramAdapter
+from core.onboarding_manager import OnboardingManager
 
 logger = logging.getLogger(__name__)
 
-# Initialize managers
-user_manager = UserDataManager()
-spreadsheet_manager = SpreadsheetManager()
-message_sender = MessageSender()
-state_manager = StateManager()
+# Constants
+CALLBACK_PATTERNS = {
+    'LINK_SHEET': '^link_sheet$',
+    'LINK_WEBAPP': '^link_webapp$',
+    'CANCEL': '^cancel_onboarding$',
+    'RETRY_SHEET': '^retry_sheet_url$',
+    'SWITCH_TO_WEBAPP': '^switch_to_webapp$',
+    'SWITCH_TO_SHEET': '^switch_to_sheet$'
+}
 
-# --- Start Command Handlers ---
-async def start_onboarding(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
-    """Handles the /start command without a payload."""
-    user = update.effective_user
-    logger.info(f"User {user.id} initiated /start (no payload).")
+COMMAND_PATTERNS = {
+    'START': r'^/start$',
+    'START_WITH_LINK': r'^/start link_.*'
+}
 
-    if user_manager.is_onboarding_complete(user.id):
-        logger.info(f"User {user.id} is already onboarded. Showing status.")
-        await message_sender.send_message(update, messages.MSG_WELCOME_BACK)
-        await show_info(update, context)
-        return ConversationHandler.END
+@dataclass
+class OnboardingState:
+    """
+    Data class to hold onboarding state information.
+    
+    This class represents the current state of a user's onboarding process,
+    including whether they are actively in the process and what step they are on.
+    
+    Attributes:
+        state (int): The current state of the onboarding process
+        in_progress (bool): Whether the user is currently in the onboarding process
+    """
+    state: int
+    in_progress: bool = True
 
-    user_exists = user_manager.get_user_data(user.id) is not None
-    welcome_message = messages.MSG_WELCOME_BACK if user_exists else messages.MSG_WELCOME
+class OnboardingStateManager:
+    """
+    Manages the onboarding state in the context.
+    
+    This class provides methods to get and set the onboarding state in the Telegram context.
+    It ensures consistent state management across different handlers and provides
+    a single source of truth for the onboarding state.
+    
+    Methods:
+        set_state: Updates the onboarding state in the context
+        get_state: Retrieves the current onboarding state from the context
+    """
+    
+    def __init__(self, onboarding_manager: OnboardingManager):
+        self.onboarding_manager = onboarding_manager
+    
+    def set_state(self, context: ContextTypes.DEFAULT_TYPE, state: int, in_progress: bool = True) -> None:
+        """Sets the onboarding state in the context."""
+        context.user_data['onboarding_state'] = state
+        context.user_data['onboarding_in_progress'] = in_progress
 
-    if not user_exists:
-        user_manager.create_user(
-            telegram_user_id=user.id,
-            username=user.username,
-            first_name=user.first_name,
-            last_name=user.last_name
+    def get_state(self, context: ContextTypes.DEFAULT_TYPE) -> OnboardingState:
+        """Gets the current onboarding state from the context."""
+        return OnboardingState(
+            state=context.user_data.get('onboarding_state', self.onboarding_manager.CHOOSING_LINK_METHOD),
+            in_progress=context.user_data.get('onboarding_in_progress', True)
         )
 
-    await message_sender.send_message(update, welcome_message)
-
-    buttons = [
-        (messages.BTN_GOOGLE_SHEET, 'link_sheet'),
-        (messages.BTN_WEBAPP, 'link_webapp')
-    ]
-    await message_sender.send_message(
-        update,
-        messages.MSG_PRESENT_OPTIONS,
-        keyboard=message_sender.create_keyboard(buttons)
-    )
-
-    state_manager.set_conversation_state(context, states.CHOOSING_LINK_METHOD)
-    return states.CHOOSING_LINK_METHOD
-
-# --- Google Sheet Handlers ---
-async def choose_sheet(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
-    """Handles the user choosing Google Sheet linking."""
-    user = update.effective_user
-    logger.info(f"User {user.id} chose Google Sheet linking.")
+class BaseOnboardingHandler:
+    """
+    Base class for onboarding handlers with common functionality.
     
-    if update.callback_query:
-        await update.callback_query.answer(messages.GOOGLE_SHEET_SELECTED)
-        
-    if user_manager.is_sheet_linked(user.id):
-        return await state_manager.end_onboarding(update, context, messages.MSG_SHEET_ALREADY_LINKED)
+    This class provides shared functionality for all onboarding handlers,
+    including callback query handling and state management. It serves as a
+    foundation for more specific handler classes.
     
-    await message_sender.send_message(update, messages.MSG_SHEET_CHOICE_CONFIRM)
+    Attributes:
+        onboarding_manager: Manages the core onboarding logic
+        state_manager: Manages the onboarding state in the context
+    """
     
-    await message_sender.send_message(
-        update,
-        messages.MSG_SHEET_STEP_1_COPY.format(template_url=config.GOOGLE_SHEET_TEMPLATE_URL)
-    )
-    await message_sender.send_message(
-        update,
-        messages.MSG_SHEET_STEP_2_SHARE.format(sa_email=config.GOOGLE_SERVICE_ACCOUNT_EMAIL)
-    )
+    def __init__(self):
+        self.onboarding_manager = OnboardingManager()
+        self.state_manager = OnboardingStateManager(self.onboarding_manager)
+
+    async def answer_callback_query(self, update: Update) -> None:
+        """Answers a callback query if it exists."""
+        if update.callback_query:
+            await update.callback_query.answer()
+
+    def _end_conversation(self, state: int) -> int:
+        """Determines if the conversation should end based on the state."""
+        return ConversationHandler.END if state == self.onboarding_manager.END else state
+
+class StartHandler(BaseOnboardingHandler):
+    """
+    Handles the start of the onboarding process.
     
-    state_manager.set_conversation_state(context, states.GOOGLE_SHEET_AWAITING_URL)
-    return states.GOOGLE_SHEET_AWAITING_URL
-
-async def receive_sheet_url(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
-    """Handles the user sending a sheet URL."""
-    user = update.effective_user
-    sheet_url = update.message.text.strip()
-    logger.info(f"User {user.id} provided potential sheet URL: {sheet_url}")
-
-    sheet_id = spreadsheet_manager.get_sheet_id_from_url(sheet_url)
-    if not sheet_id:
-        logger.warning(f"User {user.id} provided invalid URL format: {sheet_url}")
-        await message_sender.send_message(
-            update,
-            messages.MSG_SHEET_LINK_INVALID_URL,
-            keyboard=message_sender.get_error_keyboard(states.GOOGLE_SHEET_AWAITING_URL)
-        )
-        return states.GOOGLE_SHEET_AWAITING_URL
-
-    processing_msg = await message_sender.send_message(update, messages.MSG_SHEET_LINK_CHECKING)
-    access_granted = spreadsheet_manager.check_access(sheet_id)
-    await message_sender.clean_up_processing_message(processing_msg)
-
-    if access_granted:
-        user_manager.set_sheet_linked(user.id, sheet_id)
-        logger.info(f"Sheet {sheet_id} linked successfully for user {user.id}.")
-        return await state_manager.end_onboarding(update, context, messages.MSG_SHEET_LINK_SUCCESS)
+    This class manages the initial steps of the onboarding process, including:
+    - Regular start command handling
+    - Deep link handling for webapp integration
     
-    logger.warning(f"Access denied for sheet {sheet_id} for user {user.id}.")
-    await message_sender.send_message(
-        update,
-        messages.MSG_SHEET_LINK_FAILED_ACCESS.format(sa_email=config.GOOGLE_SERVICE_ACCOUNT_EMAIL),
-        keyboard=message_sender.get_error_keyboard(states.GOOGLE_SHEET_AWAITING_URL)
-    )
-    return states.GOOGLE_SHEET_AWAITING_URL
+    It's responsible for initiating the onboarding flow and setting up the
+    initial state for new users.
+    """
 
-# --- Webapp Handlers ---
-async def choose_webapp(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
-    """Handles the user choosing Webapp linking."""
-    user = update.effective_user
-    logger.info(f"User {user.id} chose Webapp linking.")
+    async def handle_start(self, update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
+        """Handles the /start command without a payload."""
+        platform = TelegramAdapter(update)
+        state = await self.onboarding_manager.start_onboarding(platform)
+        self.state_manager.set_state(context, state)
+        return self._end_conversation(state)
 
-    if update.callback_query:
-        await update.callback_query.answer(messages.WEBAPP_SELECTED)
+    async def handle_deeplink_start(self, update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
+        """Handles webapp deep linking."""
+        platform = TelegramAdapter(update)
+        state = await self.onboarding_manager.handle_webapp_deeplink(platform)
+        self.state_manager.set_state(context, state, state != self.onboarding_manager.END)
+        return self._end_conversation(state)
 
-    if user_manager.is_webapp_linked(user.id):
-        return await state_manager.end_onboarding(
-            update, 
-            context, 
-            messages.MSG_WEBAPP_ALREADY_LINKED.format(url_link=config.WEBAPP_BASE_URL)
-        )
-
-    await message_sender.send_message(update, messages.MSG_WEBAPP_CHOICE_CONFIRM)
-    await message_sender.send_message(
-        update,
-        messages.MSG_WEBAPP_STEPS.format(webapp_base_url=config.WEBAPP_BASE_URL),
-        disable_preview=True
-    )
-
-    state_manager.set_conversation_state(context, states.WEBAPP_SHOWING_INSTRUCTIONS)
-    return states.WEBAPP_SHOWING_INSTRUCTIONS
-
-async def handle_deeplink_start(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
-    """Handles webapp deep linking."""
-    user = update.effective_user
-    message = update.effective_message
-    if not message or not message.text:
-        logger.warning(f"Invalid deeplink message from user {user.id}")
-        return ConversationHandler.END
-
-    command_parts = message.text.split(" ", 1)
-    if len(command_parts) < 2:
-        logger.warning(f"Invalid deeplink format from user {user.id}")
-        return ConversationHandler.END
-
-    payload = command_parts[1]
-    if not payload.startswith("link_"):
-        return ConversationHandler.END
-
-    webapp_user_id = payload[5:]  # Remove "link_" prefix
-    logger.info(f"Processing webapp linking for user {user.id} with ID: {webapp_user_id}")
-
-    processing_msg = await message_sender.send_message(update, messages.MSG_WEBAPP_DEEPLINK_TRIGGERED)
-
-    if webapp_user_id:
-        user_manager.set_webapp_linked(user.id, webapp_user_id)
-        await message_sender.clean_up_processing_message(processing_msg)
-        logger.info(f"Webapp linked successfully for user {user.id}")
-        return await state_manager.end_onboarding(update, context, messages.MSG_WEBAPP_LINK_SUCCESS)
+class SheetHandler(BaseOnboardingHandler):
+    """
+    Handles Google Sheet related onboarding steps.
     
-    logger.warning(f"Webapp linking failed for user {user.id}")
-    await message_sender.send_message(
-        update,
-        messages.MSG_WEBAPP_LINK_FAILED.format(webapp_base_url=config.WEBAPP_BASE_URL),
-        keyboard=message_sender.get_error_keyboard(states.WEBAPP_SHOWING_INSTRUCTIONS)
-    )
-    state_manager.set_conversation_state(context, states.WEBAPP_SHOWING_INSTRUCTIONS)
-    return states.WEBAPP_SHOWING_INSTRUCTIONS
-
-# --- General Handlers ---
-async def cancel_onboarding(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
-    """Handles onboarding cancellation."""
-    if update.callback_query:
-        await update.callback_query.answer(messages.CANCEL_ONBOARDING_ANSWER)
+    This class manages all interactions related to Google Sheet integration during onboarding,
+    including:
+    - Initial sheet choice
+    - Sheet URL validation and processing
+    - Sheet access verification
     
-    state_manager.set_conversation_state(context, states.FINISHED, False)
-    await message_sender.send_message(update, messages.MSG_CANCEL_ONBOARDING_CONFIRM)
-    return ConversationHandler.END
+    It guides users through the process of linking their Google Sheet to the bot.
+    """
 
-async def onboarding_fallback(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
-    """Handles unrecognized messages during onboarding."""
-    user = update.effective_user
-    current_state = state_manager.get_current_state(context)
-    logger.warning(f"Unhandled message from user {user.id} in state {current_state}")
+    async def handle_sheet_choice(self, update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
+        """Handles the user choosing Google Sheet linking."""
+        platform = TelegramAdapter(update)
+        await self.answer_callback_query(update)
+        state = await self.onboarding_manager.handle_sheet_choice(platform)
+        self.state_manager.set_state(context, state)
+        return self._end_conversation(state)
 
-    if current_state == states.FINISHED:
-        return ConversationHandler.END
+    async def handle_sheet_url(self, update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
+        """Handles the user sending a sheet URL."""
+        platform = TelegramAdapter(update)
+        state = await self.onboarding_manager.handle_sheet_url(platform)
+        self.state_manager.set_state(context, state)
+        return self._end_conversation(state)
 
-    state_messages = {
-        states.GOOGLE_SHEET_AWAITING_URL: messages.MSG_SHEET_LINK_INVALID_URL,
-        states.WEBAPP_SHOWING_INSTRUCTIONS: messages.MSG_WEBAPP_LINK_FAILED,
-        states.CHOOSING_LINK_METHOD: messages.MSG_ONBOARDING_REQUIRED
-    }
-
-    message = state_messages.get(current_state, messages.MSG_ONBOARDING_ERROR)
-    keyboard = message_sender.get_error_keyboard(current_state)
+class WebappHandler(BaseOnboardingHandler):
+    """
+    Handles Webapp related onboarding steps.
     
-    await message_sender.send_message(
-        update,
-        message.format(webapp_base_url=config.WEBAPP_BASE_URL) if current_state == states.WEBAPP_SHOWING_INSTRUCTIONS else message,
-        keyboard=keyboard,
-        disable_preview=True
-    )
-    return current_state or states.CHOOSING_LINK_METHOD
+    This class manages the webapp integration process during onboarding,
+    including:
+    - Initial webapp choice
+    - Webapp linking instructions
+    - Deep link processing
+    
+    It guides users through the process of linking their webapp account to the bot.
+    """
+
+    async def handle_webapp_choice(self, update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
+        """Handles the user choosing Webapp linking."""
+        platform = TelegramAdapter(update)
+        await self.answer_callback_query(update)
+        state = await self.onboarding_manager.handle_webapp_choice(platform)
+        self.state_manager.set_state(context, state)
+        return self._end_conversation(state)
+
+class GeneralHandler(BaseOnboardingHandler):
+    """
+    Handles general onboarding operations.
+    
+    This class manages common operations that can occur during any stage of onboarding,
+    including:
+    - Cancellation of the onboarding process
+    - Handling of unrecognized messages
+    - Fallback behavior
+    
+    It provides a safety net for handling unexpected user inputs and graceful
+    process termination.
+    """
+
+    async def handle_cancel(self, update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
+        """Handles onboarding cancellation."""
+        platform = TelegramAdapter(update)
+        await self.answer_callback_query(update)
+        state = await self.onboarding_manager.handle_cancel(platform)
+        self.state_manager.set_state(context, state, False)
+        return self._end_conversation(state)
+
+    async def handle_fallback(self, update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
+        """Handles unrecognized messages during onboarding."""
+        platform = TelegramAdapter(update)
+        current_state = self.state_manager.get_state(context).state
+        state = await self.onboarding_manager.handle_fallback(platform, current_state)
+        self.state_manager.set_state(context, state, state != self.onboarding_manager.END)
+        return self._end_conversation(state)
+
+# Initialize handlers
+start_handler = StartHandler()
+sheet_handler = SheetHandler()
+webapp_handler = WebappHandler()
+general_handler = GeneralHandler()
 
 # --- Conversation Handler Definition ---
 onboarding_conv_handler = ConversationHandler(
     entry_points=[
-        MessageHandler(filters.TEXT & filters.Regex(r'^/start$'), start_onboarding),
-        MessageHandler(filters.TEXT & filters.Regex(r'^/start link_.*'), handle_deeplink_start),
-        CommandHandler('linksheet', choose_sheet),
-        CommandHandler('linkweb', choose_webapp),
-        CallbackQueryHandler(choose_sheet, pattern='^link_sheet$'),
-        CallbackQueryHandler(choose_webapp, pattern='^link_webapp$'),
+        MessageHandler(filters.TEXT & filters.Regex(COMMAND_PATTERNS['START']), start_handler.handle_start),
+        MessageHandler(filters.TEXT & filters.Regex(COMMAND_PATTERNS['START_WITH_LINK']), start_handler.handle_deeplink_start),
+        CommandHandler('linksheet', sheet_handler.handle_sheet_choice),
+        CommandHandler('linkweb', webapp_handler.handle_webapp_choice),
+        CallbackQueryHandler(sheet_handler.handle_sheet_choice, pattern=CALLBACK_PATTERNS['LINK_SHEET']),
+        CallbackQueryHandler(webapp_handler.handle_webapp_choice, pattern=CALLBACK_PATTERNS['LINK_WEBAPP']),
     ],
     states={
-        states.CHOOSING_LINK_METHOD: [
-            CallbackQueryHandler(choose_sheet, pattern='^link_sheet$'),
-            CallbackQueryHandler(choose_webapp, pattern='^link_webapp$'),
-            MessageHandler(filters.TEXT & ~filters.COMMAND, onboarding_fallback)
+        start_handler.onboarding_manager.CHOOSING_LINK_METHOD: [
+            CallbackQueryHandler(sheet_handler.handle_sheet_choice, pattern=CALLBACK_PATTERNS['LINK_SHEET']),
+            CallbackQueryHandler(webapp_handler.handle_webapp_choice, pattern=CALLBACK_PATTERNS['LINK_WEBAPP']),
+            CallbackQueryHandler(general_handler.handle_cancel, pattern=CALLBACK_PATTERNS['CANCEL']),
+            MessageHandler(filters.TEXT & ~filters.COMMAND, general_handler.handle_fallback)
         ],
-        states.GOOGLE_SHEET_AWAITING_URL: [
-            MessageHandler(filters.TEXT & ~filters.COMMAND, receive_sheet_url),
-            CallbackQueryHandler(cancel_onboarding, pattern='^cancel_onboarding$'),
-            CallbackQueryHandler(choose_sheet, pattern='^retry_sheet_url$'),
-            CallbackQueryHandler(choose_webapp, pattern='^switch_to_webapp$'),
+        start_handler.onboarding_manager.GOOGLE_SHEET_AWAITING_URL: [
+            MessageHandler(filters.TEXT & ~filters.COMMAND, sheet_handler.handle_sheet_url),
+            CallbackQueryHandler(general_handler.handle_cancel, pattern=CALLBACK_PATTERNS['CANCEL']),
+            CallbackQueryHandler(sheet_handler.handle_sheet_choice, pattern=CALLBACK_PATTERNS['RETRY_SHEET']),
+            CallbackQueryHandler(webapp_handler.handle_webapp_choice, pattern=CALLBACK_PATTERNS['SWITCH_TO_WEBAPP']),
         ],
-        states.WEBAPP_SHOWING_INSTRUCTIONS: [
-            MessageHandler(filters.TEXT & filters.Regex(r'^/start link_.*'), handle_deeplink_start),
-            CallbackQueryHandler(cancel_onboarding, pattern='^cancel_onboarding$'),
-            CallbackQueryHandler(choose_sheet, pattern='^switch_to_sheet$'),
-            MessageHandler(filters.TEXT, onboarding_fallback)
+        start_handler.onboarding_manager.WEBAPP_SHOWING_INSTRUCTIONS: [
+            MessageHandler(filters.TEXT & filters.Regex(COMMAND_PATTERNS['START_WITH_LINK']), start_handler.handle_deeplink_start),
+            CallbackQueryHandler(general_handler.handle_cancel, pattern=CALLBACK_PATTERNS['CANCEL']),
+            CallbackQueryHandler(sheet_handler.handle_sheet_choice, pattern=CALLBACK_PATTERNS['SWITCH_TO_SHEET']),
+            MessageHandler(filters.TEXT, general_handler.handle_fallback)
         ]
     },
     fallbacks=[
-        MessageHandler(filters.TEXT & filters.Regex(r'^/start link_.*'), handle_deeplink_start),
-        CommandHandler('cancel', cancel_onboarding),
-        MessageHandler(filters.ALL, onboarding_fallback)
+        MessageHandler(filters.TEXT & filters.Regex(COMMAND_PATTERNS['START_WITH_LINK']), start_handler.handle_deeplink_start),
+        CommandHandler('cancel', general_handler.handle_cancel),
+        MessageHandler(filters.ALL, general_handler.handle_fallback)
     ]
 )

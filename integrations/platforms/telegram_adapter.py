@@ -37,6 +37,8 @@ class TelegramAdapter(PlatformAdapter):
         Returns:
             str: The message ID.
         """
+        if self.update.callback_query:
+            return str(self.update.callback_query.message.message_id)
         return str(self.update.message.message_id)
 
     def map_to_message(self, message_text: str = None) -> Message:
@@ -65,6 +67,8 @@ class TelegramAdapter(PlatformAdapter):
         Returns:
             str: The text of the message.
         """
+        if self.update.callback_query:
+            return self.update.callback_query.data
         return self.update.message.text if self.update.message else ""
 
     def get_user_id(self) -> str:
@@ -121,7 +125,9 @@ class TelegramAdapter(PlatformAdapter):
             text (str): The text to be sent as a reply.
             *kwargs: Additional keyword arguments for platform-specific options.
         """
-        return self.update.message.reply_text(text, **kwargs)
+        if self.update.callback_query:
+            return self.update.callback_query.message.reply_text(text, parse_mode='HTML', **kwargs)
+        return self.update.message.reply_text(text, parse_mode='HTML', **kwargs)
 
     def reply_with_buttons(self, text: str, buttons: list[CommandButton], **kwargs):
         """
@@ -136,7 +142,18 @@ class TelegramAdapter(PlatformAdapter):
         keyboard = self._button_to_keyboard(buttons)
         reply_markup = InlineKeyboardMarkup(keyboard)
 
-        return self.update.message.reply_text(text, reply_markup=reply_markup, **kwargs)
+        if self.update.callback_query:
+            return self.update.callback_query.message.reply_text(text, reply_markup=reply_markup, parse_mode='HTML', **kwargs)
+        return self.update.message.reply_text(text, reply_markup=reply_markup, parse_mode='HTML', **kwargs)
+
+    def clean_up_processing_message(self, message):
+        """
+        Cleans up a processing message if the platform supports it.
+
+        Args:
+            message: The message to clean up.
+        """
+        return message.delete()
 
     def _button_to_keyboard(self, buttons: list[CommandButton]):
         """
