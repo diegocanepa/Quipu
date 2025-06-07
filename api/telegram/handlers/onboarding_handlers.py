@@ -1,6 +1,5 @@
 import logging
 from dataclasses import dataclass
-from typing import Optional, Dict, List, Pattern
 from telegram import Update
 from telegram.ext import (
     ContextTypes,
@@ -12,8 +11,7 @@ from telegram.ext import (
 )
 
 from integrations.platforms.telegram_adapter import TelegramAdapter
-from core.onboarding.onboarding_manager import OnboardingManager
-from core.onboarding import states
+from core.onboarding_manager import OnboardingManager
 
 logger = logging.getLogger(__name__)
 
@@ -60,17 +58,18 @@ class OnboardingStateManager:
         get_state: Retrieves the current onboarding state from the context
     """
     
-    @staticmethod
-    def set_state(context: ContextTypes.DEFAULT_TYPE, state: int, in_progress: bool = True) -> None:
+    def __init__(self, onboarding_manager: OnboardingManager):
+        self.onboarding_manager = onboarding_manager
+    
+    def set_state(self, context: ContextTypes.DEFAULT_TYPE, state: int, in_progress: bool = True) -> None:
         """Sets the onboarding state in the context."""
         context.user_data['onboarding_state'] = state
         context.user_data['onboarding_in_progress'] = in_progress
 
-    @staticmethod
-    def get_state(context: ContextTypes.DEFAULT_TYPE) -> OnboardingState:
+    def get_state(self, context: ContextTypes.DEFAULT_TYPE) -> OnboardingState:
         """Gets the current onboarding state from the context."""
         return OnboardingState(
-            state=context.user_data.get('onboarding_state', states.CHOOSING_LINK_METHOD),
+            state=context.user_data.get('onboarding_state', self.onboarding_manager.CHOOSING_LINK_METHOD),
             in_progress=context.user_data.get('onboarding_in_progress', True)
         )
 
@@ -89,7 +88,7 @@ class BaseOnboardingHandler:
     
     def __init__(self):
         self.onboarding_manager = OnboardingManager()
-        self.state_manager = OnboardingStateManager()
+        self.state_manager = OnboardingStateManager(self.onboarding_manager)
 
     async def answer_callback_query(self, update: Update) -> None:
         """Answers a callback query if it exists."""
@@ -98,7 +97,7 @@ class BaseOnboardingHandler:
 
     def _end_conversation(self, state: int) -> int:
         """Determines if the conversation should end based on the state."""
-        return ConversationHandler.END if state == states.END else state
+        return ConversationHandler.END if state == self.onboarding_manager.END else state
 
 class StartHandler(BaseOnboardingHandler):
     """
@@ -123,7 +122,7 @@ class StartHandler(BaseOnboardingHandler):
         """Handles webapp deep linking."""
         platform = TelegramAdapter(update)
         state = await self.onboarding_manager.handle_webapp_deeplink(platform)
-        self.state_manager.set_state(context, state, state != states.END)
+        self.state_manager.set_state(context, state, state != self.onboarding_manager.END)
         return self._end_conversation(state)
 
 class SheetHandler(BaseOnboardingHandler):
@@ -202,7 +201,7 @@ class GeneralHandler(BaseOnboardingHandler):
         platform = TelegramAdapter(update)
         current_state = self.state_manager.get_state(context).state
         state = await self.onboarding_manager.handle_fallback(platform, current_state)
-        self.state_manager.set_state(context, state, state != states.END)
+        self.state_manager.set_state(context, state, state != self.onboarding_manager.END)
         return self._end_conversation(state)
 
 # Initialize handlers
@@ -222,19 +221,19 @@ onboarding_conv_handler = ConversationHandler(
         CallbackQueryHandler(webapp_handler.handle_webapp_choice, pattern=CALLBACK_PATTERNS['LINK_WEBAPP']),
     ],
     states={
-        states.CHOOSING_LINK_METHOD: [
+        start_handler.onboarding_manager.CHOOSING_LINK_METHOD: [
             CallbackQueryHandler(sheet_handler.handle_sheet_choice, pattern=CALLBACK_PATTERNS['LINK_SHEET']),
             CallbackQueryHandler(webapp_handler.handle_webapp_choice, pattern=CALLBACK_PATTERNS['LINK_WEBAPP']),
             CallbackQueryHandler(general_handler.handle_cancel, pattern=CALLBACK_PATTERNS['CANCEL']),
             MessageHandler(filters.TEXT & ~filters.COMMAND, general_handler.handle_fallback)
         ],
-        states.GOOGLE_SHEET_AWAITING_URL: [
+        start_handler.onboarding_manager.GOOGLE_SHEET_AWAITING_URL: [
             MessageHandler(filters.TEXT & ~filters.COMMAND, sheet_handler.handle_sheet_url),
             CallbackQueryHandler(general_handler.handle_cancel, pattern=CALLBACK_PATTERNS['CANCEL']),
             CallbackQueryHandler(sheet_handler.handle_sheet_choice, pattern=CALLBACK_PATTERNS['RETRY_SHEET']),
             CallbackQueryHandler(webapp_handler.handle_webapp_choice, pattern=CALLBACK_PATTERNS['SWITCH_TO_WEBAPP']),
         ],
-        states.WEBAPP_SHOWING_INSTRUCTIONS: [
+        start_handler.onboarding_manager.WEBAPP_SHOWING_INSTRUCTIONS: [
             MessageHandler(filters.TEXT & filters.Regex(COMMAND_PATTERNS['START_WITH_LINK']), start_handler.handle_deeplink_start),
             CallbackQueryHandler(general_handler.handle_cancel, pattern=CALLBACK_PATTERNS['CANCEL']),
             CallbackQueryHandler(sheet_handler.handle_sheet_choice, pattern=CALLBACK_PATTERNS['SWITCH_TO_SHEET']),

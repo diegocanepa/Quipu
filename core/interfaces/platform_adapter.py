@@ -1,5 +1,5 @@
 from abc import ABC, abstractmethod
-from typing import List, Optional
+from typing import List
 
 from core.models.common.command_button import CommandButton
 from core.models.message import Message
@@ -113,7 +113,7 @@ class PlatformAdapter(ABC):
         pass
 
     @abstractmethod
-    def reply_with_buttons(self, text: str, buttons: list[CommandButton], **kwargs):
+    def reply_with_buttons(self, text: str, buttons: List[CommandButton], **kwargs):
         """
         Sends a reply with buttons to the user.
 

@@ -1,11 +1,9 @@
-from abc import ABC, abstractmethod
-from typing import Optional, List, Tuple
 import logging
+from typing import List
 
 from core.interfaces.platform_adapter import PlatformAdapter
 from core.models.common.command_button import CommandButton
 from core.user_data_manager import UserDataManager
-from core.onboarding import states
 from core import messages
 from integrations.spreadsheet.spreadsheet import SpreadsheetManager
 from config import config
@@ -25,6 +23,12 @@ class OnboardingManager:
     Each method in this class handles a specific part of the onboarding flow and returns
     the next state in the conversation.
     """
+
+    # States for the onboarding conversation handler
+    CHOOSING_LINK_METHOD = 1
+    GOOGLE_SHEET_AWAITING_URL = 2
+    WEBAPP_SHOWING_INSTRUCTIONS = 3
+    END = 4
 
     def __init__(self):
         self.user_manager = UserDataManager()
@@ -52,7 +56,7 @@ class OnboardingManager:
         if self.user_manager.is_onboarding_complete(user_id):
             logger.info(f"User {user_id} already onboarded, skipping process")
             await platform.reply_text(messages.MSG_WELCOME_BACK)
-            return states.END
+            return self.END
 
         user_exists = self.user_manager.get_user_data(user_id) is not None
         welcome_message = messages.MSG_WELCOME_BACK if user_exists else messages.MSG_WELCOME
@@ -75,7 +79,7 @@ class OnboardingManager:
         await platform.reply_with_buttons(messages.MSG_PRESENT_OPTIONS, buttons)
 
         logger.info(f"User {user_id} presented with linking options")
-        return states.CHOOSING_LINK_METHOD
+        return self.CHOOSING_LINK_METHOD
 
     async def handle_sheet_choice(self, platform: PlatformAdapter) -> int:
         """
@@ -97,7 +101,7 @@ class OnboardingManager:
         if self.user_manager.is_sheet_linked(user_id):
             logger.info(f"User {user_id} already has sheet linked")
             await platform.reply_text(messages.MSG_SHEET_ALREADY_LINKED)
-            return states.END
+            return self.END
         
         await platform.reply_text(messages.MSG_SHEET_CHOICE_CONFIRM)
         await platform.reply_text(
@@ -108,7 +112,7 @@ class OnboardingManager:
         )
         
         logger.info(f"User {user_id} shown sheet linking instructions")
-        return states.GOOGLE_SHEET_AWAITING_URL
+        return self.GOOGLE_SHEET_AWAITING_URL
 
     async def handle_sheet_url(self, platform: PlatformAdapter) -> int:
         """
@@ -131,12 +135,12 @@ class OnboardingManager:
         sheet_id = self.spreadsheet_manager.get_sheet_id_from_url(sheet_url)
         if not sheet_id:
             logger.warning(f"Invalid sheet URL provided by user {user_id}")
-            error_buttons = self._get_error_keyboard(states.GOOGLE_SHEET_AWAITING_URL)
+            error_buttons = self._get_error_keyboard(self.GOOGLE_SHEET_AWAITING_URL)
             await platform.reply_with_buttons(
                 messages.MSG_SHEET_LINK_INVALID_URL,
                 error_buttons
             )
-            return states.GOOGLE_SHEET_AWAITING_URL
+            return self.GOOGLE_SHEET_AWAITING_URL
 
         processing_msg = await platform.reply_text(messages.MSG_SHEET_LINK_CHECKING)
         access_granted = self.spreadsheet_manager.check_access(sheet_id)
@@ -146,15 +150,15 @@ class OnboardingManager:
             logger.info(f"Sheet access granted for user {user_id}")
             self.user_manager.set_sheet_linked(user_id, sheet_id)
             await platform.reply_text(messages.MSG_SHEET_LINK_SUCCESS)
-            return states.END
+            return self.END
         
         logger.warning(f"Sheet access denied for user {user_id}")
-        error_buttons = self._get_error_keyboard(states.GOOGLE_SHEET_AWAITING_URL)
+        error_buttons = self._get_error_keyboard(self.GOOGLE_SHEET_AWAITING_URL)
         await platform.reply_with_buttons(
             messages.MSG_SHEET_LINK_FAILED_ACCESS.format(sa_email=config.GOOGLE_SERVICE_ACCOUNT_EMAIL),
             error_buttons
         )
-        return states.GOOGLE_SHEET_AWAITING_URL
+        return self.GOOGLE_SHEET_AWAITING_URL
 
     async def handle_webapp_choice(self, platform: PlatformAdapter) -> int:
         """
@@ -177,7 +181,7 @@ class OnboardingManager:
             await platform.reply_text(
                 messages.MSG_WEBAPP_ALREADY_LINKED.format(url_link=config.WEBAPP_BASE_URL)
             )
-            return states.END
+            return self.END
 
         await platform.reply_text(messages.MSG_WEBAPP_CHOICE_CONFIRM)
         await platform.reply_text(
@@ -186,7 +190,7 @@ class OnboardingManager:
         )
 
         logger.info(f"User {user_id} shown webapp linking instructions")
-        return states.WEBAPP_SHOWING_INSTRUCTIONS
+        return self.WEBAPP_SHOWING_INSTRUCTIONS
 
     async def handle_webapp_deeplink(self, platform: PlatformAdapter) -> int:
         """
@@ -207,17 +211,17 @@ class OnboardingManager:
 
         if not message_text:
             logger.warning(f"Empty message text in deeplink for user {user_id}")
-            return states.END
+            return self.END
 
         command_parts = message_text.split(" ", 1)
         if len(command_parts) < 2:
             logger.warning(f"Invalid deeplink format for user {user_id}")
-            return states.END
+            return self.END
 
         payload = command_parts[1]
         if not payload.startswith("link_"):
             logger.warning(f"Invalid deeplink prefix for user {user_id}")
-            return states.END
+            return self.END
 
         webapp_user_id = payload[5:]  # Remove "link_" prefix
 
@@ -228,15 +232,15 @@ class OnboardingManager:
             self.user_manager.set_webapp_linked(user_id, webapp_user_id)
             await platform.clean_up_processing_message(processing_msg)
             await platform.reply_text(messages.MSG_WEBAPP_LINK_SUCCESS)
-            return states.END
+            return self.END
         
         logger.warning(f"Webapp linking failed for user {user_id}")
-        error_buttons = self._get_error_keyboard(states.WEBAPP_SHOWING_INSTRUCTIONS)
+        error_buttons = self._get_error_keyboard(self.WEBAPP_SHOWING_INSTRUCTIONS)
         await platform.reply_with_buttons(
             messages.MSG_WEBAPP_LINK_FAILED.format(webapp_base_url=config.WEBAPP_BASE_URL),
             error_buttons
         )
-        return states.WEBAPP_SHOWING_INSTRUCTIONS
+        return self.WEBAPP_SHOWING_INSTRUCTIONS
 
     async def handle_cancel(self, platform: PlatformAdapter) -> int:
         """
@@ -248,7 +252,7 @@ class OnboardingManager:
         user_id = platform.get_user_id()
         logger.info(f"User {user_id} cancelled onboarding")
         await platform.reply_text(messages.MSG_CANCEL_ONBOARDING_CONFIRM)
-        return states.END
+        return self.END
 
     async def handle_fallback(self, platform: PlatformAdapter, current_state: int) -> int:
         """
@@ -265,24 +269,24 @@ class OnboardingManager:
             - states.CHOOSING_LINK_METHOD if state is invalid
         """
         user_id = platform.get_user_id()
-        if current_state == states.END:
-            return states.END
+        if current_state == self.END:
+            return self.END
 
         logger.warning(f"Unhandled message in state {current_state} for user {user_id}")
         state_messages = {
-            states.GOOGLE_SHEET_AWAITING_URL: messages.MSG_SHEET_LINK_INVALID_URL,
-            states.WEBAPP_SHOWING_INSTRUCTIONS: messages.MSG_WEBAPP_LINK_FAILED,
-            states.CHOOSING_LINK_METHOD: messages.MSG_ONBOARDING_REQUIRED
+            self.GOOGLE_SHEET_AWAITING_URL: messages.MSG_SHEET_LINK_INVALID_URL,
+            self.WEBAPP_SHOWING_INSTRUCTIONS: messages.MSG_WEBAPP_LINK_FAILED,
+            self.CHOOSING_LINK_METHOD: messages.MSG_ONBOARDING_REQUIRED
         }
 
         message = state_messages.get(current_state, messages.MSG_ONBOARDING_ERROR)
         error_buttons = self._get_error_keyboard(current_state)
         
-        if current_state == states.WEBAPP_SHOWING_INSTRUCTIONS:
+        if current_state == self.WEBAPP_SHOWING_INSTRUCTIONS:
             message = message.format(webapp_base_url=config.WEBAPP_BASE_URL)
         
         await platform.reply_with_buttons(message, error_buttons)
-        return current_state or states.CHOOSING_LINK_METHOD
+        return current_state or self.CHOOSING_LINK_METHOD
 
     def _get_error_keyboard(self, current_state: int) -> List[CommandButton]:
         """
@@ -294,17 +298,17 @@ class OnboardingManager:
         Returns:
             List[CommandButton]: List of buttons appropriate for the current state
         """
-        if current_state == states.GOOGLE_SHEET_AWAITING_URL:
+        if current_state == self.GOOGLE_SHEET_AWAITING_URL:
             return [
                 CommandButton(messages.BTN_SWITCH_TO_WEBAPP, "switch_to_webapp"),
                 CommandButton(messages.BTN_CANCEL_ONBOARDING, "cancel_onboarding")
             ]
-        elif current_state == states.WEBAPP_SHOWING_INSTRUCTIONS:
+        elif current_state == self.WEBAPP_SHOWING_INSTRUCTIONS:
             return [
                 CommandButton(messages.BTN_SWITCH_TO_SHEET, "switch_to_sheet"),
                 CommandButton(messages.BTN_CANCEL_ONBOARDING, "cancel_onboarding")
             ]
-        elif current_state == states.CHOOSING_LINK_METHOD:
+        elif current_state == self.CHOOSING_LINK_METHOD:
             return [
                 CommandButton(messages.BTN_GOOGLE_SHEET, 'link_sheet'),
                 CommandButton(messages.BTN_WEBAPP, 'link_webapp'),
