@@ -5,7 +5,7 @@ from telegram.ext import ContextTypes
 from core import messages
 from integrations.spreadsheet.spreadsheet import SpreadsheetManager
 from core.user_data_manager import UserDataManager
-from api.telegram.handlers.message_sender import MessageSender
+from integrations.platforms.telegram_adapter import TelegramAdapter
 
 from config import config
 
@@ -14,15 +14,16 @@ logger = logging.getLogger(__name__)
 # Initialize managers
 user_manager = UserDataManager()
 spreadsheet_manager = SpreadsheetManager()
-message_sender = MessageSender()
 
 async def help_command(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     """Handler for /help command. Displays the help message."""
-    await message_sender.send_message(update, messages.MSG_HELP_TEXT)
+    platform = TelegramAdapter(update)
+    await platform.reply_text(messages.MSG_HELP_TEXT)
      
 async def show_info(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """Handler for /info command. Shows the user's current linking status."""
-    user_id = update.effective_user.id
+    platform = TelegramAdapter(update)
+    user_id = platform.get_user_id()
     status = user_manager.get_user_linking_status(user_id)
 
     # Prepare status and links
@@ -53,12 +54,13 @@ async def show_info(update: Update, context: ContextTypes.DEFAULT_TYPE):
             if not has_webapp:
                 info_message += "\n" + messages.MSG_INFO_LINK_WEBAPP_CMD
 
-    await message_sender.send_message(update, info_message, disable_preview=True)
+    await platform.reply_text(info_message, disable_web_page_preview=True)
 
 async def handle_unrecognized(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """Handles messages/commands that don't match any specific handler."""
-    user_id = update.effective_user.id
-    text = update.effective_message.text
+    platform = TelegramAdapter(update)
+    user_id = platform.get_user_id()
+    text = platform.get_message_text()
 
     # IMPORTANT: Check if the user is currently in the onboarding conversation
     # The ConversationHandler's fallback might already handle this.
@@ -72,15 +74,14 @@ async def handle_unrecognized(update: Update, context: ContextTypes.DEFAULT_TYPE
         # User is not in onboarding conversation. Check if they are onboarded.
         if not user_manager.is_onboarding_complete(user_id):
             logger.info(f"User {user_id} sent unrecognized message '{text}' and is not onboarded. Prompting setup.")
-            await message_sender.send_message(
-                update, 
+            await platform.reply_text(
                 messages.MSG_ONBOARDING_REQUIRED + "\n\n Use /start para comenzar! ✨"
             )
         else:
             logger.info(f"User {user_id} sent unrecognized message '{text}' and IS onboarded. Providing general help.")
             # User is onboarded but sent something the bot doesn't recognize as a command or data entry format
-            if update.effective_message.text.startswith('/'):
-                await message_sender.send_message(update, messages.MSG_UNKNOWN_COMMAND)
+            if text.startswith('/'):
+                await platform.reply_text(messages.MSG_UNKNOWN_COMMAND)
             else:
                 # Assume it's potentially a data entry attempt that failed parsing
-                await message_sender.send_message(update, messages.MSG_UNKNOWN_MESSAGE)
+                await platform.reply_text(messages.MSG_UNKNOWN_MESSAGE)
