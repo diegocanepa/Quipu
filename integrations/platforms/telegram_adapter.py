@@ -4,7 +4,6 @@ from core.interfaces.platform_adapter import PlatformAdapter
 from core.models.common.command_button import CommandButton
 from core.models.message import Message, Source
 
-
 class TelegramAdapter(PlatformAdapter):
     """
     Adapter for Telegram platform to handle message replies and button interactions.
