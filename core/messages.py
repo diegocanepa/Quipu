@@ -238,7 +238,7 @@ CANCEL_ONBOARDING_ANSWER = "❌ Configuración cancelada"
 BTN_GOOGLE_SHEET = "📊 Vincular Google Sheet"
 BTN_WEBAPP = "🌐 Vincular Cuenta Web"
 BTN_SWITCH_TO_WEBAPP = "🌐 Usar Cuenta Web"
-BTN_RETRY_WEBAPP_LINK = "🔄 Reintentar vinculación"
+BTN_RETRY = "🔄 Reintentar vinculación"
 BTN_SWITCH_TO_SHEET = "📊 Usar Google Sheet"
 BTN_CANCEL_ONBOARDING = "❌ Cancelar"
 

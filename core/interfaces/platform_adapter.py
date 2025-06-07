@@ -1,4 +1,5 @@
 from abc import ABC, abstractmethod
+from typing import List, Optional
 
 from core.models.common.command_button import CommandButton
 from core.models.message import Message
@@ -120,5 +121,15 @@ class PlatformAdapter(ABC):
             text (str): The text to be sent as a reply.
             buttons (list): A list of buttons to be included in the reply.
             **kwargs: Additional keyword arguments for platform-specific options.
+        """
+        pass
+
+    @abstractmethod
+    async def clean_up_processing_message(self, message):
+        """
+        Cleans up a processing message if the platform supports it.
+
+        Args:
+            message: The message to clean up.
         """
         pass
