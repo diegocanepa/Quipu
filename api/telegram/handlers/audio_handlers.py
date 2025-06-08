@@ -29,8 +29,8 @@ async def handle_audio_message(
     update: Update, context: ContextTypes.DEFAULT_TYPE
 ) -> None:
     """Handles incoming voice messages and calls the audio processor."""
-
-    telegram_adapter = TelegramAdapter(update)
+    user = context.user_data.get('current_user')
+    telegram_adapter = TelegramAdapter(update, user)
 
     if not is_feature_enabled(FeatureFlagsEnum.AUDIO_TRANSCRIPTION):
         await telegram_adapter.reply_text(
@@ -38,7 +38,7 @@ async def handle_audio_message(
         )
         return
 
-    user_id = telegram_adapter.get_user_id()
+    user_id = telegram_adapter.get_user().id
     file_id = telegram_adapter.get_voice_file_id()
     logger.info(f"Voice message received from user {user_id} with file ID: {file_id}")
 

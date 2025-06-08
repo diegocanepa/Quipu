@@ -6,7 +6,8 @@ from telegram.ext import (
     CommandHandler,
     CallbackQueryHandler,
 )
-from api.telegram.handlers import command_handlers, message_handlers, audio_handlers
+from api.telegram.handlers.command_handlers import command_handlers
+from api.telegram.handlers import message_handlers, audio_handlers
 from config import config
 from api.telegram.handlers.onboarding_handlers import onboarding_conv_handler
 
