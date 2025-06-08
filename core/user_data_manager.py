@@ -13,8 +13,13 @@ class UserDataManager:
         self._client = SupabaseManager()
         self._users_table = self._client.get_table_name("users")
 
-    def _get_user_from_supabase(self, telegram_user_id: int) -> Optional[User]:
-        """Internal method to get user data from Supabase."""
+    def get_user_by_telegram_user_id(self, telegram_user_id: int) -> Optional[User]:
+        """
+        Retrieves a user by their Telegram user ID.
+
+        Args:
+            telegram_user_id: The Telegram user ID (integer).
+        """
         try:
             response = self._client._client.table(self._users_table)\
                 .select("*")\
@@ -30,8 +35,54 @@ class UserDataManager:
         except Exception as e:
             logger.error(f"Error getting user data from Supabase: {e}")
             return None
+    
+    def get_user_by_whatsapp_user_id(self, whatsapp_user_id: int) -> Optional[User]:
+        """
+        Retrieves a user by their WhatsApp user ID.
 
-    def get_user_data(self, telegram_user_id: int) -> Optional[User]:
+        Args:
+            whatsapp_user_id: The WhatsApp user ID (integer).
+        """
+        try:
+            response = self._client._client.table(self._users_table)\
+                .select("*")\
+                .eq("whatsapp_user_id", whatsapp_user_id)\
+                .execute()
+            
+            if response and hasattr(response, 'data') and response.data:
+                logger.info(f"Found user {whatsapp_user_id} in Supabase.")
+                return User.from_dict(response.data[0])
+            
+            logger.info(f"No user found for ID: {whatsapp_user_id}")
+            return None
+        except Exception as e:
+            logger.error(f"Error getting user data from Supabase: {e}")
+            return None
+    
+    def get_user_by_id(self, user_id: str) -> Optional[User]:
+        """
+        Retrieves a user by their ID.
+
+        Args:
+            user_id: The user ID (string).
+        """
+        try:
+            response = self._client._client.table(self._users_table)\
+                .select("*")\
+                .eq("id", user_id)\
+                .execute()
+            
+            if response and hasattr(response, 'data') and response.data:
+                logger.info(f"Found user {user_id} in Supabase.")
+                return User.from_dict(response.data[0])
+            
+            logger.info(f"No user found for ID: {user_id}")
+            return None
+        except Exception as e:
+            logger.error(f"Error getting user data from Supabase: {e}")
+            return None
+
+    def get_user_data(self, user_id: str) -> Optional[User]:
         """
         Retrieves all data for a specific user.
 
@@ -41,9 +92,9 @@ class UserDataManager:
         Returns:
             A User instance containing the user's data, or None if the user is not found.
         """
-        return self._get_user_from_supabase(telegram_user_id)
+        return self.get_user_by_id(user_id)
 
-    def create_user(
+    def create_user_from_telegram(
         self,
         telegram_user_id: int,
         username: str | None,
@@ -80,24 +131,24 @@ class UserDataManager:
         else:
             logger.info(f"User {telegram_user_id} already exists. Skipping creation.")
 
-    def update_last_interaction_time(self, user_id: int) -> None:
+    def update_last_interaction_time(self, user_id: str) -> None:
         """Updates the last interaction timestamp for an existing user."""
         try:
             now_utc = datetime.now(timezone.utc)
             self._client._client.table(self._users_table)\
                 .update({"last_interaction_at": now_utc.isoformat()})\
-                .eq("telegram_user_id", user_id)\
+                .eq("id", user_id)\
                 .execute()
             logger.debug(f"Updated last interaction time for user ID: {user_id}")
         except Exception as e:
             logger.error(f"Error updating last interaction time: {e}")
 
-    def set_sheet_linked(self, user_id: int, sheet_id: str) -> None:
+    def set_sheet_linked(self, user_id: str, sheet_id: str) -> None:
         """Sets Google Sheet ID for a user."""
         try:
             self._client._client.table(self._users_table)\
                 .update({"google_sheet_id": sheet_id})\
-                .eq("telegram_user_id", user_id)\
+                .eq("id", user_id)\
                 .execute()
             logger.info(f"User {user_id} Google Sheet linked: {sheet_id}")
         except Exception as e:
@@ -112,7 +163,7 @@ class UserDataManager:
                     "webapp_user_id": webapp_user_id,
                     "last_interaction_at": now_utc.isoformat()
                 })\
-                .eq("telegram_user_id", user_id)\
+                .eq("id", user_id)\
                 .execute()
             logger.info(f"User {user_id} Webapp linked. User ID: {webapp_user_id}")
         except Exception as e:
