@@ -4,7 +4,7 @@ All messages are formatted in HTML for better presentation.
 """
 
 MSG_WELCOME = (
-    "¡Hola! 👋 Bienvenido/a a FinMate, tu copiloto financiero personal. Me alegra tenerte aquí "
+    "¡Hola! 👋 Bienvenido/a a Quipu, tu copiloto financiero personal. Me alegra tenerte aquí "
     "y estoy listo para ayudarte a tomar el control de tus finanzas. 💰\n\n"
     "¿Qué podemos hacer juntos?\n"
     "• Registrar tus <b>gastos diarios</b> de forma sencilla 🛒\n"
@@ -238,7 +238,7 @@ CANCEL_ONBOARDING_ANSWER = "❌ Configuración cancelada"
 BTN_GOOGLE_SHEET = "📊 Vincular Google Sheet"
 BTN_WEBAPP = "🌐 Vincular Cuenta Web"
 BTN_SWITCH_TO_WEBAPP = "🌐 Usar Cuenta Web"
-BTN_RETRY_WEBAPP_LINK = "🔄 Reintentar vinculación"
+BTN_RETRY = "🔄 Reintentar vinculación"
 BTN_SWITCH_TO_SHEET = "📊 Usar Google Sheet"
 BTN_CANCEL_ONBOARDING = "❌ Cancelar"
 
