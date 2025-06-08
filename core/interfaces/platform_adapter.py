@@ -53,7 +53,7 @@ class PlatformAdapter(ABC):
         pass
 
     @abstractmethod
-    def get_user_id(self) -> str:
+    def get_platform_user_id(self) -> str:
         """
         Returns the unique identifier of the user.
 

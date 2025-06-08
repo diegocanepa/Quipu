@@ -56,7 +56,7 @@ class TelegramAdapter(PlatformAdapter):
             Message: A Message object containing the message data.
         """
         message = Message(
-            user_id=self.get_user_id(),
+            user_id=self.user.id,
             message_id=self.get_message_id(),
             message_text=message_text if message_text is not None else self.get_message_text(),
             source=self.name
@@ -74,12 +74,12 @@ class TelegramAdapter(PlatformAdapter):
             return self.update.callback_query.data
         return self.update.message.text if self.update.message else ""
 
-    def get_user_id(self) -> str:
+    def get_platform_user_id(self) -> str:
         """
-        Returns the unique identifier of the user.
+        Returns the unique identifier of the user depennd on the platform.
 
         Returns:
-            str: The user ID.
+            str: The user ID on telegram.
         """
         return str(self.update.effective_user.id)
 
