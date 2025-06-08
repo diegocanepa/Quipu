@@ -59,11 +59,11 @@ def require_onboarding(handler_func):
             context.user_data['current_user'] = user
             
             # Check if user is onboarded
-            if user_manager.is_onboarding_complete(telegram_user.id):
-                logger.debug(f"User {telegram_user.id} is onboarded. Proceeding with handler {handler_func.__name__}.")
+            if user_manager.is_onboarding_complete(user.id):
+                logger.debug(f"User {user.id} is onboarded. Proceeding with handler {handler_func.__name__}.")
                 return await handler_func(update, context)
             else:
-                logger.info(f"User {telegram_user.id} is NOT onboarded. Blocking handler {handler_func.__name__}.")
+                logger.info(f"User {user.id} is NOT onboarded. Blocking handler {handler_func.__name__}.")
                 
                 keyboard = [
                     [InlineKeyboardButton(BTN_GOOGLE_SHEET, callback_data='link_sheet')],
@@ -82,13 +82,3 @@ def require_onboarding(handler_func):
             return
             
     return wrapper
-
-def create_user_if_not_exists(user_id, username, first_name, last_name):
-    user_exists = user_manager.get_user_data(user_id) is not None
-    if not user_exists:
-        user_manager.create_user_from_telegram(
-            telegram_user_id=user_id,
-            username=username,
-            first_name=first_name,
-            last_name=last_name
-        )
