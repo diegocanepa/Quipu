@@ -48,29 +48,16 @@ class OnboardingManager:
             - states.END if user is already onboarded
             - states.CHOOSING_LINK_METHOD if user needs to choose linking method
         """
-        user_id = platform.get_user_id()
         user = platform.get_user()
 
-        logger.info(f"Starting onboarding process for user {user_id}")
+        logger.info(f"Starting onboarding process for user {user.id}")
 
-        if self.user_manager.is_onboarding_complete(user_id):
-            logger.info(f"User {user_id} already onboarded, skipping process")
+        if self.user_manager.is_onboarding_complete(user.id):
+            logger.info(f"User {user.id} already onboarded, skipping process")
             await platform.reply_text(messages.MSG_WELCOME_BACK)
             return self.END
-
-        user_exists = self.user_manager.get_user_data(user_id) is not None
-        welcome_message = messages.MSG_WELCOME_BACK if user_exists else messages.MSG_WELCOME
-
-        if not user_exists:
-            logger.info(f"Creating new user {user_id}")
-            self.user_manager.create_user(
-                telegram_user_id=user_id,
-                username=user.username if hasattr(user, 'username') else None,
-                first_name=user.first_name if hasattr(user, 'first_name') else None,
-                last_name=user.last_name if hasattr(user, 'last_name') else None
-            )
-
-        await platform.reply_text(welcome_message)
+        
+        await platform.reply_text(messages.MSG_WELCOME)
 
         buttons = [
             CommandButton(messages.BTN_GOOGLE_SHEET, 'link_sheet'),
@@ -78,7 +65,7 @@ class OnboardingManager:
         ]
         await platform.reply_with_buttons(messages.MSG_PRESENT_OPTIONS, buttons)
 
-        logger.info(f"User {user_id} presented with linking options")
+        logger.info(f"User {user.id} presented with linking options")
         return self.CHOOSING_LINK_METHOD
 
     async def handle_sheet_choice(self, platform: PlatformAdapter) -> int:
@@ -95,11 +82,11 @@ class OnboardingManager:
             - states.END if sheet is already linked
             - states.GOOGLE_SHEET_AWAITING_URL to wait for sheet URL
         """
-        user_id = platform.get_user_id()
-        logger.info(f"User {user_id} chose Google Sheet linking")
+        user = platform.get_user()
+        logger.info(f"User {user.id} chose Google Sheet linking")
         
-        if self.user_manager.is_sheet_linked(user_id):
-            logger.info(f"User {user_id} already has sheet linked")
+        if self.user_manager.is_sheet_linked(user.id):
+            logger.info(f"User {user.id} already has sheet linked")
             await platform.reply_text(messages.MSG_SHEET_ALREADY_LINKED)
             return self.END
         
@@ -111,7 +98,7 @@ class OnboardingManager:
             messages.MSG_SHEET_STEP_2_SHARE.format(sa_email=config.GOOGLE_SERVICE_ACCOUNT_EMAIL)
         )
         
-        logger.info(f"User {user_id} shown sheet linking instructions")
+        logger.info(f"User {user.id} shown sheet linking instructions")
         return self.GOOGLE_SHEET_AWAITING_URL
 
     async def handle_sheet_url(self, platform: PlatformAdapter) -> int:
@@ -128,13 +115,13 @@ class OnboardingManager:
             - states.END if sheet is successfully linked
             - states.GOOGLE_SHEET_AWAITING_URL if URL is invalid or access is denied
         """
-        user_id = platform.get_user_id()
+        user = platform.get_user()
         sheet_url = platform.get_message_text().strip()
-        logger.info(f"Processing sheet URL for user {user_id}")
+        logger.info(f"Processing sheet URL for user {user.id}")
 
         sheet_id = self.spreadsheet_manager.get_sheet_id_from_url(sheet_url)
         if not sheet_id:
-            logger.warning(f"Invalid sheet URL provided by user {user_id}")
+            logger.warning(f"Invalid sheet URL provided by user {user.id}")
             error_buttons = self._get_error_keyboard(self.GOOGLE_SHEET_AWAITING_URL)
             await platform.reply_with_buttons(
                 messages.MSG_SHEET_LINK_INVALID_URL,
@@ -147,12 +134,12 @@ class OnboardingManager:
         await platform.clean_up_processing_message(processing_msg)
 
         if access_granted:
-            logger.info(f"Sheet access granted for user {user_id}")
-            self.user_manager.set_sheet_linked(user_id, sheet_id)
+            logger.info(f"Sheet access granted for user {user.id}")
+            self.user_manager.set_sheet_linked(user.id, sheet_id)
             await platform.reply_text(messages.MSG_SHEET_LINK_SUCCESS)
             return self.END
         
-        logger.warning(f"Sheet access denied for user {user_id}")
+        logger.warning(f"Sheet access denied for user {user.id}")
         error_buttons = self._get_error_keyboard(self.GOOGLE_SHEET_AWAITING_URL)
         await platform.reply_with_buttons(
             messages.MSG_SHEET_LINK_FAILED_ACCESS.format(sa_email=config.GOOGLE_SERVICE_ACCOUNT_EMAIL),
@@ -173,11 +160,11 @@ class OnboardingManager:
             - states.END if webapp is already linked
             - states.WEBAPP_SHOWING_INSTRUCTIONS to show linking instructions
         """
-        user_id = platform.get_user_id()
-        logger.info(f"User {user_id} chose Webapp linking")
+        user = platform.get_user()
+        logger.info(f"User {user.id} chose Webapp linking")
 
-        if self.user_manager.is_webapp_linked(user_id):
-            logger.info(f"User {user_id} already has webapp linked")
+        if self.user_manager.is_webapp_linked(user.id):
+            logger.info(f"User {user.id} already has webapp linked")
             await platform.reply_text(
                 messages.MSG_WEBAPP_ALREADY_LINKED.format(url_link=config.WEBAPP_BASE_URL)
             )
@@ -189,7 +176,7 @@ class OnboardingManager:
             disable_web_page_preview=True
         )
 
-        logger.info(f"User {user_id} shown webapp linking instructions")
+        logger.info(f"User {user.id} shown webapp linking instructions")
         return self.WEBAPP_SHOWING_INSTRUCTIONS
 
     async def handle_webapp_deeplink(self, platform: PlatformAdapter) -> int:
@@ -205,22 +192,22 @@ class OnboardingManager:
             - states.END if webapp is successfully linked or if deep link is invalid
             - states.WEBAPP_SHOWING_INSTRUCTIONS if linking fails
         """
-        user_id = platform.get_user_id()
+        user = platform.get_user()
         message_text = platform.get_message_text()
-        logger.info(f"Processing webapp deeplink for user {user_id}")
+        logger.info(f"Processing webapp deeplink for user {user.id}")
 
         if not message_text:
-            logger.warning(f"Empty message text in deeplink for user {user_id}")
+            logger.warning(f"Empty message text in deeplink for user {user.id}")
             return self.END
 
         command_parts = message_text.split(" ", 1)
         if len(command_parts) < 2:
-            logger.warning(f"Invalid deeplink format for user {user_id}")
+            logger.warning(f"Invalid deeplink format for user {user.id}")
             return self.END
 
         payload = command_parts[1]
         if not payload.startswith("link_"):
-            logger.warning(f"Invalid deeplink prefix for user {user_id}")
+            logger.warning(f"Invalid deeplink prefix for user {user.id}")
             return self.END
 
         webapp_user_id = payload[5:]  # Remove "link_" prefix
@@ -228,13 +215,13 @@ class OnboardingManager:
         processing_msg = await platform.reply_text(messages.MSG_WEBAPP_DEEPLINK_TRIGGERED)
 
         if webapp_user_id:
-            logger.info(f"Webapp linking successful for user {user_id}")
-            self.user_manager.set_webapp_linked(user_id, webapp_user_id)
+            logger.info(f"Webapp linking successful for user {user.id}")
+            self.user_manager.set_webapp_linked(user.id, webapp_user_id)
             await platform.clean_up_processing_message(processing_msg)
             await platform.reply_text(messages.MSG_WEBAPP_LINK_SUCCESS)
             return self.END
         
-        logger.warning(f"Webapp linking failed for user {user_id}")
+        logger.warning(f"Webapp linking failed for user {user.id}")
         error_buttons = self._get_error_keyboard(self.WEBAPP_SHOWING_INSTRUCTIONS)
         await platform.reply_with_buttons(
             messages.MSG_WEBAPP_LINK_FAILED.format(webapp_base_url=config.WEBAPP_BASE_URL),
@@ -249,8 +236,8 @@ class OnboardingManager:
         Returns:
             int: Always returns states.END to terminate the conversation
         """
-        user_id = platform.get_user_id()
-        logger.info(f"User {user_id} cancelled onboarding")
+        user = platform.get_user()
+        logger.info(f"User {user.id} cancelled onboarding")
         await platform.reply_text(messages.MSG_CANCEL_ONBOARDING_CONFIRM)
         return self.END
 
@@ -268,11 +255,11 @@ class OnboardingManager:
             - current_state if user should retry current step
             - states.CHOOSING_LINK_METHOD if state is invalid
         """
-        user_id = platform.get_user_id()
+        user = platform.get_user()
         if current_state == self.END:
             return self.END
 
-        logger.warning(f"Unhandled message in state {current_state} for user {user_id}")
+        logger.warning(f"Unhandled message in state {current_state} for user {user.id}")
         state_messages = {
             self.GOOGLE_SHEET_AWAITING_URL: messages.MSG_SHEET_LINK_INVALID_URL,
             self.WEBAPP_SHOWING_INSTRUCTIONS: messages.MSG_WEBAPP_LINK_FAILED,

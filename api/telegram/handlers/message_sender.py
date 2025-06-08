@@ -20,25 +20,6 @@ class MessageSender:
         """Helper to create inline keyboards consistently."""
         return InlineKeyboardMarkup([[InlineKeyboardButton(text, callback_data=data)] for text, data in buttons])
 
-    @staticmethod
-    def get_error_keyboard(current_state: str) -> InlineKeyboardMarkup:
-        """Helper to get appropriate error keyboard based on state."""
-        from core.onboarding import states  # Import here to avoid circular imports
-        
-        if current_state == states.GOOGLE_SHEET_AWAITING_URL:
-            buttons = [
-                (messages.BTN_SWITCH_TO_WEBAPP, 'switch_to_webapp'),
-                (messages.BTN_CANCEL_ONBOARDING, 'cancel_onboarding')
-            ]
-        elif current_state == states.WEBAPP_SHOWING_INSTRUCTIONS:
-            buttons = [
-                (messages.BTN_SWITCH_TO_SHEET, 'switch_to_sheet'),
-                (messages.BTN_CANCEL_ONBOARDING, 'cancel_onboarding')
-            ]
-        else:
-            buttons = [(messages.BTN_CANCEL_ONBOARDING, 'cancel_onboarding')]
-        
-        return MessageSender.create_keyboard(buttons)
 
     @staticmethod
     async def clean_up_processing_message(processing_msg) -> None:

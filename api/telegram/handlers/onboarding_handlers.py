@@ -12,6 +12,7 @@ from telegram.ext import (
 
 from integrations.platforms.telegram_adapter import TelegramAdapter
 from core.onboarding_manager import OnboardingManager
+from api.telegram.middlewere.get_user import get_user
 
 logger = logging.getLogger(__name__)
 
@@ -111,16 +112,20 @@ class StartHandler(BaseOnboardingHandler):
     initial state for new users.
     """
 
+    @get_user
     async def handle_start(self, update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
         """Handles the /start command without a payload."""
-        platform = TelegramAdapter(update)
+        user = context.user_data['current_user']
+        platform = TelegramAdapter(update, user)
         state = await self.onboarding_manager.start_onboarding(platform)
         self.state_manager.set_state(context, state)
         return self._end_conversation(state)
 
+    @get_user
     async def handle_deeplink_start(self, update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
         """Handles webapp deep linking."""
-        platform = TelegramAdapter(update)
+        user = context.user_data['current_user']
+        platform = TelegramAdapter(update, user)
         state = await self.onboarding_manager.handle_webapp_deeplink(platform)
         self.state_manager.set_state(context, state, state != self.onboarding_manager.END)
         return self._end_conversation(state)
@@ -138,17 +143,21 @@ class SheetHandler(BaseOnboardingHandler):
     It guides users through the process of linking their Google Sheet to the bot.
     """
 
+    @get_user
     async def handle_sheet_choice(self, update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
         """Handles the user choosing Google Sheet linking."""
-        platform = TelegramAdapter(update)
+        user = context.user_data['current_user']
+        platform = TelegramAdapter(update, user)
         await self.answer_callback_query(update)
         state = await self.onboarding_manager.handle_sheet_choice(platform)
         self.state_manager.set_state(context, state)
         return self._end_conversation(state)
 
+    @get_user
     async def handle_sheet_url(self, update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
         """Handles the user sending a sheet URL."""
-        platform = TelegramAdapter(update)
+        user = context.user_data['current_user']
+        platform = TelegramAdapter(update, user)
         state = await self.onboarding_manager.handle_sheet_url(platform)
         self.state_manager.set_state(context, state)
         return self._end_conversation(state)
@@ -166,9 +175,11 @@ class WebappHandler(BaseOnboardingHandler):
     It guides users through the process of linking their webapp account to the bot.
     """
 
+    @get_user
     async def handle_webapp_choice(self, update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
         """Handles the user choosing Webapp linking."""
-        platform = TelegramAdapter(update)
+        user = context.user_data['current_user']
+        platform = TelegramAdapter(update, user)
         await self.answer_callback_query(update)
         state = await self.onboarding_manager.handle_webapp_choice(platform)
         self.state_manager.set_state(context, state)
@@ -188,17 +199,21 @@ class GeneralHandler(BaseOnboardingHandler):
     process termination.
     """
 
+    @get_user
     async def handle_cancel(self, update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
         """Handles onboarding cancellation."""
-        platform = TelegramAdapter(update)
+        user = context.user_data['current_user']
+        platform = TelegramAdapter(update, user)
         await self.answer_callback_query(update)
         state = await self.onboarding_manager.handle_cancel(platform)
         self.state_manager.set_state(context, state, False)
         return self._end_conversation(state)
 
+    @get_user
     async def handle_fallback(self, update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
         """Handles unrecognized messages during onboarding."""
-        platform = TelegramAdapter(update)
+        user = context.user_data['current_user']
+        platform = TelegramAdapter(update, user)
         current_state = self.state_manager.get_state(context).state
         state = await self.onboarding_manager.handle_fallback(platform, current_state)
         self.state_manager.set_state(context, state, state != self.onboarding_manager.END)

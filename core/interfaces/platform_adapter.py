@@ -3,6 +3,7 @@ from typing import List
 
 from core.models.common.command_button import CommandButton
 from core.models.message import Message
+from core.models.user import User
 
 class PlatformAdapter(ABC):
     """
@@ -62,7 +63,7 @@ class PlatformAdapter(ABC):
         pass
 
     @abstractmethod
-    def get_user(self):
+    def get_user(self) -> User:
         """
         Returns the user object from the update.
 

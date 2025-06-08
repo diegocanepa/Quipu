@@ -3,6 +3,7 @@ from telegram import InlineKeyboardButton, InlineKeyboardMarkup
 from core.interfaces.platform_adapter import PlatformAdapter
 from core.models.common.command_button import CommandButton
 from core.models.message import Message, Source
+from core.models.user import User
 
 
 class TelegramAdapter(PlatformAdapter):
@@ -11,14 +12,16 @@ class TelegramAdapter(PlatformAdapter):
     Implements the PlatformAdapter interface.
     """
 
-    def __init__(self, update):
+    def __init__(self, update, user: User):
         """
         Initializes the TelegramAdapter with the given update.
 
         Args:
             update: The Telegram Update object containing the message and context.
+            user: The User object containing the user data.
         """
         self.update = update
+        self.user = user
         self.name = Source.TELEGRAM
         
     def get_platform_name(self) -> str:
@@ -99,14 +102,14 @@ class TelegramAdapter(PlatformAdapter):
         """
         return str(self.update.effective_user.id)
 
-    def get_user(self):
+    def get_user(self) -> User:
         """
         Returns the user object from the update.
 
         Returns:
             The user object or None if not present.
         """
-        return self.update.effective_user if self.update.effective_user else None
+        return self.user
 
     def get_voice_message(self):
         """
