@@ -1,29 +1,33 @@
 import logging
 from functools import wraps
-from telegram import InlineKeyboardButton, InlineKeyboardMarkup, Update
-from core.user_data_manager import UserDataManager
+from telegram import Update
 from telegram.ext import ContextTypes
-from core.messages import MSG_ONBOARDING_REQUIRED, BTN_GOOGLE_SHEET, BTN_WEBAPP, UNEXPECTED_ERROR
+from core.user_data_manager import UserDataManager
 from core.models.user import User
+from core.messages import UNEXPECTED_ERROR
 
 logger = logging.getLogger(__name__)
 
 # Initialize UserDataManager
 user_manager = UserDataManager()
 
-def require_onboarding(handler_func):
+def get_user(handler_func):
     """
-    Decorator to check if user is onboarded before running handler.
-    Also stores the user object in context.user_data['current_user'].
+    Decorator to extract user information from Telegram updates and get the full User object from database.
+    This middleware can be used with class methods to get user data.
     
     Usage:
-    @require_onboarding
-    async def handle_something(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    @get_user
+    async def handle_something(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
         user: User = context.user_data.get('current_user')  # Access user from context
         # Use user data...
+        if user.is_sheet_linked:
+            # Do something with sheet data
+        if user.is_webapp_linked:
+            # Do something with webapp data
     """
     @wraps(handler_func)
-    async def wrapper(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    async def wrapper(self, update: Update, context: ContextTypes.DEFAULT_TYPE, *args, **kwargs):
         telegram_user = update.effective_user
         
         if not telegram_user:
@@ -55,30 +59,18 @@ def require_onboarding(handler_func):
                 
                 logger.info(f"Successfully created new user for telegram_id: {telegram_user.id}")
             
+            # Update last interaction time
+            user_manager.update_last_interaction_time(user.id)
+                
             # Store full user object in context for easy access
             context.user_data['current_user'] = user
             
-            # Check if user is onboarded
-            if user_manager.is_onboarding_complete(user.id):
-                logger.debug(f"User {user.id} is onboarded. Proceeding with handler {handler_func.__name__}.")
-                return await handler_func(update, context)
-            else:
-                logger.info(f"User {user.id} is NOT onboarded. Blocking handler {handler_func.__name__}.")
-                
-                keyboard = [
-                    [InlineKeyboardButton(BTN_GOOGLE_SHEET, callback_data='link_sheet')],
-                    [InlineKeyboardButton(BTN_WEBAPP, callback_data='link_webapp')]
-                ]
-                await update.effective_message.reply_text(
-                    MSG_ONBOARDING_REQUIRED, 
-                    parse_mode='HTML', 
-                    reply_markup=InlineKeyboardMarkup(keyboard)
-                )
-                return
-                
+            logger.debug(f"User data loaded for user {telegram_user.id}")
+            return await handler_func(self, update, context, *args, **kwargs)
+            
         except Exception as e:
-            logger.error(f"Error in require_onboarding middleware: {str(e)}")
+            logger.error(f"Error in get_user middleware: {str(e)}")
             await update.effective_message.reply_text(UNEXPECTED_ERROR)
             return
-            
-    return wrapper
+        
+    return wrapper 

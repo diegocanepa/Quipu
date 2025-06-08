@@ -3,6 +3,7 @@ from telegram import InlineKeyboardButton, InlineKeyboardMarkup
 from core.interfaces.platform_adapter import PlatformAdapter
 from core.models.common.command_button import CommandButton
 from core.models.message import Message, Source
+from core.models.user import User
 
 
 class TelegramAdapter(PlatformAdapter):
@@ -11,14 +12,16 @@ class TelegramAdapter(PlatformAdapter):
     Implements the PlatformAdapter interface.
     """
 
-    def __init__(self, update):
+    def __init__(self, update, user: User):
         """
         Initializes the TelegramAdapter with the given update.
 
         Args:
             update: The Telegram Update object containing the message and context.
+            user: The User object containing the user data.
         """
         self.update = update
+        self.user = user
         self.name = Source.TELEGRAM
         
     def get_platform_name(self) -> str:
@@ -53,7 +56,7 @@ class TelegramAdapter(PlatformAdapter):
             Message: A Message object containing the message data.
         """
         message = Message(
-            user_id=self.get_user_id(),
+            user_id=self.user.id,
             message_id=self.get_message_id(),
             message_text=message_text if message_text is not None else self.get_message_text(),
             source=self.name
@@ -71,23 +74,23 @@ class TelegramAdapter(PlatformAdapter):
             return self.update.callback_query.data
         return self.update.message.text if self.update.message else ""
 
-    def get_user_id(self) -> str:
+    def get_platform_user_id(self) -> str:
         """
-        Returns the unique identifier of the user.
+        Returns the unique identifier of the user depennd on the platform.
 
         Returns:
-            str: The user ID.
+            str: The user ID on telegram.
         """
         return str(self.update.effective_user.id)
 
-    def get_user(self):
+    def get_user(self) -> User:
         """
         Returns the user object from the update.
 
         Returns:
             The user object or None if not present.
         """
-        return self.update.effective_user if self.update.effective_user else None
+        return self.user
 
     def get_voice_message(self):
         """

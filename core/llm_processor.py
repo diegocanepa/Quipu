@@ -65,7 +65,6 @@ class LLMProcessor:
             A list of ProcessingResult objects, each containing the processed data
             and the status of saving to spreadsheet and database.
         """
-        return None
         logger.info(f"Processing content: '{content}'")
         processing_results: List[ProcessingResult] = []
         current_datetime = datetime.now(pytz.timezone("America/Argentina/Buenos_Aires"))

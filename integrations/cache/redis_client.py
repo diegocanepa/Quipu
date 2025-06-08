@@ -55,7 +55,7 @@ class RedisCacheClient(CacheService):
             logger.error(f"Unexpected error connecting to Redis: {e}")
             self.redis_client = None
 
-    def get(self, key: str) -> Optional[Any]:
+    def get(self, key: str) -> Any:
         """
         Retrieves a value from the cache.
 
