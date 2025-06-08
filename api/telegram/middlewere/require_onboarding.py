@@ -18,12 +18,12 @@ def require_onboarding(handler_func):
     
     Usage:
     @require_onboarding
-    async def handle_something(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
+    async def handle_something(update: Update, context: ContextTypes.DEFAULT_TYPE):
         user: User = context.user_data.get('current_user')  # Access user from context
         # Use user data...
     """
     @wraps(handler_func)
-    async def wrapper(self, update: Update, context: ContextTypes.DEFAULT_TYPE, *args, **kwargs):
+    async def wrapper(update: Update, context: ContextTypes.DEFAULT_TYPE):
         telegram_user = update.effective_user
         
         if not telegram_user:
@@ -61,7 +61,7 @@ def require_onboarding(handler_func):
             # Check if user is onboarded
             if user_manager.is_onboarding_complete(telegram_user.id):
                 logger.debug(f"User {telegram_user.id} is onboarded. Proceeding with handler {handler_func.__name__}.")
-                return await handler_func(self, update, context, *args, **kwargs)
+                return await handler_func(update, context)
             else:
                 logger.info(f"User {telegram_user.id} is NOT onboarded. Blocking handler {handler_func.__name__}.")
                 
