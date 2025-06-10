@@ -1,8 +1,9 @@
-from typing import List
+from typing import List, Dict, Optional
 from core.interfaces.platform_adapter import PlatformAdapter
 from core.models.common.command_button import CommandButton
 from core.models.message import Message, Source
-from .whatsapp_api_client import WhatsAppAPIClient
+from core.models.user import User
+from integrations.whatsapp.whatsapp_client import whatsapp_api_client
 
 class WhatsAppAdapter(PlatformAdapter):
     """
@@ -10,16 +11,16 @@ class WhatsAppAdapter(PlatformAdapter):
     Implements the PlatformAdapter interface.
     """
 
-    def __init__(self, webhook_data: dict, api_client: WhatsAppAPIClient):
+    def __init__(self, webhook_data: dict, api_client=None):
         """
         Initializes the WhatsAppAdapter with the given webhook data.
 
         Args:
             webhook_data (dict): The webhook data containing the message and context.
-            api_client (WhatsAppAPIClient): The WhatsApp API client instance.
+            api_client: Optional WhatsApp API client instance. If not provided, uses the default client.
         """
         self.webhook_data = webhook_data
-        self.api_client = api_client
+        self.api_client = api_client if api_client else whatsapp_api_client
         self.name = Source.WHATSAPP
         self._extract_message_data()
 
@@ -113,13 +114,12 @@ class WhatsAppAdapter(PlatformAdapter):
         """
         return None
 
-    def reply_text(self, text: str, **kwargs):
+    def reply_text(self, text: str) -> None:
         """
-        Sends a text reply to the user.
-
+        Send a text message.
+        
         Args:
-            text (str): The text to be sent as a reply.
-            **kwargs: Additional keyword arguments for platform-specific options.
+            text: The message text
         """
         phone_number_id = self.metadata.get("phone_number_id")
         to = self.get_user_id()
@@ -127,12 +127,11 @@ class WhatsAppAdapter(PlatformAdapter):
 
     def reply_with_buttons(self, text: str, buttons: List[CommandButton], **kwargs):
         """
-        Sends an interactive message with buttons to the user.
-
+        Send a message with buttons.
+        
         Args:
-            text (str): The text to be sent as a reply.
-            buttons (list[CommandButton]): A list of CommandButton objects.
-            **kwargs: Additional keyword arguments for platform-specific options.
+            text: The message text
+            buttons: List of buttons to include
         """
         phone_number_id = self.metadata.get("phone_number_id")
         to = self.get_user_id()
@@ -159,3 +158,13 @@ class WhatsAppAdapter(PlatformAdapter):
         This is a no-op implementation.
         """
         pass
+
+    def get_platform_user_id(self) -> str:
+        """
+        Returns the unique identifier of the user in the WhatsApp platform.
+        This is the phone number of the user.
+
+        Returns:
+            str: The WhatsApp user ID (phone number)
+        """
+        return self.messages.get("from", "")

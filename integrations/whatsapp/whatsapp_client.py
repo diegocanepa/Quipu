@@ -1,11 +1,12 @@
 import requests
 import logging
+from config import config
 
 logger = logging.getLogger(__name__)
 
 class WhatsAppAPIClient:
-    def __init__(self, access_token: str):
-        self.access_token = access_token
+    def __init__(self):
+        self.access_token = "EAARqE6wSFykBO91FsAlGjhPIoW395cyCJi0adZBgRX1ZAGOYZCexVfIxg499GPZAxLu6LVzRbueUYHgjUiGlBu9Dsa2A9l5mfHWPXJ2Rk2yEFWLvL71xdbpZB4hLXASovdoVd5B1NPcswnLsZAAqFsu84Sf7OuKGUMqmmuv4ocrUVZBfjHZAkurlsAnrChySCe6m6eyuUI4HZA1LXLRAGFthy6JAXfc1GthiK"
         self.base_url = "https://graph.facebook.com/v18.0"
 
     def send_message(self, phone_number_id: str, to: str, message: str):
@@ -93,3 +94,6 @@ class WhatsAppAPIClient:
         if raw_number.startswith("549"):
             return "54" + raw_number[3:]
         return raw_number 
+    
+    
+whatsapp_api_client = WhatsAppAPIClient()

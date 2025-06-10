@@ -93,6 +93,44 @@ class UserDataManager:
             A User instance containing the user's data, or None if the user is not found.
         """
         return self.get_user_by_id(user_id)
+    
+    def create_user_from_whatsapp(self, whatsapp_user_id: str) -> Optional[User]:
+        """
+        Creates a new user from WhatsApp data.
+
+        Args:
+            whatsapp_user_id: The WhatsApp user ID (phone number).
+
+        Returns:
+            Optional[User]: The created user if successful, None otherwise.
+        """
+        try:
+            # Check if user already exists
+            existing_user = self.get_user_by_whatsapp_user_id(whatsapp_user_id)
+            if existing_user:
+                logger.info(f"User with WhatsApp ID {whatsapp_user_id} already exists.")
+                return existing_user
+
+            # Create new user
+            now_utc = datetime.now(timezone.utc)
+            new_user = User(
+                id=uuid.uuid4(),
+                created_at=now_utc,
+                last_interaction_at=now_utc,
+                whatsapp_user_id=whatsapp_user_id
+            )
+            
+            result = self._client.insert(self._users_table, new_user.to_dict())
+            if result:
+                logger.info(f"New WhatsApp user {whatsapp_user_id} created in Supabase.")
+                return new_user
+            else:
+                logger.error(f"Error creating WhatsApp user {whatsapp_user_id} in Supabase.")
+                return None
+                
+        except Exception as e:
+            logger.error(f"Error creating WhatsApp user: {e}")
+            return None
 
     def create_user_from_telegram(
         self,

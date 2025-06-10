@@ -46,8 +46,7 @@ async def confirm_save(update: Update, context: ContextTypes.DEFAULT_TYPE) -> in
     user = context.user_data.get('current_user')
     telegram_adapter = TelegramAdapter(update, user)
     query = telegram_adapter.get_callback_query()
-    user = telegram_adapter.get_user()
-    
+
     logger.info("Processing confirm save callback", extra={
         "user_id": user.id,
         "callback_data": query.data,
