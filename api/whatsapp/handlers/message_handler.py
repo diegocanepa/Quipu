@@ -60,7 +60,7 @@ class WhatsAppMessageHandler:
             whatsapp_user_id = platform.get_platform_user_id()
             
             # Try to find user by linking code
-            user = self.user_manager.get_user_by_linking_code(linking_code)
+            user = self.user_manager.create_user_from_whatsapp(whatsapp_user_id=whatsapp_user_id)
             
             if not user:
                 platform.reply_text("❌ Código de vinculación inválido. Por favor, verifica el código e intenta nuevamente.")
