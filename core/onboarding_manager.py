@@ -50,10 +50,10 @@ class OnboardingManager:
         """
         user = platform.get_user()
 
-        logger.info(f"Starting onboarding process for user {user.id}")
+        logger.info(f"Starting onboarding process for Telegram user {user.id}")
 
         if self.user_manager.is_onboarding_complete(user.id):
-            logger.info(f"User {user.id} already onboarded, skipping process")
+            logger.info(f"Telegram user {user.id} already onboarded, skipping process")
             await platform.reply_text(messages.MSG_WELCOME_BACK)
             return self.END
         
@@ -65,7 +65,7 @@ class OnboardingManager:
         ]
         await platform.reply_with_buttons(messages.MSG_PRESENT_OPTIONS, buttons)
 
-        logger.info(f"User {user.id} presented with linking options")
+        logger.info(f"Telegram user {user.id} presented with linking options")
         return self.CHOOSING_LINK_METHOD
 
     async def handle_sheet_choice(self, platform: PlatformAdapter) -> int:
@@ -83,10 +83,10 @@ class OnboardingManager:
             - states.GOOGLE_SHEET_AWAITING_URL to wait for sheet URL
         """
         user = platform.get_user()
-        logger.info(f"User {user.id} chose Google Sheet linking")
+        logger.info(f"Telegram user {user.id} chose Google Sheet linking")
         
         if self.user_manager.is_sheet_linked(user.id):
-            logger.info(f"User {user.id} already has sheet linked")
+            logger.info(f"Telegram user {user.id} already has sheet linked")
             await platform.reply_text(messages.MSG_SHEET_ALREADY_LINKED)
             return self.END
         
@@ -98,7 +98,7 @@ class OnboardingManager:
             messages.MSG_SHEET_STEP_2_SHARE.format(sa_email=config.GOOGLE_SERVICE_ACCOUNT_EMAIL)
         )
         
-        logger.info(f"User {user.id} shown sheet linking instructions")
+        logger.info(f"Telegram user {user.id} shown sheet linking instructions")
         return self.GOOGLE_SHEET_AWAITING_URL
 
     async def handle_sheet_url(self, platform: PlatformAdapter) -> int:
@@ -117,11 +117,11 @@ class OnboardingManager:
         """
         user = platform.get_user()
         sheet_url = platform.get_message_text().strip()
-        logger.info(f"Processing sheet URL for user {user.id}")
+        logger.info(f"Processing sheet URL for Telegram user {user.id}")
 
         sheet_id = self.spreadsheet_manager.get_sheet_id_from_url(sheet_url)
         if not sheet_id:
-            logger.warning(f"Invalid sheet URL provided by user {user.id}")
+            logger.warning(f"Invalid sheet URL provided by Telegram user {user.id}")
             error_buttons = self._get_error_keyboard(self.GOOGLE_SHEET_AWAITING_URL)
             await platform.reply_with_buttons(
                 messages.MSG_SHEET_LINK_INVALID_URL,
@@ -134,12 +134,12 @@ class OnboardingManager:
         await platform.clean_up_processing_message(processing_msg)
 
         if access_granted:
-            logger.info(f"Sheet access granted for user {user.id}")
+            logger.info(f"Sheet access granted for Telegram user {user.id}")
             self.user_manager.set_sheet_linked(user.id, sheet_id)
             await platform.reply_text(messages.MSG_SHEET_LINK_SUCCESS)
             return self.END
         
-        logger.warning(f"Sheet access denied for user {user.id}")
+        logger.warning(f"Sheet access denied for Telegram user {user.id}")
         error_buttons = self._get_error_keyboard(self.GOOGLE_SHEET_AWAITING_URL)
         await platform.reply_with_buttons(
             messages.MSG_SHEET_LINK_FAILED_ACCESS.format(sa_email=config.GOOGLE_SERVICE_ACCOUNT_EMAIL),
@@ -161,10 +161,10 @@ class OnboardingManager:
             - states.WEBAPP_SHOWING_INSTRUCTIONS to show linking instructions
         """
         user = platform.get_user()
-        logger.info(f"User {user.id} chose Webapp linking")
+        logger.info(f"Telegram user {user.id} chose Webapp linking")
 
         if self.user_manager.is_webapp_linked(user.id):
-            logger.info(f"User {user.id} already has webapp linked")
+            logger.info(f"Telegram user {user.id} already has webapp linked")
             await platform.reply_text(
                 messages.MSG_WEBAPP_ALREADY_LINKED.format(url_link=config.WEBAPP_BASE_URL)
             )
@@ -176,7 +176,7 @@ class OnboardingManager:
             disable_web_page_preview=True
         )
 
-        logger.info(f"User {user.id} shown webapp linking instructions")
+        logger.info(f"Telegram user {user.id} shown webapp linking instructions")
         return self.WEBAPP_SHOWING_INSTRUCTIONS
 
     async def handle_webapp_deeplink(self, platform: PlatformAdapter) -> int:
@@ -192,22 +192,22 @@ class OnboardingManager:
             - states.END if webapp is successfully linked or if deep link is invalid
             - states.WEBAPP_SHOWING_INSTRUCTIONS if linking fails
         """
-        user = platform.get_user()
+        telegram_user_id = platform.get_platform_user_id()
         message_text = platform.get_message_text()
-        logger.info(f"Processing webapp deeplink for user {user.id}")
+        logger.info(f"Processing webapp deeplink for Telegram user {telegram_user_id}")
 
         if not message_text:
-            logger.warning(f"Empty message text in deeplink for user {user.id}")
+            logger.warning(f"Empty message text in deeplink for Telegram user {telegram_user_id}")
             return self.END
 
         command_parts = message_text.split(" ", 1)
         if len(command_parts) < 2:
-            logger.warning(f"Invalid deeplink format for user {user.id}")
+            logger.warning(f"Invalid deeplink format for Telegram user {telegram_user_id}")
             return self.END
 
         payload = command_parts[1]
         if not payload.startswith("link_"):
-            logger.warning(f"Invalid deeplink prefix for user {user.id}")
+            logger.warning(f"Invalid deeplink prefix for Telegram user {telegram_user_id}")
             return self.END
 
         webapp_user_id = payload[5:]  # Remove "link_" prefix
@@ -215,13 +215,15 @@ class OnboardingManager:
         processing_msg = await platform.reply_text(messages.MSG_WEBAPP_DEEPLINK_TRIGGERED)
 
         if webapp_user_id:
-            logger.info(f"Webapp linking successful for user {user.id}")
-            self.user_manager.set_webapp_linked(user.id, webapp_user_id)
-            await platform.clean_up_processing_message(processing_msg)
-            await platform.reply_text(messages.MSG_WEBAPP_LINK_SUCCESS)
-            return self.END
+            user = self.user_manager.create_user(id=webapp_user_id, webapp_user_id=webapp_user_id, telegram_user_id=telegram_user_id)
+            
+            if user:
+                logger.info(f"Webapp linking successful for Telegram user {telegram_user_id}, user_id: {user.id}")
+                await platform.clean_up_processing_message(processing_msg)
+                await platform.reply_text(messages.MSG_WEBAPP_LINK_SUCCESS)
+                return self.END
         
-        logger.warning(f"Webapp linking failed for user {user.id}")
+        logger.warning(f"Webapp linking failed for Telegram user {telegram_user_id}")
         error_buttons = self._get_error_keyboard(self.WEBAPP_SHOWING_INSTRUCTIONS)
         await platform.reply_with_buttons(
             messages.MSG_WEBAPP_LINK_FAILED.format(webapp_base_url=config.WEBAPP_BASE_URL),
@@ -237,7 +239,7 @@ class OnboardingManager:
             int: Always returns states.END to terminate the conversation
         """
         user = platform.get_user()
-        logger.info(f"User {user.id} cancelled onboarding")
+        logger.info(f"Telegram user {user.id} cancelled onboarding")
         await platform.reply_text(messages.MSG_CANCEL_ONBOARDING_CONFIRM)
         return self.END
 
@@ -259,7 +261,7 @@ class OnboardingManager:
         if current_state == self.END:
             return self.END
 
-        logger.warning(f"Unhandled message in state {current_state} for user {user.id}")
+        logger.warning(f"Unhandled message in state {current_state} for Telegram user {user.id}")
         state_messages = {
             self.GOOGLE_SHEET_AWAITING_URL: messages.MSG_SHEET_LINK_INVALID_URL,
             self.WEBAPP_SHOWING_INSTRUCTIONS: messages.MSG_WEBAPP_LINK_FAILED,
