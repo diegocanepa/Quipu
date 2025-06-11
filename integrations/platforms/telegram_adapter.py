@@ -11,7 +11,7 @@ class TelegramAdapter(PlatformAdapter):
     Implements the PlatformAdapter interface.
     """
 
-    def __init__(self, update, user: User):
+    def __init__(self, update, user: User=None):
         """
         Initializes the TelegramAdapter with the given update.
 

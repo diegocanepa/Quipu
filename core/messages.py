@@ -195,7 +195,6 @@ MSG_HELP_TEXT = (
     "• /info – Ver estado de cuenta\n"
     "• /linksheet – Vincular Google Sheet\n"
     "• /linkweb – Vincular Cuenta Web\n"
-    "• /cancel – Cancelar operación actual\n"
     "• /help – Ver esta ayuda\n\n"
     "<i>Para registrar movimientos, escribe:</i>\n"
     "<code>gasto 100 cafe</code> o <code>ingreso 500 sueldo</code>"
@@ -277,3 +276,17 @@ SAVE_SUCCESS = "✅ Guardado correctamente"
 # Button texts
 CONFIRM_BUTTON = "✅ Confirmar"
 CANCEL_BUTTON = "❌ Cancelar"
+
+MSG_WEBAPP_NOT_REGISTERED_HTML = (
+    "🚫 <b>¡Aún no creaste una cuenta en nuestra página web!</b>\n\n"
+    "Para comenzar a utilizar la plataforma web, primero necesitás crear tu cuenta.\n\n"
+    "<b>🧾 Pasos:</b>\n"
+    "1. Ingresá aquí ➡️ <a href=\"{webapp_signup_url}\">Crear cuenta en Quipu</a>\n"
+    "2. Completá el registro en pocos segundos\n"
+    "3. Desde tu perfil, hacé clic en \"<b>Vincular con Telegram</b>\" para conectar tu cuenta\n\n"
+    "Una vez vinculada, vas a poder gestionar tus finanzas fácilmente desde Telegram 📱✨"
+)
+
+# Voice Processing Messages
+MSG_VOICE_NO_TEXT = "❌ <b>No pude entender el mensaje de voz</b>\n\nPor favor, intentá enviar el mensaje nuevamente o escribí el texto directamente 📝"
+MSG_VOICE_PROCESSING_ERROR = "❌ <b>Hubo un error al procesar el mensaje de voz</b>\n\nPor favor, intentá nuevamente en unos minutos 🎙️"
