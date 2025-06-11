@@ -7,9 +7,10 @@ from telegram.ext import (
     CallbackQueryHandler,
 )
 from api.telegram.handlers.command_handlers import command_handlers
-from api.telegram.handlers import message_handlers, audio_handlers
-from config import config
+from api.telegram.handlers.message_handlers import message_handlers
+from api.telegram.handlers.audio_handlers import audio_handlers
 from api.telegram.handlers.onboarding_handlers import onboarding_conv_handler
+from config import config
 
 logger = logging.getLogger(__name__)
 

@@ -14,61 +14,68 @@ from core.feature_flag import (
 )
 from core.message_processor import MessageProcessor
 from integrations.platforms.telegram_adapter import TelegramAdapter
+from core.messages import MSG_VOICE_NO_TEXT, MSG_VOICE_PROCESSING_ERROR
 
 logger = logging.getLogger(__name__)
 
-# Initialize the AudioProcessor when your bot application starts
-audio_processor = AudioProcessor()
-message_processor = MessageProcessor()
+class AudioHandlers:
+    """
+    Handles all audio-related operations for the Telegram bot.
+    This includes processing voice messages and managing audio transcriptions.
+    """
 
-# TODO Decouple between audio_processor and telegram_audio_handler
+    def __init__(self):
+        """Initialize the audio handlers with required processors."""
+        self.audio_processor = AudioProcessor()
+        self.message_processor = MessageProcessor()
 
-
-@require_onboarding
-async def handle_audio_message(
-    update: Update, context: ContextTypes.DEFAULT_TYPE
-) -> None:
-    """Handles incoming voice messages and calls the audio processor."""
-    user = context.user_data.get('current_user')
-    telegram_adapter = TelegramAdapter(update, user)
-
-    if not is_feature_enabled(FeatureFlagsEnum.AUDIO_TRANSCRIPTION):
-        await telegram_adapter.reply_text(
-            get_disabled_message(FeatureFlagsEnum.AUDIO_TRANSCRIPTION)
-        )
-        return
-
-    user_id = telegram_adapter.get_user().id
-    file_id = telegram_adapter.get_voice_file_id()
-    logger.info(f"Voice message received from user {user_id} with file ID: {file_id}")
-
-    try:
-        # Get the File object from Telegram
-        file = await context.bot.get_file(file_id)
-        filename = f"voice_{user_id}.ogg"
-
-        # Download directly to local disk (avoiding requests and URL)
-        await file.download_to_drive(custom_path=filename)
-
-        # Process audio
-        transcription_result = await audio_processor.process_audio(filename)
-        os.remove(filename)
+    @require_onboarding
+    async def handle_audio_message(
+        self, update: Update, context: ContextTypes.DEFAULT_TYPE
+    ) -> None:
+        """
+        Handles incoming voice messages and calls the audio processor.
         
-        message = telegram_adapter.map_to_message(message_text=transcription_result)
+        Args:
+            update (Update): The Telegram update object containing the voice message
+            context (ContextTypes.DEFAULT_TYPE): The context object for the conversation
+        """
+        user = context.user_data.get('current_user')
+        telegram_adapter = TelegramAdapter(update, user)
 
-        if transcription_result:
-            await message_processor.process_and_respond(
-                user_message=message,
-                platform=telegram_adapter,
-                context=context,
-            )
-        else:
+        if not is_feature_enabled(FeatureFlagsEnum.AUDIO_TRANSCRIPTION):
             await telegram_adapter.reply_text(
-                "Voice processed, but no transcription text was found in the result."
+                get_disabled_message(FeatureFlagsEnum.AUDIO_TRANSCRIPTION)
             )
+            return
 
-    except Exception as e:
-        logger.error(f"Error handling voice message: {e}")
-        await telegram_adapter.reply_text(
-            "Sorry, there was an error processing the voice message."
-        )
+        user_id = telegram_adapter.get_user().id
+        file_id = telegram_adapter.get_voice_file_id()
+        logger.info(f"Voice message received from user {user_id} with file ID: {file_id}")
+
+        try:
+            # Get the File object from Telegram
+            file = await context.bot.get_file(file_id)
+            filename = f"voice_{user_id}.ogg"
+
+            # Download directly to local disk (avoiding requests and URL)
+            await file.download_to_drive(custom_path=filename)
+
+            # Process audio
+            transcription_result = await self.audio_processor.process_audio(filename)
+            logger.info(transcription_result)
+            os.remove(filename)
+            
+            message = telegram_adapter.map_to_message(message_text=transcription_result)
+
+            if transcription_result:
+                await self.message_processor.process_and_respond(user_message=message, platform=telegram_adapter)
+            else:
+                await telegram_adapter.reply_text(MSG_VOICE_NO_TEXT)
+
+        except Exception as e:
+            logger.error(f"Error handling voice message: {e}")
+            await telegram_adapter.reply_text(MSG_VOICE_PROCESSING_ERROR)
+
+# Create a singleton instance
+audio_handlers = AudioHandlers()

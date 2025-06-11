@@ -11,12 +11,9 @@ class User:
     Uses dataclass for automatic implementation of __init__, __repr__, etc.
     """
     id: UUID
-    telegram_user_id: int
-    telegram_first_name: str
-    created_at: datetime
-    last_interaction_at: datetime
-    telegram_username: Optional[str] = None
-    telegram_last_name: Optional[str] = None
+    telegram_user_id: Optional[int] = None
+    created_at: Optional[datetime] = None
+    last_interaction_at: Optional[datetime] = None
     google_sheet_id: Optional[str] = None
     webapp_user_id: Optional[str] = None
     webapp_integration_id: Optional[str] = None
@@ -38,9 +35,6 @@ class User:
         return cls(
             id=id_value,
             telegram_user_id=data['telegram_user_id'],
-            telegram_username=data.get('telegram_username'),
-            telegram_first_name=data['telegram_first_name'],
-            telegram_last_name=data.get('telegram_last_name'),
             google_sheet_id=data.get('google_sheet_id'),
             webapp_user_id=data.get('webapp_user_id'),
             webapp_integration_id=data.get('webapp_integration_id'),
@@ -57,9 +51,6 @@ class User:
         return {
             'id': str(self.id),
             'telegram_user_id': self.telegram_user_id,
-            'telegram_username': self.telegram_username,
-            'telegram_first_name': self.telegram_first_name,
-            'telegram_last_name': self.telegram_last_name,
             'google_sheet_id': self.google_sheet_id,
             'webapp_user_id': self.webapp_user_id,
             'webapp_integration_id': self.webapp_integration_id,
