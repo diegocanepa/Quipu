@@ -94,44 +94,6 @@ class UserDataManager:
         """
         return self.get_user_by_id(user_id)
     
-    def create_user_from_whatsapp(self, whatsapp_user_id: str) -> Optional[User]:
-        """
-        Creates a new user from WhatsApp data.
-
-        Args:
-            whatsapp_user_id: The WhatsApp user ID (phone number).
-
-        Returns:
-            Optional[User]: The created user if successful, None otherwise.
-        """
-        try:
-            # Check if user already exists
-            existing_user = self.get_user_by_whatsapp_user_id(whatsapp_user_id)
-            if existing_user:
-                logger.info(f"User with WhatsApp ID {whatsapp_user_id} already exists.")
-                return existing_user
-
-            # Create new user
-            now_utc = datetime.now(timezone.utc)
-            new_user = User(
-                id=uuid.uuid4(),
-                created_at=now_utc,
-                last_interaction_at=now_utc,
-                whatsapp_user_id=whatsapp_user_id
-            )
-            
-            result = self._client.insert(self._users_table, new_user.to_dict())
-            if result:
-                logger.info(f"New WhatsApp user {whatsapp_user_id} created in Supabase.")
-                return new_user
-            else:
-                logger.error(f"Error creating WhatsApp user {whatsapp_user_id} in Supabase.")
-                return None
-                
-        except Exception as e:
-            logger.error(f"Error creating WhatsApp user: {e}")
-            return None
-
     def update_last_interaction_time(self, user_id: str) -> None:
         """Updates the last interaction timestamp for an existing user."""
         try:
@@ -259,4 +221,43 @@ class UserDataManager:
             return None
         except Exception as e:
             logger.error(f"Error creating user with ID: {e}")
+            return None
+
+    def update_user(self, user_id: str, **update_data) -> Optional[User]:
+        """
+        Updates specific fields for a user.
+        
+        Args:
+            user_id: The ID of the user to update
+            **update_data: Dictionary of fields to update and their new values
+            
+        Returns:
+            The updated User instance if successful, None otherwise
+        """
+        try:
+            # Remove None values to avoid storing nulls in the database
+            update_data = {k: v for k, v in update_data.items() if v is not None}
+            
+            if not update_data:
+                logger.warning(f"No valid data provided for update for user {user_id}")
+                return None
+                
+            # Add last_interaction_at timestamp
+            now_utc = datetime.now(timezone.utc)
+            update_data["last_interaction_at"] = now_utc.isoformat()
+            
+            response = self._client._client.table(self._users_table)\
+                .update(update_data)\
+                .eq("id", user_id)\
+                .execute()
+            
+            if response and hasattr(response, 'data') and response.data:
+                logger.info(f"Successfully updated user {user_id}")
+                return User.from_dict(response.data[0])
+            
+            logger.error(f"Failed to update user {user_id}")
+            return None
+            
+        except Exception as e:
+            logger.error(f"Error updating user {user_id}: {e}")
             return None

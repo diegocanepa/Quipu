@@ -1,0 +1,56 @@
+import logging
+from flask import Flask, request, jsonify
+from api.whatsapp.handlers.message_handler import message_handler
+from api.whatsapp.models.whatsapp_message import WhatsAppWebhook
+from config import config
+
+# Configure logging
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
+
+app = Flask(__name__)
+
+VERIFY_TOKEN = "BDra5aZ4RIuPI3nXXVZs4MbHoJxvKJ4w"
+
+@app.route('/webhook', methods=['GET'])
+def verify():
+    mode = request.args.get("hub.mode")
+    token = request.args.get("hub.verify_token")
+    challenge = request.args.get("hub.challenge")
+
+    logger.info(f"Received webhook verification request - Mode: {mode}, Token: {token}")
+
+    if mode == "subscribe" and token == VERIFY_TOKEN:
+        logger.info("WEBHOOK VERIFICADO")
+        return challenge, 200
+    else:
+        logger.warning("Unauthorized webhook verification attempt")
+        return "Unauthorized", 403
+
+@app.route('/webhook', methods=['POST'])
+async def webhook():
+    """Handle incoming WhatsApp messages."""
+    try:
+        data = request.get_json()
+        
+        # Parse the webhook data first
+        webhook_data = WhatsAppWebhook.from_json(data)
+        
+        # Check if it's a message event
+        if webhook_data.is_message_event():
+            logger.info(f"Received message from {webhook_data.contacts[0].name} ({webhook_data.messages[0].from_number}): {webhook_data.messages[0].text.body}")
+            
+            # Process the message with the structured data
+            await message_handler.handle_message(webhook_data)
+            logger.info("Message processed successfully")
+        else:
+            logger.info("Skipping non-message event")
+        
+        return jsonify({"status": "success"}), 200
+        
+    except Exception as e:
+        logger.error(f"Error processing webhook: {str(e)}", exc_info=True)
+        return jsonify({"status": "error", "message": str(e)}), 500
+
+if __name__ == '__main__':
+    app.run(port=5000, debug=True)

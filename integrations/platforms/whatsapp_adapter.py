@@ -4,6 +4,7 @@ from core.models.common.command_button import CommandButton
 from core.models.message import Message, Source
 from core.models.user import User
 from integrations.whatsapp.whatsapp_client import whatsapp_api_client
+from api.whatsapp.models.whatsapp_message import WhatsAppWebhook, WhatsAppMessage, WhatsAppContact
 
 class WhatsAppAdapter(PlatformAdapter):
     """
@@ -11,26 +12,26 @@ class WhatsAppAdapter(PlatformAdapter):
     Implements the PlatformAdapter interface.
     """
 
-    def __init__(self, webhook_data: dict, api_client=None):
+    def __init__(self, webhook_data: WhatsAppWebhook, user: Optional[User] = None):
         """
         Initializes the WhatsAppAdapter with the given webhook data.
 
         Args:
-            webhook_data (dict): The webhook data containing the message and context.
-            api_client: Optional WhatsApp API client instance. If not provided, uses the default client.
+            webhook_data (WhatsAppWebhook): The structured webhook data containing the message and context.
+            user (Optional[User]): The user associated with this message, if any.
         """
         self.webhook_data = webhook_data
-        self.api_client = api_client if api_client else whatsapp_api_client
+        self.api_client = whatsapp_api_client
         self.name = Source.WHATSAPP
+        self.user = user
         self._extract_message_data()
 
     def _extract_message_data(self):
         """Extracts relevant message data from the webhook payload."""
-        self.entry = self.webhook_data.get("entry", [{}])[0]
-        self.changes = self.entry.get("changes", [{}])[0]
-        self.value = self.changes.get("value", {})
-        self.messages = self.value.get("messages", [{}])[0]
-        self.metadata = self.value.get("metadata", {})
+        # Get the first message and contact
+        self.message = self.webhook_data.messages[0] if self.webhook_data.messages else None
+        self.contact = self.webhook_data.contacts[0] if self.webhook_data.contacts else None
+        self.metadata = self.webhook_data.metadata
         
     def get_platform_name(self) -> str:
         """
@@ -48,7 +49,7 @@ class WhatsAppAdapter(PlatformAdapter):
         Returns:
             str: The message ID.
         """
-        return self.messages.get("id", "")
+        return self.message.message_id if self.message else ""
 
     def map_to_message(self, message_text: str = None) -> Message:
         """
@@ -75,7 +76,7 @@ class WhatsAppAdapter(PlatformAdapter):
         Returns:
             str: The text of the message.
         """
-        return self.messages.get("text", {}).get("body", "")
+        return self.message.text.body if self.message and self.message.text else ""
 
     def get_user_id(self) -> str:
         """
@@ -84,14 +85,13 @@ class WhatsAppAdapter(PlatformAdapter):
         Returns:
             str: The user ID.
         """
-        return self.messages.get("from", "")
+        return self.message.from_number if self.message else ""
 
     def get_user(self):
         """
-        WhatsApp doesn't provide detailed user information in webhooks.
-        Returns None as this information is not available.
+        Returns the user associated with this message, if any.
         """
-        return None
+        return self.user
 
     def get_voice_message(self):
         """
@@ -121,7 +121,7 @@ class WhatsAppAdapter(PlatformAdapter):
         Args:
             text: The message text
         """
-        phone_number_id = self.metadata.get("phone_number_id")
+        phone_number_id = self.metadata.phone_number_id
         to = self.get_user_id()
         return self.api_client.send_message(phone_number_id, to, text)
 
@@ -133,7 +133,7 @@ class WhatsAppAdapter(PlatformAdapter):
             text: The message text
             buttons: List of buttons to include
         """
-        phone_number_id = self.metadata.get("phone_number_id")
+        phone_number_id = self.metadata.phone_number_id
         to = self.get_user_id()
         
         # Convert CommandButton objects to WhatsApp button format
@@ -167,4 +167,4 @@ class WhatsAppAdapter(PlatformAdapter):
         Returns:
             str: The WhatsApp user ID (phone number)
         """
-        return self.messages.get("from", "")
+        return self.message.from_number if self.message else ""
