@@ -34,6 +34,8 @@ class Config:
     FF_INVESTMENT: bool = os.getenv("FF_INVESTMENT", "true").lower() == "true"
     WEBAPP_BASE_URL: str = os.getenv("WEBAPP_BASE_URL")
     WHATSAPP_ACCESS_TOKEN: str = os.getenv("WHATSAPP_ACCESS_TOKEN")
+    WHATSAPP_BASE_URL: str = os.getenv("WHATSAPP_BASE_URL")
+    WHATSAPP_VERIFY_TOKEN: str = os.getenv("WHATSAPP_VERIFY_TOKEN")
 
     def __init__(self):
         self._validate_configs()
@@ -63,6 +65,10 @@ class Config:
         if not self.WEBHOOK_URL:
             raise ValueError("WEBHOOK_URL must be set in the .env file.")
         if not self.WHATSAPP_ACCESS_TOKEN:
+            raise ValueError("WHATSAPP_ACCESS_TOKEN must be set in the .env file.")
+        if not self.WHATSAPP_BASE_URL:
+            raise ValueError("WHATSAPP_ACCESS_TOKEN must be set in the .env file.")
+        if not self.WHATSAPP_VERIFY_TOKEN:
             raise ValueError("WHATSAPP_ACCESS_TOKEN must be set in the .env file.")
         try:
             float(self.LLM_TEMPERATURE)

@@ -10,8 +10,6 @@ logger = logging.getLogger(__name__)
 
 app = Flask(__name__)
 
-VERIFY_TOKEN = "BDra5aZ4RIuPI3nXXVZs4MbHoJxvKJ4w"
-
 @app.route('/webhook', methods=['GET'])
 def verify():
     mode = request.args.get("hub.mode")
@@ -20,7 +18,7 @@ def verify():
 
     logger.info(f"Received webhook verification request - Mode: {mode}, Token: {token}")
 
-    if mode == "subscribe" and token == VERIFY_TOKEN:
+    if mode == "subscribe" and token == config.WHATSAPP_VERIFY_TOKEN:
         logger.info("WEBHOOK VERIFICADO")
         return challenge, 200
     else:
