@@ -7,7 +7,7 @@ logger = logging.getLogger(__name__)
 class WhatsAppAPIClient:
     def __init__(self):
         self.access_token = config.WHATSAPP_ACCESS_TOKEN
-        self.base_url = "https://graph.facebook.com/v18.0"
+        self.base_url = config.WHATSAPP_BASE_URL
 
     def send_message(self, phone_number_id: str, to: str, message: str):
         """
