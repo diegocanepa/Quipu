@@ -67,9 +67,9 @@ class Config:
         if not self.WHATSAPP_ACCESS_TOKEN:
             raise ValueError("WHATSAPP_ACCESS_TOKEN must be set in the .env file.")
         if not self.WHATSAPP_BASE_URL:
-            raise ValueError("WHATSAPP_ACCESS_TOKEN must be set in the .env file.")
+            raise ValueError("WHATSAPP_BASE_URL must be set in the .env file.")
         if not self.WHATSAPP_VERIFY_TOKEN:
-            raise ValueError("WHATSAPP_ACCESS_TOKEN must be set in the .env file.")
+            raise ValueError("WHATSAPP_VERIFY_TOKEN must be set in the .env file.")
         try:
             float(self.LLM_TEMPERATURE)
         except ValueError:
