@@ -1,8 +1,6 @@
 import logging
-from typing import Dict, Optional
+from typing import Optional
 import re
-from datetime import datetime
-import json
 
 from core.message_processor import MessageProcessor
 from core.user_data_manager import UserDataManager

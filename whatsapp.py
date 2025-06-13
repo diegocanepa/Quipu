@@ -3,7 +3,6 @@ from flask import Flask, request, jsonify
 from api.whatsapp.handlers.message_handler import message_handler
 from api.whatsapp.models.whatsapp_message import WhatsAppWebhook
 from config import config
-import os
 
 # Configure logging
 logging.basicConfig(level=logging.INFO)

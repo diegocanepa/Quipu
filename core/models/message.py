@@ -1,5 +1,4 @@
 from dataclasses import dataclass, field
-from enum import Enum
 from typing import Optional
 from core.models.base_model import FinancialModel 
 from core.models.common.source import Source

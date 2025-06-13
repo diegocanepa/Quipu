@@ -1,10 +1,10 @@
-from typing import List, Dict, Optional
+from typing import List, Optional
 from core.interfaces.platform_adapter import PlatformAdapter
 from core.models.common.command_button import CommandButton
 from core.models.message import Message, Source
 from core.models.user import User
 from integrations.whatsapp.whatsapp_client import whatsapp_api_client
-from api.whatsapp.models.whatsapp_message import WhatsAppWebhook, WhatsAppMessage, WhatsAppContact
+from api.whatsapp.models.whatsapp_message import WhatsAppWebhook
 
 class WhatsAppAdapter(PlatformAdapter):
     """
