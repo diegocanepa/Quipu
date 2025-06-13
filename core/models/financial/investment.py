@@ -4,6 +4,7 @@ from typing import List, Dict, Any
 from enum import Enum
 from core.models.base_model import FinancialModel
 from core.models.user import User
+from core.models.common.source import Source
 
 class InvestmentAction(str, Enum):
     """Defines possible investment actions."""
@@ -21,9 +22,10 @@ class Investment(BaseModel, FinancialModel):
     price: float = Field(description="Price of the investment tool")
     currency: str = Field(description="Currency of the operation")
     
-    def to_presentation_string(self) -> str:
+    def _to_telegram_presentation(self) -> str:
         """
-        Returns a formatted string representation of the investment for presentation.
+        Returns a formatted string representation for Telegram.
+        Uses HTML formatting and emojis.
         """
         action_emoji = "📈" if self.action == InvestmentAction.BUY else "📉"
         return f"""
@@ -37,6 +39,23 @@ class Investment(BaseModel, FinancialModel):
             <b>💸 Monto Total:</b> <code>{self.format_money_data(self.amount * self.price)}</code> {self.currency}
             <b>🗓️ Fecha:</b> <code>{self.date.strftime('%d/%m/%Y %H:%M')}</code>
         """
+
+    def _to_whatsapp_presentation(self) -> str:
+        """
+        Returns a formatted string representation for WhatsApp.
+        Uses plain text and emojis.
+        """
+        action_emoji = "📈" if self.action == InvestmentAction.BUY else "📉"
+        return f"""{action_emoji} *Inversión*
+
+        📝 *Descripción:* {self.description}
+        🏷️ *Categoría:* {self.category}
+        ➡️ *Acción:* {self.action.value}
+        🏢 *Plataforma:* {self.platform}
+        🔢 *Cantidad:* {self.format_money_data(self.amount)}
+        💲 *Precio por Unidad:* {self.format_money_data(self.price)} {self.currency}
+        💸 *Monto Total:* {self.format_money_data(self.amount * self.price)} {self.currency}
+        🗓️ *Fecha:* {self.date.strftime('%d/%m/%Y %H:%M')}"""
 
     def to_sheet_row(self) -> List[Any]:
         """Returns data formatted for spreadsheet storage."""

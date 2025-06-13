@@ -58,8 +58,8 @@ class MessageProcessor:
         for idx, result in enumerate(results):
             if result.error:
                 await platform.reply_text(f"❌ {result.error}")
-            else:
-                response_text = result.data_object.to_presentation_string()
+            else: 
+                response_text = result.data_object.to_presentation_string(platform.get_platform_name())
                 callback_id = f"{platform.get_message_id()}_{idx}"
 
                 buttons: list[CommandButton] = [
@@ -71,7 +71,7 @@ class MessageProcessor:
                     ),
                 ]
 
-                await platform.reply_with_buttons(text=response_text, buttons=buttons)
+                platform.reply_with_buttons(text=response_text, buttons=buttons)
                 
                 response_message = Message(
                     user_id=user_message.user_id,

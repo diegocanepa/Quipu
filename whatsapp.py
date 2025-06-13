@@ -30,6 +30,7 @@ async def webhook():
     """Handle incoming WhatsApp messages."""
     try:
         data = request.get_json()
+        logger.info(f"confirmation {data}")
         
         # Parse the webhook data first
         webhook_data = WhatsAppWebhook.from_json(data)
