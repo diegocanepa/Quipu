@@ -13,10 +13,11 @@ class Forex(BaseModel, FinancialModel):
     price: float = Field(description="Exchange rate")
     date: datetime = Field(description="Operation datetime")
     action: str = Field(description="Action type")
-    
-    def to_presentation_string(self) -> str:
+
+    def _to_telegram_presentation(self) -> str:
         """
-        Returns a formatted string representation of the forex operation for presentation.
+        Returns a formatted string representation for Telegram.
+        Uses HTML formatting and emojis.
         """
         return f"""
             <b>💱 Operación Forex</b>
@@ -27,6 +28,21 @@ class Forex(BaseModel, FinancialModel):
         <b>📥 Cantidad Recibida:</b> <code>{self.format_money_data(self.amount * self.price)} </code> {self.currency_to}
         <b>💰 Precio de Cambio:</b> <code>{self.format_money_data(self.price)}</code> {self.currency_from}/{self.currency_to}
         <b>🗓️ Fecha:</b> <code>{self.date.strftime('%d/%m/%Y %H:%M')}</code> 
+        """
+
+    def _to_whatsapp_presentation(self) -> str:
+        """
+        Returns a formatted string representation for WhatsApp.
+        Uses plain text and emojis.
+        """
+        return f"""💱 *Operación Forex*
+    
+            📝 *Descripción:* {self.description}
+            🔄 *Acción:* {self.action}
+            📤 *Cantidad Enviada:* {self.format_money_data(self.amount)} {self.currency_from}
+            📥 *Cantidad Recibida:* {self.format_money_data(self.amount * self.price)} {self.currency_to}
+            💰 *Precio de Cambio:* {self.format_money_data(self.price)} {self.currency_from}/{self.currency_to}
+            🗓️ *Fecha:* {self.date.strftime('%d/%m/%Y %H:%M')}
         """
 
     def to_sheet_row(self) -> List[Any]:
