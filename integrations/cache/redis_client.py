@@ -40,7 +40,6 @@ class RedisCacheClient(CacheService):
                 decode_responses=False,
                 socket_timeout=5,  # 5 seconds timeout
                 socket_connect_timeout=5,  # 5 seconds connection timeout
-                retry_on_timeout=True,
                 health_check_interval=30,  # Check connection every 30 seconds
                 ssl=True,  # Enable SSL for encryption in transit
                 ssl_cert_reqs=None  # Don't verify SSL certificate
