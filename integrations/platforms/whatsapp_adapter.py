@@ -62,7 +62,7 @@ class WhatsAppAdapter(PlatformAdapter):
             Message: A Message object containing the message data.
         """
         message = Message(
-            user_id=self.get_user_id(),
+            user_id=self.user.id,
             message_id=self.get_message_id(),
             message_text=message_text if message_text is not None else self.get_message_text(),
             source=self.name
