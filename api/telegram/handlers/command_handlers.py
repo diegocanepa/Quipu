@@ -58,7 +58,6 @@ class CommandHandlers:
 
     async def handle_unrecognized(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
         """Handles messages/commands that don't match any specific handler."""
-        text = update.effective_message.text
         telegram_user_id = update.effective_user.id
         
         try: 

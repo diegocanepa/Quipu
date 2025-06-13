@@ -28,11 +28,15 @@ class Config:
     REDIS_PORT: int = int(os.getenv("REDIS_PORT", 6379))
     REDIS_PASSWORD: str = os.getenv("REDIS_PASSWORD", None)
     REDIS_DB: int = int(os.getenv("REDIS_DB", 0))
+    REDIS_SSL: bool = os.getenv("REDIS_SSL", "false").lower() == "true"
     FF_TRANSFER: bool = os.getenv("FF_TRANSFER", "true").lower() == "true"
     FF_EXCHANGE: bool = os.getenv("FF_EXCHANGE", "true").lower() == "true"
     FF_TRANSACTION: bool = os.getenv("FF_TRANSACTION", "true").lower() == "true"
     FF_INVESTMENT: bool = os.getenv("FF_INVESTMENT", "true").lower() == "true"
     WEBAPP_BASE_URL: str = os.getenv("WEBAPP_BASE_URL")
+    WHATSAPP_ACCESS_TOKEN: str = os.getenv("WHATSAPP_ACCESS_TOKEN")
+    WHATSAPP_BASE_URL: str = os.getenv("WHATSAPP_BASE_URL")
+    WHATSAPP_VERIFY_TOKEN: str = os.getenv("WHATSAPP_VERIFY_TOKEN")
 
     def __init__(self):
         self._validate_configs()
@@ -61,6 +65,12 @@ class Config:
             raise ValueError("WEBAPP_BASE_URL must be set in the .env file.")
         if not self.WEBHOOK_URL:
             raise ValueError("WEBHOOK_URL must be set in the .env file.")
+        if not self.WHATSAPP_ACCESS_TOKEN:
+            raise ValueError("WHATSAPP_ACCESS_TOKEN must be set in the .env file.")
+        if not self.WHATSAPP_BASE_URL:
+            raise ValueError("WHATSAPP_BASE_URL must be set in the .env file.")
+        if not self.WHATSAPP_VERIFY_TOKEN:
+            raise ValueError("WHATSAPP_VERIFY_TOKEN must be set in the .env file.")
         try:
             float(self.LLM_TEMPERATURE)
         except ValueError:

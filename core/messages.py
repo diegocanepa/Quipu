@@ -228,6 +228,22 @@ MSG_ONBOARDING_ERROR = (
     "👉 Usa /start para reiniciar el proceso"
 )
 
+MSG_WEBAPP_NOT_REGISTERED = (
+    "🚫 *¡Aún no creaste una cuenta en nuestra página web!*\n\n"
+    "Para comenzar a utilizar la plataforma web, primero necesitás crear tu cuenta.\n\n"
+    "🧾 *Pasos:*\n"
+    "1. Ingresá aquí ➡️ Crear cuenta en Quipu: {webapp_signup_url}\n"
+    "2. Completá el registro en pocos segundos\n"
+    "3. Desde tu perfil, hacé clic en \"*Vincular con WhatsApp*\" para conectar tu cuenta\n\n"
+    "Una vez vinculada, vas a poder gestionar tus finanzas fácilmente desde WhatsApp 📱✨"
+)
+
+UNEXPECTED_ERROR_WPS = (
+    "❌ *¡Ups! Ocurrió un error inesperado*\n\n"
+    "No te preocupes, nuestro equipo ya fue notificado y estamos trabajando para solucionarlo.\n\n"
+    "Por favor, intentá nuevamente en unos minutos. Si el problema persiste, contactanos a través de nuestra web."
+)
+
 # Pop up answers / messages
 GOOGLE_SHEET_SELECTED = "✅ Google Sheet seleccionado"
 WEBAPP_SELECTED = "✅ Cuenta Web seleccionada"

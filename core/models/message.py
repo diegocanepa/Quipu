@@ -1,12 +1,7 @@
 from dataclasses import dataclass, field
-from enum import Enum
 from typing import Optional
 from core.models.base_model import FinancialModel 
-
-class Source(str, Enum):
-    """Defines possible message sources."""
-    TELEGRAM = "telegram"
-    WHATSAPP = "whatsapp"
+from core.models.common.source import Source
 
 @dataclass
 class Message:

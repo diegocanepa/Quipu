@@ -3,13 +3,42 @@ from typing import Any, List, Dict
 import os
 
 from core.models.user import User
+from core.models.common.source import Source
 
 class FinancialModel(ABC):
     """Base interface for all financial models."""
     
+    def to_presentation_string(self, source: str = Source.TELEGRAM) -> str:
+        """
+        Returns a formatted string representation for user presentation.
+        
+        Args:
+            source: The source platform (telegram or whatsapp)
+            
+        Returns:
+            str: Formatted string for the specified platform
+        """
+        if source == Source.TELEGRAM:
+            return self._to_telegram_presentation()
+        elif source == Source.WHATSAPP:
+            return self._to_whatsapp_presentation()
+        else:
+            raise ValueError(f"Unsupported source: {source}")
+
     @abstractmethod
-    def to_presentation_string(self) -> str:
-        """Returns a formatted string representation for user presentation."""
+    def _to_telegram_presentation(self) -> str:
+        """
+        Returns a formatted string representation for Telegram.
+        Uses HTML formatting and emojis.
+        """
+        pass
+
+    @abstractmethod
+    def _to_whatsapp_presentation(self) -> str:
+        """
+        Returns a formatted string representation for WhatsApp.
+        Uses plain text and emojis.
+        """
         pass
 
     @abstractmethod
