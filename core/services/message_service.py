@@ -30,7 +30,7 @@ class MessageService:
         Generates a unique key for a message based on user ID, message ID, and platform.
 
         Args:
-            user_id (str): The ID of the user.
+            user_id (str): The ID of the user. Not from telegram, not for whatsapp, the ID. 
             message_id (str): The ID of the message on the platform.
             platform (Source): The platform where the message originated.
 
@@ -44,7 +44,7 @@ class MessageService:
         Retrieves a specific message of a user from the cache based on user ID, message ID, and platform.
 
         Args:
-            user_id (str): The ID of the user.
+            user_id (str): The ID of the user. Not from telegram, not for whatsapp, the ID. 
             message_id (str): The ID of the message on the platform.
             platform (Source): The platform where the message originated.
 
@@ -86,7 +86,7 @@ class MessageService:
         Deletes a specific message of a user from the cache based on user ID, message ID, and platform.
 
         Args:
-            user_id (str): The ID of the user.
+            user_id (str): The ID of the user. Not from telegram, not for whatsapp, the ID. 
             message_id (str): The ID of the message on the platform.
             platform (Source): The platform where the message originated.
 

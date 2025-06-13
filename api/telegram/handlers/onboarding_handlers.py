@@ -10,6 +10,8 @@ from telegram.ext import (
     filters,
 )
 
+from api.telegram.middlewere.requiere_user import require_user
+from core.models.user import User
 from integrations.platforms.telegram_adapter import TelegramAdapter
 from core.onboarding_manager import OnboardingManager
 from api.telegram.middlewere.get_user import get_user
@@ -111,8 +113,7 @@ class StartHandler(BaseOnboardingHandler):
     It's responsible for initiating the onboarding flow and setting up the
     initial state for new users.
     """
-
-    @get_user
+    @require_user
     async def handle_start(self, update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
         """Handles the /start command without a payload."""
         user = context.user_data['current_user']
@@ -143,7 +144,7 @@ class SheetHandler(BaseOnboardingHandler):
     It guides users through the process of linking their Google Sheet to the bot.
     """
 
-    @get_user
+    @require_user
     async def handle_sheet_choice(self, update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
         """Handles the user choosing Google Sheet linking."""
         user = context.user_data['current_user']
@@ -153,7 +154,7 @@ class SheetHandler(BaseOnboardingHandler):
         self.state_manager.set_state(context, state)
         return self._end_conversation(state)
 
-    @get_user
+    @require_user
     async def handle_sheet_url(self, update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
         """Handles the user sending a sheet URL."""
         user = context.user_data['current_user']
@@ -174,8 +175,7 @@ class WebappHandler(BaseOnboardingHandler):
     
     It guides users through the process of linking their webapp account to the bot.
     """
-
-    @get_user
+    @require_user
     async def handle_webapp_choice(self, update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
         """Handles the user choosing Webapp linking."""
         user = context.user_data['current_user']
@@ -198,8 +198,7 @@ class GeneralHandler(BaseOnboardingHandler):
     It provides a safety net for handling unexpected user inputs and graceful
     process termination.
     """
-
-    @get_user
+    @require_user
     async def handle_cancel(self, update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
         """Handles onboarding cancellation."""
         user = context.user_data['current_user']
@@ -209,7 +208,7 @@ class GeneralHandler(BaseOnboardingHandler):
         self.state_manager.set_state(context, state, False)
         return self._end_conversation(state)
 
-    @get_user
+    @require_user
     async def handle_fallback(self, update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
         """Handles unrecognized messages during onboarding."""
         user = context.user_data['current_user']

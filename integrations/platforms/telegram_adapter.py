@@ -5,14 +5,13 @@ from core.models.common.command_button import CommandButton
 from core.models.message import Message, Source
 from core.models.user import User
 
-
 class TelegramAdapter(PlatformAdapter):
     """
     Adapter for Telegram platform to handle message replies and button interactions.
     Implements the PlatformAdapter interface.
     """
 
-    def __init__(self, update, user: User):
+    def __init__(self, update, user: User=None):
         """
         Initializes the TelegramAdapter with the given update.
 

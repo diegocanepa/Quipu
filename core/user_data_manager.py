@@ -94,43 +94,6 @@ class UserDataManager:
         """
         return self.get_user_by_id(user_id)
 
-    def create_user_from_telegram(
-        self,
-        telegram_user_id: int,
-        username: str | None,
-        first_name: str,
-        last_name: str | None
-    ) -> None:
-        """
-        Creates a new user entry if they do not already exist.
-
-        Args:
-            user_id: The Telegram user ID (integer).
-            username: The user's Telegram username (string, can be None).
-            first_name: The user's Telegram first name (string).
-            last_name: The user's Telegram last name (string, can be None).
-        """
-        existing_user = self.get_user_data(telegram_user_id)
-        if not existing_user:
-            now_utc = datetime.now(timezone.utc)
-            new_user = User(
-                id=uuid.uuid4(),
-                telegram_user_id=telegram_user_id,
-                telegram_username=username,
-                telegram_first_name=first_name,
-                telegram_last_name=last_name,
-                created_at=now_utc,
-                last_interaction_at=now_utc
-            )
-            
-            result = self._client.insert(self._users_table, new_user.to_dict())
-            if result:
-                logger.info(f"New user {telegram_user_id} created in Supabase.")
-            else:
-                logger.error(f"Error creating user {telegram_user_id} in Supabase.")
-        else:
-            logger.info(f"User {telegram_user_id} already exists. Skipping creation.")
-
     def update_last_interaction_time(self, user_id: str) -> None:
         """Updates the last interaction timestamp for an existing user."""
         try:
@@ -201,3 +164,61 @@ class UserDataManager:
         """Returns the linked Webapp User ID or None."""
         user = self.get_user_data(user_id)
         return user.webapp_user_id if user else None
+
+    def create_user(self, 
+                   id: str,
+                   telegram_user_id: Optional[int] = None,
+                   webapp_user_id: Optional[str] = None,
+                   whatsapp_user_id: Optional[str] = None,
+                   google_sheet_id: Optional[str] = None,
+                   webapp_integration_id: Optional[str] = None) -> Optional[User]:
+        """
+        Creates a new user with the specified parameters.
+        If a user with the given ID already exists, returns the existing user.
+        
+        Args:
+            id: The unique identifier for the user
+            telegram_user_id: Optional Telegram user ID
+            webapp_user_id: Optional webapp user ID
+            whatsapp_user_id: Optional WhatsApp user ID
+            google_sheet_id: Optional Google Sheet ID
+            webapp_integration_id: Optional webapp integration ID
+            
+        Returns:
+            The User instance if successful (either existing or newly created), None otherwise.
+        """
+        try:
+            # First check if user already exists
+            existing_user = self.get_user_by_id(id)
+            if existing_user:
+                logger.info(f"User with ID {id} already exists")
+                return existing_user
+
+            now_utc = datetime.now(timezone.utc)
+            user_data = {
+                "id": id,
+                "telegram_user_id": telegram_user_id,
+                "webapp_user_id": webapp_user_id,
+                "whatsapp_user_id": whatsapp_user_id,
+                "google_sheet_id": google_sheet_id,
+                "webapp_integration_id": webapp_integration_id,
+                "created_at": now_utc.isoformat(),
+                "last_interaction_at": now_utc.isoformat()
+            }
+            
+            # Remove None values to avoid storing nulls in the database
+            user_data = {k: v for k, v in user_data.items() if v is not None}
+            
+            response = self._client._client.table(self._users_table)\
+                .insert(user_data)\
+                .execute()
+            
+            if response and hasattr(response, 'data') and response.data:
+                logger.info(f"Created new user with ID: {id}")
+                return User.from_dict(response.data[0])
+            
+            logger.error(f"Failed to create user with ID: {id}")
+            return None
+        except Exception as e:
+            logger.error(f"Error creating user with ID: {e}")
+            return None
