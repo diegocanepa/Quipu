@@ -72,7 +72,7 @@ class Transaction(BaseModel, FinancialModel):
 
     def get_base_table_name(self) -> str:
         """Returns the base table name without test prefix."""
-        return "transaction"
+        return "transactions"
 
     def get_worksheet_name(self) -> str:
         """Returns the worksheet name for Google Sheets."""
