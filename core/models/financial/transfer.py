@@ -96,7 +96,7 @@ class Transfer(BaseModel, FinancialModel):
             "initial_amount": self.initial_amount,
             "final_amount": self.final_amount,
             "currency": self.currency,
-            "webapp_user_id": user.id,
+            "webapp_user_id": str(user.id) if user.id else None
         }
 
     def get_base_table_name(self) -> str:

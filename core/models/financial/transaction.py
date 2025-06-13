@@ -67,7 +67,7 @@ class Transaction(BaseModel, FinancialModel):
             "date": self.date.isoformat(),
             "category": self.category,
             "action": self.action.value,
-            "webapp_user_id": user.id
+            "webapp_user_id": str(user.id) if user.id else None
         }
 
     def get_base_table_name(self) -> str:
