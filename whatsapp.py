@@ -30,17 +30,24 @@ async def webhook():
     """Handle incoming WhatsApp messages."""
     try:
         data = request.get_json()
-        logger.info(f"confirmation {data}")
         
         # Parse the webhook data first
         webhook_data = WhatsAppWebhook.from_json(data)
         
         # Check if it's a message event
         if webhook_data.is_message_event():
-            logger.info(f"Received message from {webhook_data.contacts[0].name} ({webhook_data.messages[0].from_number}): {webhook_data.messages[0].text.body}")
+            message = webhook_data.messages[0]
+            contact = webhook_data.contacts[0]
             
-            # Process the message with the structured data
-            await message_handler.handle_message(webhook_data)
+            if message.is_text_message():
+                logger.info(f"Received text message from {contact.name} ({message.from_number}): {message.text.body}")
+                await message_handler.handle_message(webhook_data)
+            elif message.is_button_reply():
+                logger.info(f"Received button reply from {contact.name} ({message.from_number}): {message.get_button_title()} (ID: {message.get_button_id()})")
+                await message_handler.handle_response(webhook_data)
+            else:
+                logger.info(f"Received unknown message type from {contact.name} ({message.from_number}): {message.type}")
+
             logger.info("Message processed successfully")
         else:
             logger.info("Skipping non-message event")

@@ -65,28 +65,6 @@ class LLMProcessor:
             A list of ProcessingResult objects, each containing the processed data
             and the status of saving to spreadsheet and database.
         """
-        return [
-            ProcessingResult(
-                data_object=Transaction(
-                    amount=1000.0,
-                    currency="ARS",
-                    description="Test transaction",
-                    date=datetime.now(pytz.timezone("America/Argentina/Buenos_Aires")),
-                    category="Test",
-                    action="gasto"
-                )
-            ),
-            ProcessingResult(
-                data_object=Transaction(
-                    amount=1000.0,
-                    currency="ARS",
-                    description="Test transaction",
-                    date=datetime.now(pytz.timezone("America/Argentina/Buenos_Aires")),
-                    category="Test",
-                    action="ingreso"
-                )
-            )
-        ]
         logger.info(f"Processing content: '{content}'")
         processing_results: List[ProcessingResult] = []
         current_datetime = datetime.now(pytz.timezone("America/Argentina/Buenos_Aires"))
