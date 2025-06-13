@@ -81,9 +81,7 @@ class Investment(BaseModel, FinancialModel):
             "amount": self.amount,
             "price": self.price,
             "currency": self.currency,
-            "webapp_user_id": user.webapp_user_id,
-            "telegram_user_id": user.telegram_user_id,
-            "whatsapp_user_id": user.whatsapp_user_id,
+            "webapp_user_id": user.id,
         }
 
     def get_base_table_name(self) -> str:
