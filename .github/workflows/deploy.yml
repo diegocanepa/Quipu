@@ -10,7 +10,7 @@ env:
   PYTHON_VERSION: '3.11'
   APP_NAME: 'quipu'
   SERVICE_NAME: 'quipu.service'
-  MAIN_FILE: 'app.py'
+  MAIN_FILE: 'telegram.py'
   SERVICE_PORT: '8080'
 
 jobs:
