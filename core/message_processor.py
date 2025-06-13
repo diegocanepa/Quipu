@@ -52,12 +52,12 @@ class MessageProcessor:
         )
 
         if not results:
-            await platform.reply_text(UNEXPECTED_ERROR)
+            platform.reply_text(UNEXPECTED_ERROR)
             return -1 # Means conversations END but we have to check how whatsapp works
 
         for idx, result in enumerate(results):
             if result.error:
-                await platform.reply_text(f"❌ {result.error}")
+                platform.reply_text(f"❌ {result.error}")
             else: 
                 response_text = result.data_object.to_presentation_string(platform.get_platform_name())
                 callback_id = f"{platform.get_message_id()}_{idx}"
