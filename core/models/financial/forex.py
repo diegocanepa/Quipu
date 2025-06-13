@@ -68,7 +68,7 @@ class Forex(BaseModel, FinancialModel):
             "price": self.price,
             "date": self.date.isoformat(),
             "action": self.action,
-            "webapp_user_id": user.id,
+            "webapp_user_id": str(user.id) if user.id else None
         }
 
     def get_base_table_name(self) -> str:

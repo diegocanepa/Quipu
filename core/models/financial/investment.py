@@ -81,7 +81,7 @@ class Investment(BaseModel, FinancialModel):
             "amount": self.amount,
             "price": self.price,
             "currency": self.currency,
-            "webapp_user_id": user.id,
+            "webapp_user_id": str(user.id) if user.id else None
         }
 
     def get_base_table_name(self) -> str:
