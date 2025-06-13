@@ -24,6 +24,7 @@ class RedisCacheClient(CacheService):
         self.port = Config.REDIS_PORT
         self.password = Config.REDIS_PASSWORD
         self.db = Config.REDIS_DB
+        self.ssl = Config.REDIS_SSL
         self.redis_client: Optional[redis.Redis] = None
         self._connect()
 
@@ -41,7 +42,7 @@ class RedisCacheClient(CacheService):
                 socket_timeout=5,  # 5 seconds timeout
                 socket_connect_timeout=5,  # 5 seconds connection timeout
                 health_check_interval=30,  # Check connection every 30 seconds
-                ssl=True,  # Enable SSL for encryption in transit
+                ssl=self.ssl,  # Enable SSL for encryption in transit
                 ssl_cert_reqs=None  # Don't verify SSL certificate
             )
             # Try to ping with a short timeout
