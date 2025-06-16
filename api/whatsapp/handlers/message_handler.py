@@ -2,44 +2,31 @@ import logging
 from typing import Optional
 import re
 
+from pywa_async import WhatsApp, types
 from core.message_processor import MessageProcessor
 from core.user_data_manager import UserDataManager
-from integrations.platforms.whatsapp_adapter import WhatsAppAdapter
+from integrations.platforms.whatsapp_v2_adapter import WhatsAppV2Adapter
 from config import config
 from api.whatsapp.messages import messages
-from api.whatsapp.models.whatsapp_message import WhatsAppWebhook
 
 logger = logging.getLogger(__name__)
 
-class WhatsAppMessageHandler:
+class WhatsAppV2MessageHandler:
     """
-    Main handler for WhatsApp messages.
+    Main handler for WhatsApp messages using PyWa library.
     This class handles basic message processing and user verification.
     """
     
-    def __init__(self):
+    def __init__(self, wa: WhatsApp):
+        """
+        Initialize the handler with a WhatsApp client instance.
+
+        Args:
+            wa: The WhatsApp client instance
+        """
+        self.wa = wa
         self.message_processor = MessageProcessor()
         self.user_manager = UserDataManager()
-
-    def _extract_message_id_from_button(self, button_id: str) -> Optional[str]:
-        """
-        Extracts the message ID from a button ID.
-        Example: from 'cancel#message_id'
-        returns 'message_id'
-        
-        Args:
-            button_id: The button ID containing the message ID
-            
-        Returns:
-            Optional[str]: The extracted message ID if found, None otherwise
-        """
-        try:
-            if '#' in button_id:
-                return button_id.split('#')[1]
-            return None
-        except Exception as e:
-            logger.error(f"Error extracting message ID from button: {str(e)}")
-            return None
 
     def _extract_linking_code(self, message_text: str) -> Optional[str]:
         """
@@ -52,8 +39,6 @@ class WhatsAppMessageHandler:
             Optional[str]: The linking code if found, None otherwise
         """
         try:
-            # Pattern to match everything after "Mi código de vinculación es:"
-            # :TODO I don't like using regex. I think it could be a good change in a future
             pattern = r"Mi código de vinculación es:\s*(.+)"
             match = re.search(pattern, message_text)
             linking_code = match.group(1).strip() if match else None
@@ -84,7 +69,7 @@ class WhatsAppMessageHandler:
         logger.debug(f"Message is linking message: {is_linking}")
         return is_linking
 
-    async def _handle_linking_code(self, platform: WhatsAppAdapter, linking_code: str) -> None:
+    async def _handle_linking_code(self, platform: WhatsAppV2Adapter, linking_code: str) -> None:
         """
         Handles the linking code message by updating existing user or creating a new one.
         
@@ -134,28 +119,25 @@ class WhatsAppMessageHandler:
             logger.error(f"Error handling linking code. User: {whatsapp_user_id}, Code: {linking_code}, Error: {str(e)}")
             await platform.reply_text(messages.MSG_UNEXPECTED_ERROR)
 
-    async def handle_message(self, webhook_data: WhatsAppWebhook) -> None:
+    async def handle_message(self, message: types.Message) -> None:
         """
         Main entry point for handling WhatsApp messages.
         
         Args:
-            webhook_data: The structured WhatsApp webhook data
+            message: The WhatsApp message object from PyWa
         """
         platform = None
         platform_user_id = None
         message_id = None
         
         try:
-            # Get the first message and contact from the webhook data
-            message = webhook_data.messages[0]
-            
             # Initialize platform adapter without user
-            platform = WhatsAppAdapter(webhook_data, None)
+            platform = WhatsAppV2Adapter(self.wa, message, None)
             
             # Extract basic message info
-            platform_user_id = message.from_number
-            message_id = message.message_id
-            message_text = message.text.body if message.text else ""
+            platform_user_id = platform.get_platform_user_id()
+            message_id = platform.get_message_id()
+            message_text = platform.get_message_text()
             
             logger.info(f"Processing WhatsApp message. ID: {message_id}, User: {platform_user_id}, Text: {message_text}")
             
@@ -178,12 +160,11 @@ class WhatsAppMessageHandler:
             user = self.user_manager.get_user_by_whatsapp_user_id(platform_user_id)
             if not user:
                 logger.info(f"New user registration required. User: {platform_user_id}")
-                               
                 await platform.reply_text(messages.MSG_WELCOME.format(webapp_url=config.WEBAPP_BASE_URL))
                 return
             
             # Update platform adapter with user
-            platform = WhatsAppAdapter(webhook_data, user)
+            platform = WhatsAppV2Adapter(self.wa, message, user)
 
             # Process regular message
             logger.info(f"Processing regular message. User: {user.id}, Platform User: {platform_user_id}, Message ID: {message_id}")
@@ -196,84 +177,6 @@ class WhatsAppMessageHandler:
 
         except Exception as e:
             logger.error(f"Error handling WhatsApp message. User: {platform_user_id}, Message ID: {message_id}, Error: {str(e)}")
-            await platform.reply_text(messages.MSG_UNEXPECTED_ERROR)
-
-    async def handle_response(self, webhook_data: WhatsAppWebhook) -> None:
-        """
-        Handles button responses from WhatsApp messages.
-        
-        Args:
-            webhook_data: The structured WhatsApp webhook data
-        """
-        platform = None
-        platform_user_id = None
-        message_id = None
-        
-        try:
-            # Get the first message and contact from the webhook data
-            message = webhook_data.messages[0]
-            
-            # Initialize platform adapter without user
-            platform = WhatsAppAdapter(webhook_data, None)
-            
-            # Extract basic message info
-            platform_user_id = message.from_number
-            message_id = message.message_id
-            
-            logger.info(f"Processing WhatsApp button response. ID: {message_id}, User: {platform_user_id}")
-            
-            if not platform_user_id:
-                logger.error(f"No user ID found in message. Message ID: {message_id}")
-                return
-
-            # Get user
-            user = self.user_manager.get_user_by_whatsapp_user_id(platform_user_id)
-            if not user:
-                logger.info(f"User not found. User: {platform_user_id}")
-                await platform.reply_text(messages.MSG_WELCOME.format(webapp_url=config.WEBAPP_BASE_URL))
-                return
-            
-            # Update platform adapter with user
-            platform = WhatsAppAdapter(webhook_data, user)
-
-            # Get button ID and title
-            button_id = message.get_button_id()
-            button_title = message.get_button_title()
-            
-            logger.info(f"Button response. ID: {button_id}, Title: {button_title}")
-            
-            # Extract the original message ID from the button ID
-            original_message_id = self._extract_message_id_from_button(button_id) if button_id else None
-            
-            if not original_message_id:
-                logger.error(f"Could not extract original message ID from button ID: {button_id}")
-                await platform.reply_text(messages.MSG_UNEXPECTED_ERROR)
-                return
-            
-            # Handle different button responses
-            if button_id and button_id.startswith("confirm"):
-                logger.info(f"Processing confirm action for user {user.id} and message {original_message_id}")
-                response = self.message_processor.save_and_respond(
-                    user_id=user.id,
-                    message_id=original_message_id,
-                    platform=platform
-                )
-                await platform.reply_text(response)
-            elif button_id and button_id.startswith("cancel"):
-                logger.info(f"Processing cancel action for user {user.id} and message {original_message_id}")
-                response = self.message_processor.cancel_and_respond(
-                    user_id=user.id,
-                    message_id=original_message_id,
-                    platform=platform
-                )
-                await platform.reply_text(response)
-            else:
-                logger.warning(f"Unknown button response. ID: {button_id}, Title: {button_title}")
+            if platform:
                 await platform.reply_text(messages.MSG_UNEXPECTED_ERROR)
 
-        except Exception as e:
-            logger.error(f"Error handling WhatsApp button response. User: {platform_user_id}, Message ID: {message_id}, Error: {str(e)}")
-            await platform.reply_text(messages.MSG_UNEXPECTED_ERROR)
-
-# Initialize the main handler
-message_handler = WhatsAppMessageHandler() 

@@ -12,7 +12,7 @@ from core.feature_flag import (
 )
 from integrations.platforms.whatsapp_v2_adapter import WhatsAppV2Adapter
 from core.user_data_manager import UserDataManager
-from api.whatsapp_v2.messages import messages
+from api.whatsapp.messages import messages
 from config import config
 
 logger = logging.getLogger(__name__)

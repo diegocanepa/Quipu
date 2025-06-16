@@ -1,62 +1,50 @@
+import os
+import json
 import logging
-from flask import Flask, request, jsonify
-from api.whatsapp.handlers.message_handler import message_handler
-from api.whatsapp.models.whatsapp_message import WhatsAppWebhook
+from flask import Flask, jsonify, request
+from pywa_async import WhatsApp, handlers, types
+from api.whatsapp.handlers_registry import WhatsAppV2Handlers
 from config import config
+import uvicorn
+from asgiref.wsgi import WsgiToAsgi
 
-# Configure logging
-logging.basicConfig(level=logging.INFO)
+# Configurar logging
+logging.basicConfig(
+    level=logging.INFO,
+    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
+)
+# Obtener logger para este módulo
 logger = logging.getLogger(__name__)
 
 app = Flask(__name__)
 
-@app.route('/webhook', methods=['GET'])
-def verify():
-    mode = request.args.get("hub.mode")
-    token = request.args.get("hub.verify_token")
-    challenge = request.args.get("hub.challenge")
+# Initialize WhatsApp client
+wa = WhatsApp(
+    phone_id=config.WHATSAPP_PHONE_ID,
+    token=config.WHATSAPP_TOKEN,
+    server=app,  
+    verify_token=config.WHATSAPP_VERIFY_TOKEN, 
+    app_id=config.WHATSAPP_APP_ID,
+    app_secret=config.WHATSAPP_APP_SECRET,
+    webhook_endpoint="/webhook",
+)
 
-    logger.info(f"Received webhook verification request - Mode: {mode}, Token: {token}")
+# Initialize handlers
+my_handlers = WhatsAppV2Handlers(wa)
+my_handlers.register_handlers()
 
-    if mode == "subscribe" and token == config.WHATSAPP_VERIFY_TOKEN:
-        logger.info("WEBHOOK VERIFICADO")
-        return challenge, 200
-    else:
-        logger.warning("Unauthorized webhook verification attempt")
-        return "Unauthorized", 403
+@app.route('/')
+def home():
+    logger.info("Home endpoint accessed")
+    return 'WhatsApp Bot is running!'
 
-@app.route('/webhook', methods=['POST'])
-async def webhook():
-    """Handle incoming WhatsApp messages."""
-    try:
-        data = request.get_json()
-        
-        # Parse the webhook data first
-        webhook_data = WhatsAppWebhook.from_json(data)
-        
-        # Check if it's a message event
-        if webhook_data.is_message_event():
-            message = webhook_data.messages[0]
-            contact = webhook_data.contacts[0]
-            
-            if message.is_text_message():
-                logger.info(f"Received text message from {contact.name} ({message.from_number}): {message.text.body}")
-                await message_handler.handle_message(webhook_data)
-            elif message.is_button_reply():
-                logger.info(f"Received button reply from {contact.name} ({message.from_number}): {message.get_button_title()} (ID: {message.get_button_id()})")
-                await message_handler.handle_response(webhook_data)
-            else:
-                logger.info(f"Received unknown message type from {contact.name} ({message.from_number}): {message.type}")
-
-            logger.info("Message processed successfully")
-        else:
-            logger.info("Skipping non-message event")
-        
-        return jsonify({"status": "success"}), 200
-        
-    except Exception as e:
-        logger.error(f"Error processing webhook: {str(e)}", exc_info=True)
-        return jsonify({"status": "error", "message": str(e)}), 500
+# Convertir la app Flask a ASGI
+asgi_app = WsgiToAsgi(app)
 
 if __name__ == '__main__':
-    app.run(host='0.0.0.0', port=8080)
+    uvicorn.run(
+        "whatsapp:asgi_app",  # Usar string de importación
+        host=config.HOST,
+        port=config.PORT,
+        reload=config.DEBUG
+    )

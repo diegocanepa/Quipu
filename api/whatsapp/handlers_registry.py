@@ -2,9 +2,9 @@ import logging
 from typing import Optional
 
 from pywa_async import WhatsApp, types, filters
-from api.whatsapp_v2.handlers.message_handler import WhatsAppV2MessageHandler
-from api.whatsapp_v2.handlers.callback_handler import WhatsAppV2CallbackHandler
-from api.whatsapp_v2.handlers.audio_hanlder import WhatsAppV2AudioHandler
+from api.whatsapp.handlers.message_handler import WhatsAppV2MessageHandler
+from api.whatsapp.handlers.callback_handler import WhatsAppV2CallbackHandler
+from api.whatsapp.handlers.audio_hanlder import WhatsAppV2AudioHandler
 
 logger = logging.getLogger(__name__)
 

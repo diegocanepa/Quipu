@@ -39,3 +39,7 @@ MSG_UNEXPECTED_ERROR = (
     "Por favor, intenta nuevamente en unos minutos.\n"
     "Si el problema persiste, contacta a soporte 📞"
 )
+
+# Voice Processing Messages
+MSG_VOICE_NO_TEXT = "❌ *No pude entender el mensaje de voz*\n\nPor favor, intentá enviar el mensaje nuevamente o escribí el texto directamente 📝"
+MSG_VOICE_PROCESSING_ERROR = "❌ *Hubo un error al procesar el mensaje de voz*\n\nPor favor, intentá nuevamente en unos minutos 🎙️"
