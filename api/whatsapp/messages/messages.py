@@ -18,18 +18,18 @@ MSG_LINKING_SUCCESS = (
 MSG_LINKING_CODE_NOT_FOUND = (
     "❌ *No se pudo encontrar el código de vinculación*\n\n"
     "Por favor, asegúrate de incluir el código correctamente en el formato:\n"
-    "_Mi código de vinculación es: XXXXX_ 📝"
+    "_Hola Quipu! Mi código de vinculación es: XXXXX_ 📝"
 )
 
 # Welcome Message
 MSG_WELCOME = (
     "👋 *¡Bienvenido/a a Quipu!*\n\n"
     "Para comenzar a usar Quipu, necesitas vincular tu cuenta.\n\n"
-    "1. Ingresa a la plataforma web: {webapp_url}\n"
-    "2. Ve a tu perfil\n"
-    "3. Copia tu código de vinculación\n"
-    "4. Envíalo aquí en este formato:\n"
-    "_Mi código de vinculación es: XXXXX_\n\n"
+    "1. Ingresa o registrate en la plataforma web: {webapp_url}\n"
+    "2. Nevagá a _vincular cuentas_.\n"
+    "3. Toca la opción vincular con whatsapp.\n"
+    "4. Manda el mensaje generado.\n\n"
+
     "¡Y listo! Comenzarás a disfrutar de todas las funcionalidades de Quipu 🚀"
 )
 
