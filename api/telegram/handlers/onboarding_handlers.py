@@ -11,7 +11,6 @@ from telegram.ext import (
 )
 
 from api.telegram.middlewere.requiere_user import require_user
-from core.models.user import User
 from integrations.platforms.telegram_adapter import TelegramAdapter
 from core.onboarding_manager import OnboardingManager
 from api.telegram.middlewere.get_user import get_user

@@ -13,3 +13,4 @@ ruff
 flask[async]
 asgiref
 redis
+pywa[async]

@@ -4,7 +4,6 @@ from typing import List, Dict, Any
 from enum import Enum
 from core.models.base_model import FinancialModel
 from core.models.user import User
-from core.models.common.source import Source
 
 class InvestmentAction(str, Enum):
     """Defines possible investment actions."""
