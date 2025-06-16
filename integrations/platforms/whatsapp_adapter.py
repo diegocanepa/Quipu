@@ -1,38 +1,31 @@
-from typing import List, Optional
+from typing import List
+from pywa_async import WhatsApp, types
+
 from core.interfaces.platform_adapter import PlatformAdapter
 from core.models.common.command_button import CommandButton
 from core.models.message import Message, Source
 from core.models.user import User
-from integrations.whatsapp.whatsapp_client import whatsapp_api_client
-from api.whatsapp.models.whatsapp_message import WhatsAppWebhook
 
-class WhatsAppAdapter(PlatformAdapter):
+class WhatsAppV2Adapter(PlatformAdapter):
     """
-    Adapter for WhatsApp platform to handle message replies and interactions.
-    Implements the PlatformAdapter interface.
+    Adapter for WhatsApp platform to handle message replies and button interactions.
+    Implements the PlatformAdapter interface using PyWa library.
     """
 
-    def __init__(self, webhook_data: WhatsAppWebhook, user: Optional[User] = None):
+    def __init__(self, wa: WhatsApp, update: types.Message, user: User = None):
         """
-        Initializes the WhatsAppAdapter with the given webhook data.
+        Initializes the WhatsAppV2Adapter with the given update.
 
         Args:
-            webhook_data (WhatsAppWebhook): The structured webhook data containing the message and context.
-            user (Optional[User]): The user associated with this message, if any.
+            wa: The WhatsApp client instance
+            update: The WhatsApp Message object containing the message and context
+            user: The User object containing the user data from our database.
         """
-        self.webhook_data = webhook_data
-        self.api_client = whatsapp_api_client
-        self.name = Source.WHATSAPP
+        self.wa = wa
+        self.update = update
         self.user = user
-        self._extract_message_data()
+        self.name = Source.WHATSAPP
 
-    def _extract_message_data(self):
-        """Extracts relevant message data from the webhook payload."""
-        # Get the first message and contact
-        self.message = self.webhook_data.messages[0] if self.webhook_data.messages else None
-        self.contact = self.webhook_data.contacts[0] if self.webhook_data.contacts else None
-        self.metadata = self.webhook_data.metadata
-        
     def get_platform_name(self) -> str:
         """
         Returns the platform name.
@@ -49,7 +42,7 @@ class WhatsAppAdapter(PlatformAdapter):
         Returns:
             str: The message ID.
         """
-        return self.message.message_id if self.message else ""
+        return str(self.update.id)
 
     def map_to_message(self, message_text: str = None) -> Message:
         """
@@ -57,6 +50,7 @@ class WhatsAppAdapter(PlatformAdapter):
 
         Args:
             message_text (str, optional): The text to use for the message. If None, uses the current message text.
+                                          This is used for transcription where we pass the transcripted text from the audio.
 
         Returns:
             Message: A Message object containing the message data.
@@ -71,100 +65,131 @@ class WhatsAppAdapter(PlatformAdapter):
 
     def get_message_text(self) -> str:
         """
-        Returns the text of the message from the webhook data.
+        Returns the text of the message from the update.
 
         Returns:
             str: The text of the message.
         """
-        return self.message.text.body if self.message and self.message.text else ""
+        return self.update.text if hasattr(self.update, 'text') else ""
 
-    def get_user_id(self) -> str:
+    def get_platform_user_id(self) -> str:
         """
-        Returns the unique identifier of the user.
+        Returns the unique identifier of the user depending on the platform.
+        For WhatsApp, this is the wa_id which is the phone number with the country code.
 
         Returns:
-            str: The user ID.
+            str: The WhatsApp ID (wa_id) of the user.
         """
-        return self.message.from_number if self.message else ""
+        return str(self.update.from_user.wa_id)
 
-    def get_user(self):
+    def get_user(self) -> User:
         """
-        Returns the user associated with this message, if any.
+        Returns the user object from the update.
+
+        Returns:
+            The user object or None if not present.
         """
         return self.user
 
     def get_voice_message(self):
         """
-        WhatsApp voice messages are not implemented in this version.
-        Returns None.
+        Returns the voice message from the update if available.
+
+        Returns:
+            The voice message object or None if not present.
         """
-        return None
+        return self.update.voice if hasattr(self.update, 'voice') else None
 
     def get_voice_file_id(self) -> str:
         """
-        WhatsApp voice messages are not implemented in this version.
-        Returns empty string.
+        Returns the file ID of the voice message if available.
+
+        Returns:
+            str: The file ID of the voice message or None if not present.
         """
-        return ""
+        voice = self.get_voice_message()
+        return voice.id if voice else None
 
     def get_callback_query(self):
         """
-        WhatsApp doesn't have a direct equivalent to callback queries.
-        Returns None.
-        """
-        return None
-
-    def reply_text(self, text: str) -> None:
-        """
-        Send a text message.
-        
-        Args:
-            text: The message text
-        """
-        phone_number_id = self.metadata.phone_number_id
-        to = self.get_user_id()
-        return self.api_client.send_message(phone_number_id, to, text)
-
-    def reply_with_buttons(self, text: str, buttons: List[CommandButton], **kwargs):
-        """
-        Send a message with buttons.
-        
-        Args:
-            text: The message text
-            buttons: List of buttons to include
-        """
-        phone_number_id = self.metadata.phone_number_id
-        to = self.get_user_id()
-        
-        # Convert CommandButton objects to WhatsApp button format
-        whatsapp_buttons = [
-            {
-                "id": button.callback_data,
-                "title": button.text
-            }
-            for button in buttons
-        ]
-        
-        return self.api_client.send_interactive_message(
-            phone_number_id=phone_number_id,
-            to=to,
-            body_text=text,
-            buttons=whatsapp_buttons
-        )
-
-    async def clean_up_processing_message(self, message):
-        """
-        WhatsApp doesn't support message deletion.
-        This is a no-op implementation.
-        """
-        pass
-
-    def get_platform_user_id(self) -> str:
-        """
-        Returns the unique identifier of the user in the WhatsApp platform.
-        This is the phone number of the user.
+        Returns the callback query from the update if available.
 
         Returns:
-            str: The WhatsApp user ID (phone number)
+            The callback query object or None if not present.
         """
-        return self.message.from_number if self.message else ""
+        return self.update.callback_data if hasattr(self.update, 'callback_data') else None
+
+    async def reply_text(self, text: str, **kwargs):
+        """
+        Sends a text reply to the user.
+
+        Args:
+            text (str): The text to be sent as a reply.
+            **kwargs: Additional keyword arguments for platform-specific options.
+        """
+        return await self.wa.send_message(
+            to=self._sanitize_number(self.get_platform_user_id()),
+            text=text,
+            **kwargs
+        )
+
+    async def reply_with_buttons(self, text: str, buttons: List[CommandButton], **kwargs):
+        """
+        Sends a reply with buttons to the user.
+
+        Args:
+            text (str): The text to be sent as a reply.
+            buttons (list): A list of CommandButton objects to be included in the reply.
+            **kwargs: Additional keyword arguments for platform-specific options.
+        """
+        keyboard = self._button_to_keyboard(buttons)
+        return await self.wa.send_message(
+            to=self._sanitize_number(self.get_platform_user_id()),
+            text=text,
+            buttons=keyboard,
+            **kwargs
+        )
+
+    def clean_up_processing_message(self, message):
+        """
+        Cleans up a processing message if the platform supports it.
+
+        Args:
+            message: The message to clean up.
+        """
+        # WhatsApp doesn't support message deletion
+        pass
+
+    def _button_to_keyboard(self, buttons: list[CommandButton]):
+        """
+        Converts a list of CommandButton objects to a format suitable for WhatsApp's button format.
+
+        Args:
+            buttons (list): A list of CommandButton objects.
+
+        Returns:
+            list: A list of Button objects for WhatsApp.
+        """
+        return [
+            types.Button(
+                title=button.text,
+                callback_data=button.callback_data
+            )
+            for button in buttons
+        ]
+    
+            
+    def _sanitize_number(self, raw_number: str) -> str:
+        """
+        Sanitizes a phone number for WhatsApp API use.
+
+        Args:
+            raw_number (str): The raw phone number
+
+        Returns:
+            str: The sanitized phone number
+        """
+        # Argentina: if it starts with 549, remove the '9'
+        if raw_number.startswith("549"):
+            return "54" + raw_number[3:]
+        return raw_number 

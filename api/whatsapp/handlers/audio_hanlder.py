@@ -10,9 +10,9 @@ from core.feature_flag import (
     get_disabled_message,
     is_feature_enabled,
 )
-from integrations.platforms.whatsapp_v2_adapter import WhatsAppV2Adapter
+from integrations.platforms.whatsapp_adapter import WhatsAppV2Adapter
 from core.user_data_manager import UserDataManager
-from api.whatsapp_v2.messages import messages
+from api.whatsapp.messages import messages
 from config import config
 
 logger = logging.getLogger(__name__)
