@@ -4,7 +4,6 @@ from telegram import InlineKeyboardButton, InlineKeyboardMarkup, Update
 from core.user_data_manager import UserDataManager
 from telegram.ext import ContextTypes
 from core.messages import MSG_ONBOARDING_REQUIRED, BTN_GOOGLE_SHEET, BTN_WEBAPP, UNEXPECTED_ERROR, MSG_WEBAPP_NOT_REGISTERED_HTML
-from core.models.user import User
 from config import config
 
 logger = logging.getLogger(__name__)

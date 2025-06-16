@@ -1,7 +1,6 @@
 import logging
 from datetime import datetime, timezone
 from typing import Optional
-import uuid
 
 from integrations.supabase.supabase import SupabaseManager
 from core.models.user import User
@@ -93,7 +92,7 @@ class UserDataManager:
             A User instance containing the user's data, or None if the user is not found.
         """
         return self.get_user_by_id(user_id)
-
+    
     def update_last_interaction_time(self, user_id: str) -> None:
         """Updates the last interaction timestamp for an existing user."""
         try:
@@ -221,4 +220,43 @@ class UserDataManager:
             return None
         except Exception as e:
             logger.error(f"Error creating user with ID: {e}")
+            return None
+
+    def update_user(self, user_id: str, **update_data) -> Optional[User]:
+        """
+        Updates specific fields for a user.
+        
+        Args:
+            user_id: The ID of the user to update
+            **update_data: Dictionary of fields to update and their new values
+            
+        Returns:
+            The updated User instance if successful, None otherwise
+        """
+        try:
+            # Remove None values to avoid storing nulls in the database
+            update_data = {k: v for k, v in update_data.items() if v is not None}
+            
+            if not update_data:
+                logger.warning(f"No valid data provided for update for user {user_id}")
+                return None
+                
+            # Add last_interaction_at timestamp
+            now_utc = datetime.now(timezone.utc)
+            update_data["last_interaction_at"] = now_utc.isoformat()
+            
+            response = self._client._client.table(self._users_table)\
+                .update(update_data)\
+                .eq("id", user_id)\
+                .execute()
+            
+            if response and hasattr(response, 'data') and response.data:
+                logger.info(f"Successfully updated user {user_id}")
+                return User.from_dict(response.data[0])
+            
+            logger.error(f"Failed to update user {user_id}")
+            return None
+            
+        except Exception as e:
+            logger.error(f"Error updating user {user_id}: {e}")
             return None

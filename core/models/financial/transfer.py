@@ -15,10 +15,11 @@ class Transfer(BaseModel, FinancialModel):
     initial_amount: float = Field(description="Initial amount before fees")
     final_amount: float = Field(description="Final amount after fees")
     currency: str = Field(description="Currency of the operation")
-
-    def to_presentation_string(self) -> str:
+    
+    def _to_telegram_presentation(self) -> str:
         """
-        Returns a formatted string representation of the transfer for presentation.
+        Returns a formatted string representation for Telegram.
+        Uses HTML formatting and emojis.
         """
         wallet_to_str = self.wallet_to if self.wallet_to is not None else "N/A"
         commission = self.initial_amount - self.final_amount
@@ -39,6 +40,33 @@ class Transfer(BaseModel, FinancialModel):
             lines.append(f"<b>➖ Comisión:</b> <code>{self.format_money_data(commission)}</code> {self.currency}")
             
         lines.append(f"<b>🗓️ Fecha:</b> <code>{self.date.strftime('%d/%m/%Y %H:%M')}</code>")
+        
+        return "\n".join(lines)
+
+    def _to_whatsapp_presentation(self) -> str:
+        """
+        Returns a formatted string representation for WhatsApp.
+        Uses plain text and emojis.
+        """
+        wallet_to_str = self.wallet_to if self.wallet_to is not None else "N/A"
+        commission = self.initial_amount - self.final_amount
+        
+        lines = [
+            "💱 *Transferencia*",
+            "",
+            f"📝 *Descripción:* {self.description}",
+            f"🏷️ *Categoría:* {self.category}",
+            f"➡️ *Acción:* {self.action}",
+            f"🏦 *Desde:* {self.wallet_from}",
+            f"➡️ *Hacia:* {wallet_to_str}",
+            f"📤 *Monto Inicial:* {self.format_money_data(self.initial_amount)} {self.currency}",
+            f"📥 *Monto Final:* {self.format_money_data(self.final_amount)} {self.currency}",
+        ]
+        
+        if commission != 0:
+            lines.append(f"➖ *Comisión:* {self.format_money_data(commission)} {self.currency}")
+            
+        lines.append(f"🗓️ *Fecha:* {self.date.strftime('%d/%m/%Y %H:%M')}")
         
         return "\n".join(lines)
 
@@ -68,9 +96,7 @@ class Transfer(BaseModel, FinancialModel):
             "initial_amount": self.initial_amount,
             "final_amount": self.final_amount,
             "currency": self.currency,
-            "webapp_user_id": user.webapp_user_id,
-            "telegram_user_id": user.telegram_user_id,
-            "whatsapp_user_id": user.whatsapp_user_id,
+            "webapp_user_id": str(user.id) if user.id else None
         }
 
     def get_base_table_name(self) -> str:

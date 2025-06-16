@@ -28,11 +28,25 @@ class Config:
     REDIS_PORT: int = int(os.getenv("REDIS_PORT", 6379))
     REDIS_PASSWORD: str = os.getenv("REDIS_PASSWORD", None)
     REDIS_DB: int = int(os.getenv("REDIS_DB", 0))
+    REDIS_SSL: bool = os.getenv("REDIS_SSL", "false").lower() == "true"
     FF_TRANSFER: bool = os.getenv("FF_TRANSFER", "true").lower() == "true"
     FF_EXCHANGE: bool = os.getenv("FF_EXCHANGE", "true").lower() == "true"
     FF_TRANSACTION: bool = os.getenv("FF_TRANSACTION", "true").lower() == "true"
     FF_INVESTMENT: bool = os.getenv("FF_INVESTMENT", "true").lower() == "true"
     WEBAPP_BASE_URL: str = os.getenv("WEBAPP_BASE_URL")
+
+    # Flask settings
+    HOST = os.getenv('HOST', '0.0.0.0')
+    PORT = int(os.getenv('PORT', 8080))
+    DEBUG = os.getenv('DEBUG', 'False').lower() == 'true'
+
+    # WhatsApp settings
+    WHATSAPP_PHONE_ID = os.getenv('WHATSAPP_PHONE_ID')
+    WHATSAPP_TOKEN = os.getenv('WHATSAPP_TOKEN')
+    WHATSAPP_APP_ID = os.getenv('WHATSAPP_APP_ID')
+    WHATSAPP_APP_SECRET = os.getenv('WHATSAPP_APP_SECRET')
+    WHATSAPP_BASE_URL: str = os.getenv("WHATSAPP_BASE_URL")
+    WHATSAPP_VERIFY_TOKEN: str = os.getenv("WHATSAPP_VERIFY_TOKEN")
 
     def __init__(self):
         self._validate_configs()
@@ -61,11 +75,23 @@ class Config:
             raise ValueError("WEBAPP_BASE_URL must be set in the .env file.")
         if not self.WEBHOOK_URL:
             raise ValueError("WEBHOOK_URL must be set in the .env file.")
+        if not self.WHATSAPP_BASE_URL:
+            raise ValueError("WHATSAPP_BASE_URL must be set in the .env file.")
+        if not self.WHATSAPP_VERIFY_TOKEN:
+            raise ValueError("WHATSAPP_VERIFY_TOKEN must be set in the .env file.")
+        if not self.WHATSAPP_PHONE_ID:
+            raise ValueError("WHATSAPP_PHONE_ID must be set in the .env file.")
+        if not self.WHATSAPP_TOKEN:
+            raise ValueError("WHATSAPP_TOKEN must be set in the .env file.")
+        if not self.WHATSAPP_APP_ID:
+            raise ValueError("WHATSAPP_APP_ID must be set in the .env file.")
+        if not self.WHATSAPP_APP_SECRET:
+            raise ValueError("WHATSAPP_APP_SECRET must be set in the .env file.")
         try:
             float(self.LLM_TEMPERATURE)
         except ValueError:
             raise ValueError("LLM_TEMPERATURE must be a valid float in the .env file.")
 
 
-# Create a global instance of the settings for easy access
+# Create and export a single instance of the settings
 config = Config()

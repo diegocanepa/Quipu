@@ -1,143 +1,102 @@
-# app.py
 import argparse
-import sys
-import logging
 import asyncio
-from pathlib import Path
-from flask import Flask, Response, request, make_response
+import logging
+from flask import Flask
 from asgiref.wsgi import WsgiToAsgi
 import uvicorn
-from http import HTTPStatus
-from telegram import Update
-from api.telegram.bot import register_handlers, get_application, setup_webhook
+from telegram_bot import app as telegram_app, initialize_telegram, application as telegram_application
+from whatsapp_bot import app as whatsapp_app, initialize_whatsapp
 
-def get_version():
-    """Get version from version.txt file"""
-    try:
-        version_file = Path(__file__).parent / "version.txt"
-        if version_file.exists():
-            return version_file.read_text().strip()
-        return "development"
-    except Exception:
-        return "unknown"
+# Configure logging
+logging.basicConfig(
+    level=logging.INFO,
+    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
+    handlers=[logging.StreamHandler()]
+)
 
-def setup_logging():
-    """Configure logging for the application"""
-    logging.basicConfig(
-        level=logging.INFO,
-        format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
-        handlers=[logging.StreamHandler(sys.stdout)]
-    )
-
-setup_logging()
+# Get logger for this module
 logger = logging.getLogger(__name__)
 
-# Initialize Flask app and Telegram application
+# Create main Flask app
 app = Flask(__name__)
-application = get_application()
-register_handlers(application)
 
-logger.info(f"Starting Quipu version {get_version()}")
+# Register Telegram routes
+app.register_blueprint(telegram_app, url_prefix='/telegram')
 
-async def process_updates():
-    async with application:
-        await application.start()
-        while True:
-            logger.info("Running update process")
-            try:
-                update = await application.update_queue.get()
-                logger.info(f"Procesando actualización: {update}")
-                await application.process_update(update)
-            finally:
-                application.update_queue.task_done()
-            await asyncio.sleep(0.1)  # Pequeña pausa para no consumir CPU al 100%
+# Register WhatsApp routes
+app.register_blueprint(whatsapp_app, url_prefix='/whatsapp')
 
-@app.post("/telegram")
-async def telegram_webhook() -> Response:
-    logger.info("Recibiendo petición POST en /telegram")
-    logger.info(f"Headers de la petición: {request.headers}")
-    logger.info(f"Cuerpo de la petición: {request.get_data(as_text=True)}")
-    logger.info(f"App: {application}")
-    try:
-        update = Update.de_json(data=request.json, bot=application.bot)
-        await application.update_queue.put(update)
-        return Response(status=HTTPStatus.OK)
-    except Exception as e:
-        logger.error(f"Error al procesar la actualización: {e}")
-        return Response(status=HTTPStatus.INTERNAL_SERVER_ERROR)
+@app.route('/')
+def home():
+    logger.info("Home endpoint accessed")
+    return 'Quipu Multi-Service Financial Bot is running!'
 
-@app.get("/healthcheck")
-async def healthcheck():
-    """Health check endpoint with version info"""
-    version = get_version()
-    status = {
-        "status": "healthy",
-        "service": "quipu",
-        "version": version,
-        "timestamp": asyncio.get_event_loop().time()
+@app.route('/healthcheck')
+def healthcheck():
+    logger.info("Health check endpoint accessed")
+    return {
+        'status': 'healthy',
+        'services': ['telegram', 'whatsapp']
     }
-    return make_response(status, HTTPStatus.OK)
 
-@app.get("/version")
-async def version_endpoint():
-    """Version endpoint"""
-    return make_response({"version": get_version()}, HTTPStatus.OK)
-
-async def main():
-    await setup_webhook()
-    server = uvicorn.Server(
-        config=uvicorn.Config(
-            app=WsgiToAsgi(app),
-            port=8080,
-            host="0.0.0.0",
-            use_colors=True,
-            log_level="debug",
-            reload=True
+async def initialize_services(debug: bool = False):
+    """Initialize both services"""
+    try:
+        logger.info("Initializing services...")
+        await asyncio.gather(
+            initialize_telegram(debug=debug),
+            initialize_whatsapp(debug=debug, flask_app=app)
         )
-    )
+        logger.info("Services initialized successfully")
+    except Exception as e:
+        logger.error(f"Error initializing services: {e}")
+        raise
 
-    async with application:
-        asyncio.create_task(process_updates())  # Iniciar el consumidor de la cola en segundo plano
-        await application.start()
-        await server.serve()
-        await application.stop()
+async def shutdown_services():
+    """Shutdown both services"""
+    try:
+        logger.info("Shutting down services...")
+        await telegram_application.stop()
+        # Add WhatsApp shutdown if needed
+        logger.info("Services shut down successfully")
+    except Exception as e:
+        logger.error(f"Error shutting down services: {e}")
 
 def main_cli():
     """CLI entry point with argument parsing"""
     parser = argparse.ArgumentParser(description='Quipu Multi-Service Financial Bot')
-    parser.add_argument('--version', action='version',
-                       version=f'Quipu {get_version()}')
     parser.add_argument('--port', type=int, default=8080,
                        help='Port to run the server on (default: 8080)')
     parser.add_argument('--host', default='0.0.0.0',
                        help='Host to bind to (default: 0.0.0.0)')
+    parser.add_argument('--debug', action='store_true',
+                       help='Run in debug mode')
 
     args = parser.parse_args()
 
-    # Update uvicorn config with CLI args
-    global main
-    original_main = main
-
-    async def main_with_args():
-        await setup_webhook()
-        server = uvicorn.Server(
-            config=uvicorn.Config(
-                app=WsgiToAsgi(app),
-                port=args.port,
-                host=args.host,
-                use_colors=True,
-                log_level="info",
-                reload=False
+    async def run_server():
+        try:
+            # Initialize services
+            await initialize_services(args.debug)
+            
+            # Start the unified server
+            logger.info(f"Starting server on {args.host}:{args.port}")
+            server = uvicorn.Server(
+                config=uvicorn.Config(
+                    app=WsgiToAsgi(app),
+                    port=args.port,
+                    host=args.host,
+                    use_colors=True,
+                    log_level="debug" if args.debug else "info",
+                    reload=args.debug
+                )
             )
-        )
-
-        async with application:
-            asyncio.create_task(process_updates())
-            await application.start()
             await server.serve()
-            await application.stop()
+        finally:
+            # Ensure services are properly shut down
+            await shutdown_services()
 
-    asyncio.run(main_with_args())
+    asyncio.run(run_server())
 
 if __name__ == '__main__':
-    main_cli()
+    main_cli() 

@@ -58,11 +58,11 @@ class MessageProcessor:
         for idx, result in enumerate(results):
             if result.error:
                 await platform.reply_text(f"❌ {result.error}")
-            else:
-                response_text = result.data_object.to_presentation_string()
+            else: 
+                response_text = result.data_object.to_presentation_string(platform.get_platform_name())
                 callback_id = f"{platform.get_message_id()}_{idx}"
 
-                buttons: list[CommandButton] = [
+                buttons: List[CommandButton] = [
                     CommandButton(
                         text=CONFIRM_BUTTON, callback_data=f"confirm#{callback_id}"
                     ),

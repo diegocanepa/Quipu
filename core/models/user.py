@@ -15,7 +15,7 @@ class User:
     created_at: Optional[datetime] = None
     last_interaction_at: Optional[datetime] = None
     google_sheet_id: Optional[str] = None
-    webapp_user_id: Optional[str] = None
+    webapp_user_id: Optional[UUID] = None
     webapp_integration_id: Optional[str] = None
     whatsapp_user_id: Optional[str] = None
 
@@ -31,12 +31,13 @@ class User:
         
         # Convert string to UUID if it's a string
         id_value = UUID(data['id']) if isinstance(data['id'], str) else data['id']
+        webapp_user_id = UUID(data['webapp_user_id']) if data.get('webapp_user_id') and isinstance(data['webapp_user_id'], str) else data.get('webapp_user_id')
         
         return cls(
             id=id_value,
             telegram_user_id=data['telegram_user_id'],
             google_sheet_id=data.get('google_sheet_id'),
-            webapp_user_id=data.get('webapp_user_id'),
+            webapp_user_id=webapp_user_id,
             webapp_integration_id=data.get('webapp_integration_id'),
             whatsapp_user_id=data.get('whatsapp_user_id'),
             created_at=created_at,
@@ -52,7 +53,7 @@ class User:
             'id': str(self.id),
             'telegram_user_id': self.telegram_user_id,
             'google_sheet_id': self.google_sheet_id,
-            'webapp_user_id': self.webapp_user_id,
+            'webapp_user_id': str(self.webapp_user_id) if self.webapp_user_id else None,
             'webapp_integration_id': self.webapp_integration_id,
             'whatsapp_user_id': self.whatsapp_user_id,
             'created_at': self.created_at.isoformat(),
