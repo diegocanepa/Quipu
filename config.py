@@ -43,10 +43,8 @@ class Config:
     # WhatsApp settings
     WHATSAPP_PHONE_ID = os.getenv('WHATSAPP_PHONE_ID')
     WHATSAPP_TOKEN = os.getenv('WHATSAPP_TOKEN')
-    WHATSAPP_CALLBACK_URL = os.getenv('WHATSAPP_CALLBACK_URL')
     WHATSAPP_APP_ID = os.getenv('WHATSAPP_APP_ID')
     WHATSAPP_APP_SECRET = os.getenv('WHATSAPP_APP_SECRET')
-    WHATSAPP_ACCESS_TOKEN: str = os.getenv("WHATSAPP_ACCESS_TOKEN")
     WHATSAPP_BASE_URL: str = os.getenv("WHATSAPP_BASE_URL")
     WHATSAPP_VERIFY_TOKEN: str = os.getenv("WHATSAPP_VERIFY_TOKEN")
 
@@ -77,8 +75,6 @@ class Config:
             raise ValueError("WEBAPP_BASE_URL must be set in the .env file.")
         if not self.WEBHOOK_URL:
             raise ValueError("WEBHOOK_URL must be set in the .env file.")
-        if not self.WHATSAPP_ACCESS_TOKEN:
-            raise ValueError("WHATSAPP_ACCESS_TOKEN must be set in the .env file.")
         if not self.WHATSAPP_BASE_URL:
             raise ValueError("WHATSAPP_BASE_URL must be set in the .env file.")
         if not self.WHATSAPP_VERIFY_TOKEN:
@@ -87,8 +83,6 @@ class Config:
             raise ValueError("WHATSAPP_PHONE_ID must be set in the .env file.")
         if not self.WHATSAPP_TOKEN:
             raise ValueError("WHATSAPP_TOKEN must be set in the .env file.")
-        if not self.WHATSAPP_CALLBACK_URL:
-            raise ValueError("WHATSAPP_CALLBACK_URL must be set in the .env file.")
         if not self.WHATSAPP_APP_ID:
             raise ValueError("WHATSAPP_APP_ID must be set in the .env file.")
         if not self.WHATSAPP_APP_SECRET:

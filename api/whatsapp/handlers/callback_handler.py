@@ -4,7 +4,7 @@ from typing import Optional
 from pywa_async import WhatsApp, types
 from core.message_processor import MessageProcessor
 from core.user_data_manager import UserDataManager
-from integrations.platforms.whatsapp_v2_adapter import WhatsAppV2Adapter
+from integrations.platforms.whatsapp_adapter import WhatsAppV2Adapter
 from api.whatsapp.messages import messages
 from config import config
 
