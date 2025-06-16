@@ -43,7 +43,7 @@ asgi_app = WsgiToAsgi(app)
 
 if __name__ == '__main__':
     uvicorn.run(
-        "main:asgi_app",  # Usar string de importación
+        "whatsapp_v2:asgi_app",  # Usar string de importación
         host=config.HOST,
         port=config.PORT,
         reload=config.DEBUG
