@@ -15,7 +15,7 @@ from core.prompts import (
     TRANSACTION_PROMPT,
     TRANSFER_PROMPT,
 )
-from integrations.providers.llm_akash import AkashLLMClient as LLMAgent
+from integrations.providers.llm_akash import RotatingLLMClientPool as LLMAgent
 from core.models.common.action_type import Actions, ActionTypes
 from core.models.financial.forex import Forex
 from core.models.financial.investment import Investment
