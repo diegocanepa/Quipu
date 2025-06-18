@@ -215,7 +215,38 @@ class OnboardingManager:
         processing_msg = await platform.reply_text(messages.MSG_WEBAPP_DEEPLINK_TRIGGERED)
 
         if webapp_user_id:
-            user = self.user_manager.create_user(id=webapp_user_id, webapp_user_id=webapp_user_id, telegram_user_id=telegram_user_id)
+            # Check if user exists with this webapp ID
+            existing_user = self.user_manager.get_user_by_id(webapp_user_id)
+            
+            if existing_user:
+                # Update existing user with Telegram ID
+                updated_user = self.user_manager.update_user(
+                    user_id=webapp_user_id,
+                    webapp_user_id=webapp_user_id,
+                    telegram_user_id=telegram_user_id
+                )
+                
+                if not updated_user:
+                    logger.error(f"Failed to update user with Telegram ID. User: {telegram_user_id}, Webapp ID: {webapp_user_id}")
+                    await platform.clean_up_processing_message(processing_msg)
+                    error_buttons = self._get_error_keyboard(self.WEBAPP_SHOWING_INSTRUCTIONS)
+                    await platform.reply_with_buttons(
+                        messages.MSG_WEBAPP_LINK_FAILED.format(webapp_base_url=config.WEBAPP_BASE_URL),
+                        error_buttons
+                    )
+                    return self.WEBAPP_SHOWING_INSTRUCTIONS
+                
+                logger.info(f"Successfully updated user with Telegram ID. User: {telegram_user_id}, ID: {updated_user.id}")
+                await platform.clean_up_processing_message(processing_msg)
+                await platform.reply_text(messages.MSG_WEBAPP_LINK_SUCCESS)
+                return self.END
+            
+            # Create new user with webapp ID
+            user = self.user_manager.create_user(
+                id=webapp_user_id,
+                webapp_user_id=webapp_user_id,
+                telegram_user_id=telegram_user_id
+            )
             
             if user:
                 logger.info(f"Webapp linking successful for Telegram user {telegram_user_id}, user_id: {user.id}")
@@ -224,6 +255,7 @@ class OnboardingManager:
                 return self.END
         
         logger.warning(f"Webapp linking failed for Telegram user {telegram_user_id}")
+        await platform.clean_up_processing_message(processing_msg)
         error_buttons = self._get_error_keyboard(self.WEBAPP_SHOWING_INSTRUCTIONS)
         await platform.reply_with_buttons(
             messages.MSG_WEBAPP_LINK_FAILED.format(webapp_base_url=config.WEBAPP_BASE_URL),
