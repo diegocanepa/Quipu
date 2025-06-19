@@ -25,6 +25,7 @@ class RedisCacheClient(CacheService):
         self.password = Config.REDIS_PASSWORD
         self.db = Config.REDIS_DB
         self.ssl = Config.REDIS_SSL
+        self.username = Config.REDIS_USERNAME
         self.redis_client: Optional[redis.Redis] = None
         self._connect()
 
@@ -37,6 +38,7 @@ class RedisCacheClient(CacheService):
                 host=self.host,
                 port=self.port,
                 password=self.password,
+                username=self.username,
                 db=self.db,
                 decode_responses=False,
                 socket_timeout=5,  # 5 seconds timeout

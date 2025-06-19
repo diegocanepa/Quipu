@@ -30,6 +30,7 @@ class Config:
     REDIS_PASSWORD: str = os.getenv("REDIS_PASSWORD", None)
     REDIS_DB: int = int(os.getenv("REDIS_DB", 0))
     REDIS_SSL: bool = os.getenv("REDIS_SSL", "false").lower() == "true"
+    REDIS_USERNAME: str = os.getenv("REDIS_USERNAME")
     FF_TRANSFER: bool = os.getenv("FF_TRANSFER", "true").lower() == "true"
     FF_EXCHANGE: bool = os.getenv("FF_EXCHANGE", "true").lower() == "true"
     FF_TRANSACTION: bool = os.getenv("FF_TRANSACTION", "true").lower() == "true"
