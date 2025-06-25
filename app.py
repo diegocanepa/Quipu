@@ -1,6 +1,8 @@
 import argparse
 import asyncio
 import logging
+from pathlib import Path
+import sys
 from flask import Flask
 from asgiref.wsgi import WsgiToAsgi
 import uvicorn
@@ -8,12 +10,28 @@ from telegram_bot import app as telegram_app, initialize_telegram, application a
 from whatsapp_bot import app as whatsapp_app, initialize_whatsapp
 
 # Configure logging
-logging.basicConfig(
-    level=logging.INFO,
-    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
-    handlers=[logging.StreamHandler()]
-)
+def setup_logging():
+    """Configure logging for the application"""
+    log_dir = Path("/var/log/quipu")
+    log_dir.mkdir(exist_ok=True)
 
+    handlers = [logging.StreamHandler(sys.stdout)]
+
+    # Only add file handler if running in production
+    if log_dir.exists() and log_dir.is_dir():
+        try:
+            handlers.append(logging.FileHandler(log_dir / "quipu.log"))
+        except PermissionError:
+            # If we can't write to /var/log/quipu, just use stdout
+            pass
+
+    logging.basicConfig(
+        level=logging.INFO,
+        format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
+        handlers=handlers
+    )
+
+setup_logging()
 # Get logger for this module
 logger = logging.getLogger(__name__)
 
