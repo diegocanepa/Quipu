@@ -11,7 +11,10 @@ from whatsapp_bot import app as whatsapp_app, initialize_whatsapp
 logging.basicConfig(
     level=logging.INFO,
     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
-    handlers=[logging.StreamHandler()]
+    handlers=[
+        logging.StreamHandler(),
+        logging.FileHandler("/var/log/quipu.log")
+    ]
 )
 
 # Get logger for this module
