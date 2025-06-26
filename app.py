@@ -11,7 +11,6 @@ from whatsapp_bot import app as whatsapp_app, initialize_whatsapp
 
 # Configure logging
 def setup_logging():
-    print("=== NEW BINARY VERSION - LOGGING FIX APPLIED ===")
     """Configure logging for the application"""
     import os
 
@@ -23,11 +22,9 @@ def setup_logging():
     try:
         log_dir.mkdir(parents=True, exist_ok=True)
         handlers.append(logging.FileHandler(log_file_path))
-        #.info(f"Logging to file: {log_file_path}")
-        print(f"Logging to file: {log_file_path}")
+        logger.info(f"Logging to file: {log_file_path}")
     except (PermissionError, OSError) as e:
-        #logger.warning(f"Cannot write to {log_file_path}: {e}. Using stdout only.")
-        print(f"Cannot write to {log_file_path}: {e}. Using stdout only.")
+        logger.warning(f"Cannot write to {log_file_path}: {e}. Using stdout only.")
 
     logging.basicConfig(
         level=logging.INFO,
