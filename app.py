@@ -12,18 +12,19 @@ from whatsapp_bot import app as whatsapp_app, initialize_whatsapp
 # Configure logging
 def setup_logging():
     """Configure logging for the application"""
-    log_dir = Path("/var/log/quipu")
-    log_dir.mkdir(exist_ok=True)
+    import os
+
+    log_file_path = os.getenv('LOG_FILE', '/var/log/quipu/quipu.log')
+    log_dir = Path(log_file_path).parent
 
     handlers = [logging.StreamHandler(sys.stdout)]
 
-    # Only add file handler if running in production
-    if log_dir.exists() and log_dir.is_dir():
-        try:
-            handlers.append(logging.FileHandler(log_dir / "quipu.log"))
-        except PermissionError:
-            # If we can't write to /var/log/quipu, just use stdout
-            pass
+    try:
+        log_dir.mkdir(parents=True, exist_ok=True)
+        handlers.append(logging.FileHandler(log_file_path))
+        logger.info(f"Logging to file: {log_file_path}")
+    except (PermissionError, OSError) as e:
+        logger.warning(f"Cannot write to {log_file_path}: {e}. Using stdout only.")
 
     logging.basicConfig(
         level=logging.INFO,
