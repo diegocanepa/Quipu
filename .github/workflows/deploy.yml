@@ -46,6 +46,17 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+        with:
+          fetch-depth: 0
+          ref: ${{ github.sha }}
+      
+      - name: Debug checkout info
+        run: |
+          echo "Current commit: $(git rev-parse HEAD)"
+          echo "GitHub SHA: ${{ github.sha }}"
+          echo "GitHub REF: ${{ github.ref }}"
+          git log -1 --oneline
+
       - name: Clear GitHub cache
         run: echo "CACHE_BUST=$(date +%s)" >> $GITHUB_ENV
 
@@ -122,6 +133,15 @@ jobs:
     
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          ref: ${{ github.sha }}
+      
+      - name: Debug checkout info
+        run: |
+          echo "Current commit: $(git rev-parse HEAD)"
+          echo "GitHub SHA: ${{ github.sha }}"
+          git log -1 --oneline
       
       - name: Download artifact
         uses: actions/download-artifact@v4
