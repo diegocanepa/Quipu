@@ -24,13 +24,14 @@ OOMScoreAdjust=-500
 NoNewPrivileges=yes
 ProtectSystem=strict
 ProtectHome=yes
-ReadWritePaths=/opt/quipu /var/log/quipu
+ReadWritePaths=/opt/quipu /var/log/quipu /var/log
 PrivateTmp=yes
 
 # Environment
 Environment=PYTHONUNBUFFERED=1
 Environment=PYTHONDONTWRITEBYTECODE=1
 EnvironmentFile=-/opt/quipu/.env
+Environment=LOG_FILE=/var/log/quipu/quipu.log
 
 # Logging (optimized)
 StandardOutput=journal
