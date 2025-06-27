@@ -223,8 +223,16 @@ jobs:
             sudo systemctl daemon-reload
           fi
           
-          # Set ownership
+          # Set ownership and ensure proper permissions
           sudo chown -R quipu:quipu $DEPLOY_DIR /var/log/quipu
+          sudo chmod 755 /var/log/quipu
+          
+          # Test write permissions
+          sudo -u quipu touch /var/log/quipu/test.log && sudo -u quipu rm -f /var/log/quipu/test.log || {
+            echo "Warning: Cannot write to log directory, fixing permissions..."
+            sudo chmod 775 /var/log/quipu
+            sudo chown -R quipu:quipu /var/log/quipu
+          }
           
           # Start service
           echo "Starting service..."

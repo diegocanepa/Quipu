@@ -30,8 +30,8 @@ PrivateTmp=yes
 # Environment
 Environment=PYTHONUNBUFFERED=1
 Environment=PYTHONDONTWRITEBYTECODE=1
-EnvironmentFile=-/opt/quipu/.env
 Environment=LOG_FILE=/var/log/quipu/quipu.log
+EnvironmentFile=-/opt/quipu/.env
 
 # Logging (optimized)
 StandardOutput=journal
