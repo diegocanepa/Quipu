@@ -21,10 +21,16 @@ def setup_logging():
 
     try:
         log_dir.mkdir(parents=True, exist_ok=True)
+        # Test if we can write to the log file
+        test_file = log_dir / 'test_write.tmp'
+        test_file.touch()
+        test_file.unlink()
+        # If test successful, add file handler
         handlers.append(logging.FileHandler(log_file_path))
-        logger.info(f"Logging to file: {log_file_path}")
+        print(f"Logging to file: {log_file_path}")
     except (PermissionError, OSError) as e:
-        logger.warning(f"Cannot write to {log_file_path}: {e}. Using stdout only.")
+        print(f"Warning: Cannot write to {log_file_path}, using stdout only. Error: {e}")
+        # Just use stdout if file logging fails
 
     logging.basicConfig(
         level=logging.INFO,
