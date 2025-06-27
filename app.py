@@ -54,6 +54,8 @@ def setup_logging():
         format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
         handlers=handlers
     )
+    
+    logger.info("Log after to setup logging config")
 
 setup_logging()
 # Get logger for this module
