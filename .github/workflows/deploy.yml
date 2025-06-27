@@ -118,7 +118,7 @@ jobs:
           cp dist/${{ env.APP_NAME }} deploy/
           cp version.txt deploy/
           cp deploy_scripts/install.sh deploy/
-          cp quipu.service deploy/
+          cp deploy_scripts/quipu.service deploy/
           chmod +x deploy/${{ env.APP_NAME }}
           chmod +x deploy/install.sh
           tar -czf ${{ env.APP_NAME }}-${{ env.VERSION }}.tar.gz -C deploy .
