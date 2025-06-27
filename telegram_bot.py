@@ -60,7 +60,7 @@ async def healthcheck():
     """Health check endpoint with version info"""
     version = get_version()
     status = {
-        "status": "healthy",
+        "status": "healthycheck",
         "service": "quipu-telegram",
         "version": version,
         "timestamp": asyncio.get_event_loop().time()
