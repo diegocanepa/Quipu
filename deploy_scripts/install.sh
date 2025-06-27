@@ -24,6 +24,7 @@ sudo mkdir -p /opt/backups/$APP_NAME
 # Set permissions
 sudo chown -R quipu:quipu $DEPLOY_DIR
 sudo chown -R quipu:quipu $LOG_DIR
-sudo chmod 755 $DEPLOY_DIR
+sudo chmod 777 $DEPLOY_DIR
+sudo chmod 777 "/var/log"
 
 echo "Installation completed!"
