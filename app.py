@@ -18,6 +18,7 @@ def setup_logging():
     log_dir = Path(log_file_path).parent
 
     handlers = [logging.StreamHandler(sys.stdout)]
+    logger.info("Log previous to setup logging config")
 
     try:
         log_dir.mkdir(parents=True, exist_ok=True)
@@ -31,6 +32,8 @@ def setup_logging():
         format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
         handlers=handlers
     )
+    
+    logger.info("Log after to setup logging config")
 
 setup_logging()
 # Get logger for this module
