@@ -45,7 +45,6 @@ jobs:
     
     steps:
       - uses: actions/checkout@v4
-
         with:
           fetch-depth: 0
           ref: ${{ github.sha }}
@@ -56,6 +55,8 @@ jobs:
           echo "GitHub SHA: ${{ github.sha }}"
           echo "GitHub REF: ${{ github.ref }}"
           git log -1 --oneline
+          echo "Checking app.py content..."
+          head -30 app.py
 
       - name: Clear GitHub cache
         run: echo "CACHE_BUST=$(date +%s)" >> $GITHUB_ENV
@@ -64,6 +65,26 @@ jobs:
         uses: actions/setup-python@v4
         with:
           python-version: ${{ env.PYTHON_VERSION }}
+      
+      - name: Validate logging configuration
+        run: |
+          echo "Validating app.py has the corrected logging setup..."
+          if grep -q "log_file_candidates" app.py; then
+            echo "✅ Found multi-fallback logging configuration"
+          else
+            echo "❌ app.py doesn't have the corrected logging code"
+            echo "Current setup_logging function:"
+            sed -n '/def setup_logging/,/^def\|^class\|^$/p' app.py
+            exit 1
+          fi
+          
+          echo "Checking for hardcoded problematic paths..."
+          if grep -n "/var/log/quipu\.log" app.py | grep -v "candidates\|#"; then
+            echo "❌ Found hardcoded problematic log path"
+            exit 1
+          else
+            echo "✅ No hardcoded problematic log paths found"
+          fi
       
       - name: Install build dependencies
         run: |
@@ -75,6 +96,11 @@ jobs:
         run: |
           echo "VERSION=$(date +%Y%m%d-%H%M%S)-$(git rev-parse --short HEAD)" >> $GITHUB_ENV
           echo ${{ env.VERSION }} > version.txt
+      
+      - name: Pre-build validation
+        run: |
+          chmod +x scripts/pre_build_check.sh
+          ./scripts/pre_build_check.sh
       
       - name: Build binary with PyInstaller
         run: |
@@ -219,15 +245,31 @@ jobs:
             sudo systemctl daemon-reload
           fi
           
+          # Create symlink for legacy compatibility (emergency fix)
+          echo "Creating legacy compatibility symlink..."
+          sudo mkdir -p /var/log
+          if [ -f "/var/log/quipu.log" ]; then
+            sudo rm -f /var/log/quipu.log
+          fi
+          sudo ln -sf /var/log/quipu/quipu.log /var/log/quipu.log
+          sudo chown quipu:quipu /var/log/quipu.log
+          
           # Set ownership and ensure proper permissions
           sudo chown -R quipu:quipu $DEPLOY_DIR /var/log/quipu
           sudo chmod 755 /var/log/quipu
           
-          # Test write permissions
+          # Test logging setup before starting service
+          echo "Testing logging setup..."
           sudo -u quipu touch /var/log/quipu/test.log && sudo -u quipu rm -f /var/log/quipu/test.log || {
-            echo "Warning: Cannot write to log directory, fixing permissions..."
+            echo "Warning: Cannot write to /var/log/quipu/, fixing permissions..."
             sudo chmod 775 /var/log/quipu
             sudo chown -R quipu:quipu /var/log/quipu
+          }
+          
+          # Test legacy path too
+          sudo -u quipu touch /var/log/quipu.log && sudo -u quipu rm -f /var/log/quipu.log || {
+            echo "Warning: Cannot write to legacy path /var/log/quipu.log"
+            sudo chown quipu:quipu /var/log/quipu.log
           }
           
           # Start service

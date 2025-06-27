@@ -11,26 +11,43 @@ from whatsapp_bot import app as whatsapp_app, initialize_whatsapp
 
 # Configure logging
 def setup_logging():
-    """Configure logging for the application"""
+    """Configure logging for the application with multiple fallback strategies"""
     import os
 
-    log_file_path = os.getenv('LOG_FILE', '/var/log/quipu/quipu.log')
-    log_dir = Path(log_file_path).parent
+    # Try multiple log file locations in order of preference
+    log_file_candidates = [
+        os.getenv('LOG_FILE', '/var/log/quipu/quipu.log'),  # From environment
+        '/var/log/quipu/quipu.log',  # Preferred location
+        '/var/log/quipu.log',  # Legacy location (for compatibility)
+        '/tmp/quipu.log',  # Temporary fallback
+        './quipu.log'  # Local fallback
+    ]
 
     handlers = [logging.StreamHandler(sys.stdout)]
-
-    try:
-        log_dir.mkdir(parents=True, exist_ok=True)
-        # Test if we can write to the log file
-        test_file = log_dir / 'test_write.tmp'
-        test_file.touch()
-        test_file.unlink()
-        # If test successful, add file handler
-        handlers.append(logging.FileHandler(log_file_path))
-        print(f"Logging to file: {log_file_path}")
-    except (PermissionError, OSError) as e:
-        print(f"Warning: Cannot write to {log_file_path}, using stdout only. Error: {e}")
-        # Just use stdout if file logging fails
+    
+    # Try each log file location until one works
+    for log_file_path in log_file_candidates:
+        try:
+            log_dir = Path(log_file_path).parent
+            log_dir.mkdir(parents=True, exist_ok=True)
+            
+            # Test if we can write to the log file
+            test_file = log_dir / 'test_write.tmp'
+            test_file.touch()
+            test_file.unlink()
+            
+            # If test successful, add file handler
+            handlers.append(logging.FileHandler(log_file_path))
+            print(f"✅ Logging to file: {log_file_path}")
+            break  # Success, stop trying other locations
+            
+        except (PermissionError, OSError) as e:
+            print(f"⚠️ Cannot write to {log_file_path}: {e}")
+            continue  # Try next location
+    
+    # If no file logging worked, warn but continue with stdout only
+    if len(handlers) == 1:
+        print("⚠️ File logging failed for all locations, using stdout only")
 
     logging.basicConfig(
         level=logging.INFO,
