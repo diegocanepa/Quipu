@@ -164,7 +164,7 @@ jobs:
       - name: Upload artifact
         uses: actions/upload-artifact@v4
         with:
-          name: quipu-binary-v3-${{ env.CACHE_BUST }}
+          name: quipu-binary-${{ github.sha }}
           path: ${{ env.APP_NAME }}-${{ env.VERSION }}.tar.gz
           retention-days: 30
 
@@ -185,13 +185,10 @@ jobs:
           echo "GitHub SHA: ${{ github.sha }}"
           git log -1 --oneline
       
-      - name: Set cache bust
-        run: echo "CACHE_BUST=$(date +%s)-$(git rev-parse HEAD)" >> $GITHUB_ENV
-      
       - name: Download artifact
         uses: actions/download-artifact@v4
         with:
-          name: quipu-binary-v3-${{ env.CACHE_BUST }}
+          name: quipu-binary-${{ github.sha }}
       
       - name: Setup SSH
         run: |
