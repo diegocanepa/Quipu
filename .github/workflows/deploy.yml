@@ -59,7 +59,7 @@ jobs:
           head -30 app.py
 
       - name: Clear GitHub cache
-        run: echo "CACHE_BUST=$(date +%s)" >> $GITHUB_ENV
+        run: echo "CACHE_BUST=$(date +%s)-$(git rev-parse HEAD)" >> $GITHUB_ENV
 
       - name: Set up Python
         uses: actions/setup-python@v4
@@ -101,6 +101,11 @@ jobs:
         run: |
           rm -rf build dist *.spec
       
+      - name: Force fresh build
+        run: |
+          chmod +x scripts/force_fresh_build.sh
+          ./scripts/force_fresh_build.sh
+      
       - name: Pre-build validation
         run: |
           chmod +x scripts/pre_build_check.sh
@@ -138,6 +143,13 @@ jobs:
             --specpath . \
             ${{ env.MAIN_FILE }}
       
+      - name: Debug service file content
+        run: |
+          echo "=== Content of quipu-freetier.service ==="
+          cat deploy_scripts/quipu-freetier.service
+          echo "=== Checking for LOG_FILE ==="
+          grep -n "LOG_FILE" deploy_scripts/quipu-freetier.service || echo "LOG_FILE not found!"
+      
       - name: Create deployment package
         run: |
           mkdir -p deploy
@@ -152,7 +164,7 @@ jobs:
       - name: Upload artifact
         uses: actions/upload-artifact@v4
         with:
-          name: quipu-binary-v2
+          name: quipu-binary-v3-${{ env.CACHE_BUST }}
           path: ${{ env.APP_NAME }}-${{ env.VERSION }}.tar.gz
           retention-days: 30
 
@@ -173,10 +185,13 @@ jobs:
           echo "GitHub SHA: ${{ github.sha }}"
           git log -1 --oneline
       
+      - name: Set cache bust
+        run: echo "CACHE_BUST=$(date +%s)-$(git rev-parse HEAD)" >> $GITHUB_ENV
+      
       - name: Download artifact
         uses: actions/download-artifact@v4
         with:
-          name: quipu-binary-v2
+          name: quipu-binary-v3-${{ env.CACHE_BUST }}
       
       - name: Setup SSH
         run: |
