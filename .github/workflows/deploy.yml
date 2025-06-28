@@ -131,9 +131,15 @@ jobs:
             --hidden-import=gspread \
             --hidden-import=oauth2client \
             --hidden-import=langchain_openai \
+            --hidden-import=aiohttp \
+            --hidden-import=aiofiles \
+            --hidden-import=httpx \
+            --hidden-import=requests \
+            --hidden-import=pywa_async \
             --collect-all telegram \
             --collect-all uvicorn \
             --collect-all flask \
+            --collect-all aiohttp \
             --exclude-module=matplotlib \
             --exclude-module=numpy \
             --exclude-module=pandas \
