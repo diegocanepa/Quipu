@@ -1,11 +1,15 @@
-from pydantic import BaseModel, Field
 from datetime import datetime
-from typing import Optional, List, Dict, Any
+from typing import Any, Dict, List, Optional
+
+from pydantic import BaseModel, Field
+
 from core.models.base_model import FinancialModel
 from core.models.user import User
 
+
 class Transfer(BaseModel, FinancialModel):
     """Represents a transfer operation."""
+
     description: str = Field(description="Description of the transfer")
     category: str = Field(description="Category of the transfer")
     date: datetime = Field(description="Operation datetime")
@@ -15,7 +19,7 @@ class Transfer(BaseModel, FinancialModel):
     initial_amount: float = Field(description="Initial amount before fees")
     final_amount: float = Field(description="Final amount after fees")
     currency: str = Field(description="Currency of the operation")
-    
+
     def _to_telegram_presentation(self) -> str:
         """
         Returns a formatted string representation for Telegram.
@@ -23,7 +27,7 @@ class Transfer(BaseModel, FinancialModel):
         """
         wallet_to_str = self.wallet_to if self.wallet_to is not None else "N/A"
         commission = self.initial_amount - self.final_amount
-        
+
         lines = [
             "<b>💱 Transferencia</b>",
             "",
@@ -35,12 +39,16 @@ class Transfer(BaseModel, FinancialModel):
             f"<b>📤 Monto Inicial:</b> <code>{self.format_money_data(self.initial_amount)}</code> {self.currency}",
             f"<b>📥 Monto Final:</b> <code>{self.format_money_data(self.final_amount)}</code> {self.currency}",
         ]
-        
+
         if commission != 0:
-            lines.append(f"<b>➖ Comisión:</b> <code>{self.format_money_data(commission)}</code> {self.currency}")
-            
-        lines.append(f"<b>🗓️ Fecha:</b> <code>{self.date.strftime('%d/%m/%Y %H:%M')}</code>")
-        
+            lines.append(
+                f"<b>➖ Comisión:</b> <code>{self.format_money_data(commission)}</code> {self.currency}"
+            )
+
+        lines.append(
+            f"<b>🗓️ Fecha:</b> <code>{self.date.strftime('%d/%m/%Y %H:%M')}</code>"
+        )
+
         return "\n".join(lines)
 
     def _to_whatsapp_presentation(self) -> str:
@@ -50,7 +58,7 @@ class Transfer(BaseModel, FinancialModel):
         """
         wallet_to_str = self.wallet_to if self.wallet_to is not None else "N/A"
         commission = self.initial_amount - self.final_amount
-        
+
         lines = [
             "💱 *Transferencia*",
             "",
@@ -62,13 +70,22 @@ class Transfer(BaseModel, FinancialModel):
             f"📤 *Monto Inicial:* {self.format_money_data(self.initial_amount)} {self.currency}",
             f"📥 *Monto Final:* {self.format_money_data(self.final_amount)} {self.currency}",
         ]
-        
+
         if commission != 0:
-            lines.append(f"➖ *Comisión:* {self.format_money_data(commission)} {self.currency}")
-            
+            lines.append(
+                f"➖ *Comisión:* {self.format_money_data(commission)} {self.currency}"
+            )
+
         lines.append(f"🗓️ *Fecha:* {self.date.strftime('%d/%m/%Y %H:%M')}")
-        
+
         return "\n".join(lines)
+
+    def get_description(self) -> str:
+        """
+        Returns a description of the investment operation.
+        This is used for user understanding and documentation.
+        """
+        return self.description
 
     def to_sheet_row(self) -> List[Any]:
         """Returns data formatted for spreadsheet storage."""
@@ -83,7 +100,7 @@ class Transfer(BaseModel, FinancialModel):
             self.currency,
             self.description,
         ]
-        
+
     def to_storage_dict(self, user: User) -> Dict[str, Any]:
         """Returns data formatted for database storage."""
         return {
@@ -96,7 +113,7 @@ class Transfer(BaseModel, FinancialModel):
             "initial_amount": self.initial_amount,
             "final_amount": self.final_amount,
             "currency": self.currency,
-            "webapp_user_id": str(user.id) if user.id else None
+            "webapp_user_id": str(user.id) if user.id else None,
         }
 
     def get_base_table_name(self) -> str:
@@ -105,4 +122,4 @@ class Transfer(BaseModel, FinancialModel):
 
     def get_worksheet_name(self) -> str:
         """Returns the worksheet name for Google Sheets."""
-        return "Transferencias" 
+        return "Transferencias"

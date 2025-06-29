@@ -1,11 +1,15 @@
-from pydantic import BaseModel, Field
 from datetime import datetime
-from typing import List, Dict, Any
+from typing import Any, Dict, List
+
+from pydantic import BaseModel, Field
+
 from core.models.base_model import FinancialModel
 from core.models.user import User
 
+
 class Forex(BaseModel, FinancialModel):
     """Represents a forex operation."""
+
     description: str = Field(description="Description of the operation")
     amount: float = Field(description="Amount to exchange")
     currency_from: str = Field(description="Source currency")
@@ -27,7 +31,7 @@ class Forex(BaseModel, FinancialModel):
         <b>📤 Cantidad Enviada:</b> <code>{self.format_money_data(self.amount)}</code> {self.currency_from}
         <b>📥 Cantidad Recibida:</b> <code>{self.format_money_data(self.amount * self.price)} </code> {self.currency_to}
         <b>💰 Precio de Cambio:</b> <code>{self.format_money_data(self.price)}</code> {self.currency_from}/{self.currency_to}
-        <b>🗓️ Fecha:</b> <code>{self.date.strftime('%d/%m/%Y %H:%M')}</code> 
+        <b>🗓️ Fecha:</b> <code>{self.date.strftime("%d/%m/%Y %H:%M")}</code> 
         """
 
     def _to_whatsapp_presentation(self) -> str:
@@ -42,8 +46,15 @@ class Forex(BaseModel, FinancialModel):
             📤 *Cantidad Enviada:* {self.format_money_data(self.amount)} {self.currency_from}
             📥 *Cantidad Recibida:* {self.format_money_data(self.amount * self.price)} {self.currency_to}
             💰 *Precio de Cambio:* {self.format_money_data(self.price)} {self.currency_from}/{self.currency_to}
-            🗓️ *Fecha:* {self.date.strftime('%d/%m/%Y %H:%M')}
+            🗓️ *Fecha:* {self.date.strftime("%d/%m/%Y %H:%M")}
         """
+
+    def get_description(self) -> str:
+        """
+        Returns a description of the forex operation.
+        This is used for user understanding and documentation.
+        """
+        return self.description
 
     def to_sheet_row(self) -> List[Any]:
         """Returns data formatted for spreadsheet storage."""
@@ -55,9 +66,9 @@ class Forex(BaseModel, FinancialModel):
             self.currency_to,
             self.price,
             self.price * self.amount,
-            self.description
+            self.description,
         ]
-        
+
     def to_storage_dict(self, user: User) -> Dict[str, Any]:
         """Returns data formatted for database storage."""
         return {
@@ -68,7 +79,7 @@ class Forex(BaseModel, FinancialModel):
             "price": self.price,
             "date": self.date.isoformat(),
             "action": self.action,
-            "webapp_user_id": str(user.id) if user.id else None
+            "webapp_user_id": str(user.id) if user.id else None,
         }
 
     def get_base_table_name(self) -> str:
@@ -77,4 +88,4 @@ class Forex(BaseModel, FinancialModel):
 
     def get_worksheet_name(self) -> str:
         """Returns the worksheet name for Google Sheets."""
-        return "CambioDeDivisas" 
+        return "CambioDeDivisas"
