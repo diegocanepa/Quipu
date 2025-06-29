@@ -1,20 +1,21 @@
-from abc import ABC, abstractmethod
-from typing import Any, List, Dict
 import os
+from abc import ABC, abstractmethod
+from typing import Any, Dict, List
 
-from core.models.user import User
 from core.models.common.source import Source
+from core.models.user import User
+
 
 class FinancialModel(ABC):
     """Base interface for all financial models."""
-    
+
     def to_presentation_string(self, source: str = Source.TELEGRAM) -> str:
         """
         Returns a formatted string representation for user presentation.
-        
+
         Args:
             source: The source platform (telegram or whatsapp)
-            
+
         Returns:
             str: Formatted string for the specified platform
         """
@@ -38,6 +39,14 @@ class FinancialModel(ABC):
         """
         Returns a formatted string representation for WhatsApp.
         Uses plain text and emojis.
+        """
+        pass
+
+    @abstractmethod
+    def get_description(self) -> str:
+        """
+        Returns a description of the financial model.
+        This is used for user understanding and documentation.
         """
         pass
 
@@ -67,8 +76,8 @@ class FinancialModel(ABC):
         Handles test environment by adding 'test_' prefix.
         """
         base_name = self.get_base_table_name()
-        is_test = os.getenv('ENVIRONMENT', 'prod').lower() == 'test'
+        is_test = os.getenv("ENVIRONMENT", "prod").lower() == "test"
         return f"{base_name}_test" if is_test else base_name
-    
+
     def format_money_data(self, number: float) -> str:
         return f"{number:,.2f}".replace(",", "X").replace(".", ",").replace("X", ".")
