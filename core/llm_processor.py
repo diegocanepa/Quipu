@@ -6,6 +6,11 @@ import pytz
 from pydantic import BaseModel
 
 from core.feature_flag import FeatureFlagsEnum, is_feature_enabled
+from core.models.common.action_type import Actions, ActionTypes
+from core.models.financial.forex import Forex
+from core.models.financial.investment import Investment
+from core.models.financial.transaction import Transaction
+from core.models.financial.transfer import Transfer
 from core.prompts import (
     EXPENSE_PROMPT,
     FOREX_PROMPT,
@@ -16,11 +21,6 @@ from core.prompts import (
     TRANSFER_PROMPT,
 )
 from integrations.providers.llm_akash import RotatingLLMClientPool as LLMAgent
-from core.models.common.action_type import Actions, ActionTypes
-from core.models.financial.forex import Forex
-from core.models.financial.investment import Investment
-from core.models.financial.transaction import Transaction
-from core.models.financial.transfer import Transfer
 
 logger = logging.getLogger(__name__)
 
@@ -77,7 +77,8 @@ class LLMProcessor:
                 )
                 processing_results.append(
                     ProcessingResult(
-                        error="No se pudo determinar una accion para registrar en base al mensaje"
+                        error='No se pudo determinar una acción para registrar en base al mensaje. \
+                            \n Pobrá especificando el movimiento con "Gasté" o "Recibí" seguido del monto y la descripción del movimiento.'
                     )
                 )
                 return processing_results
