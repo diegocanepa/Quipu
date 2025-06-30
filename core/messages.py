@@ -290,3 +290,5 @@ MSG_WEBAPP_NOT_REGISTERED_HTML = (
 # Voice Processing Messages
 MSG_VOICE_NO_TEXT = "❌ <b>No pude entender el mensaje de voz</b>\n\nPor favor, intentá enviar el mensaje nuevamente o escribí el texto directamente 📝"
 MSG_VOICE_PROCESSING_ERROR = "❌ <b>Hubo un error al procesar el mensaje de voz</b>\n\nPor favor, intentá nuevamente en unos minutos 🎙️"
+
+ERROR_PROCESSING_MESSAGE="Ups 😅, algo salió mal y no logré interpretar tu mensaje. Por favor, intentá de nuevo. Si el problema continúa, podés escribirnos a soporte en instagram para que te ayudemos ✨."

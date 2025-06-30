@@ -15,6 +15,7 @@ from core.messages import (
     SAVE_SUCCESS
 )
 from core.models.common.command_button import CommandButton
+from core.models.common.simple_message import SimpleStringResponse
 from core.models.message import Message
 from core.services.message_service import MessageService
 from core.user_data_manager import UserDataManager
@@ -58,7 +59,9 @@ class MessageProcessor:
         for idx, result in enumerate(results):
             if result.error:
                 await platform.reply_text(f"❌ {result.error}")
-            else: 
+            if result.response_text:
+                await platform.reply_text(result.response_text)
+            elif result.data_object: 
                 response_text = result.data_object.to_presentation_string(platform.get_platform_name())
                 callback_id = f"{platform.get_message_id()}_{idx}"
 
