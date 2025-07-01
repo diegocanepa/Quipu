@@ -1,4 +1,5 @@
 import os
+from typing import List
 
 from dotenv import load_dotenv
 
@@ -9,7 +10,7 @@ class Config:
     """Class to store application settings."""
 
     AKASH_API_BASE_URL: str = os.getenv("AKASH_API_BASE_URL")
-    AKASH_API_KEY: str = os.getenv("AKASH_API_KEY")
+    AKASH_API_KEY: List[str] = os.getenv("AKASH_API_KEY").split(",") if os.getenv("AKASH_API_KEY") else []
     LLM_MODEL_NAME: str = os.getenv("LLM_MODEL_NAME", "DeepSeek-R1-Distill-Qwen-32B")
     LLM_TEMPERATURE: float = float(os.getenv("LLM_TEMPERATURE", "0.7"))
     TELEGRAM_BOT_TOKEN: str = os.getenv("TELEGRAM_BOT_TOKEN")
@@ -29,6 +30,7 @@ class Config:
     REDIS_PASSWORD: str = os.getenv("REDIS_PASSWORD", None)
     REDIS_DB: int = int(os.getenv("REDIS_DB", 0))
     REDIS_SSL: bool = os.getenv("REDIS_SSL", "false").lower() == "true"
+    REDIS_USERNAME: str = os.getenv("REDIS_USERNAME")
     FF_TRANSFER: bool = os.getenv("FF_TRANSFER", "true").lower() == "true"
     FF_EXCHANGE: bool = os.getenv("FF_EXCHANGE", "true").lower() == "true"
     FF_TRANSACTION: bool = os.getenv("FF_TRANSACTION", "true").lower() == "true"
@@ -55,7 +57,7 @@ class Config:
         """Optional: Add validations to ensure required configs are present and valid."""
         if not self.AKASH_API_BASE_URL:
             raise ValueError("AKASH_API_BASE_URL must be set in the .env file.")
-        if not self.AKASH_API_KEY:
+        if not self.AKASH_API_KEY or len(self.AKASH_API_KEY) == 0:
             raise ValueError("AKASH_API_KEY must be set in the .env file.")
         if not self.TELEGRAM_BOT_TOKEN:
             raise ValueError("TELEGRAM_BOT_TOKEN must be set in the .env file.")

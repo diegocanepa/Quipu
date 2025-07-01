@@ -88,6 +88,7 @@ class WhatsAppV2MessageHandler:
                 # Update existing user with WhatsApp ID
                 updated_user = self.user_manager.update_user(
                     user_id=linking_code,
+                    webapp_user_id=linking_code,
                     whatsapp_user_id=whatsapp_user_id
                 )
                 
@@ -103,8 +104,8 @@ class WhatsAppV2MessageHandler:
             # Create new user with linking code
             user = self.user_manager.create_user(
                 id=linking_code,
-                webapp_integration_id=linking_code,
-                whatsapp_user_id=whatsapp_user_id
+                whatsapp_user_id=whatsapp_user_id,
+                webapp_user_id=linking_code
             )
             
             if not user:

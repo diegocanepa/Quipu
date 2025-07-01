@@ -20,7 +20,7 @@ The primary objective of Quipu is to offer a user-friendly way to track and unde
 
 You can run Quipu on your own computer using either the standard terminal or with Docker. Follow the steps below for your preferred method.
 
-### Method 1: Running from the Terminal (Without Docker)
+### Method 1: Running from the Terminal (Without Docker). Redis disabled
 
 1.  **Make sure you have Python installed:** Quipu requires Python 3.9.6 or a later version. You can check your Python version by opening your terminal and running:
     ```bash

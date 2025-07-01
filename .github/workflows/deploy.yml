@@ -45,11 +45,46 @@ jobs:
     
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          ref: ${{ github.sha }}
       
+      - name: Debug checkout info
+        run: |
+          echo "Current commit: $(git rev-parse HEAD)"
+          echo "GitHub SHA: ${{ github.sha }}"
+          echo "GitHub REF: ${{ github.ref }}"
+          git log -1 --oneline
+          echo "Checking app.py content..."
+          head -30 app.py
+
+      - name: Clear GitHub cache
+        run: echo "CACHE_BUST=$(date +%s)-$(git rev-parse HEAD)" >> $GITHUB_ENV
+
       - name: Set up Python
         uses: actions/setup-python@v4
         with:
           python-version: ${{ env.PYTHON_VERSION }}
+      
+      - name: Validate logging configuration
+        run: |
+          echo "Validating app.py has the corrected logging setup..."
+          if grep -q "log_file_candidates" app.py; then
+            echo "✅ Found multi-fallback logging configuration"
+          else
+            echo "❌ app.py doesn't have the corrected logging code"
+            echo "Current setup_logging function:"
+            sed -n '/def setup_logging/,/^def\|^class\|^$/p' app.py
+            exit 1
+          fi
+          
+          echo "Checking for hardcoded problematic paths..."
+          if grep -n "/var/log/quipu\.log" app.py | grep -v "candidates\|#"; then
+            echo "❌ Found hardcoded problematic log path"
+            exit 1
+          else
+            echo "✅ No hardcoded problematic log paths found"
+          fi
       
       - name: Install build dependencies
         run: |
@@ -61,6 +96,20 @@ jobs:
         run: |
           echo "VERSION=$(date +%Y%m%d-%H%M%S)-$(git rev-parse --short HEAD)" >> $GITHUB_ENV
           echo ${{ env.VERSION }} > version.txt
+
+      - name: Clean previous build
+        run: |
+          rm -rf build dist *.spec
+      
+      - name: Force fresh build
+        run: |
+          chmod +x scripts/force_fresh_build.sh
+          ./scripts/force_fresh_build.sh
+      
+      - name: Pre-build validation
+        run: |
+          chmod +x scripts/pre_build_check.sh
+          ./scripts/pre_build_check.sh
       
       - name: Build binary with PyInstaller
         run: |
@@ -82,9 +131,15 @@ jobs:
             --hidden-import=gspread \
             --hidden-import=oauth2client \
             --hidden-import=langchain_openai \
+            --hidden-import=aiohttp \
+            --hidden-import=aiofiles \
+            --hidden-import=httpx \
+            --hidden-import=requests \
+            --hidden-import=pywa_async \
             --collect-all telegram \
             --collect-all uvicorn \
             --collect-all flask \
+            --collect-all aiohttp \
             --exclude-module=matplotlib \
             --exclude-module=numpy \
             --exclude-module=pandas \
@@ -94,13 +149,20 @@ jobs:
             --specpath . \
             ${{ env.MAIN_FILE }}
       
+      - name: Debug service file content
+        run: |
+          echo "=== Content of quipu-freetier.service ==="
+          cat deploy_scripts/quipu-freetier.service
+          echo "=== Checking for LOG_FILE ==="
+          grep -n "LOG_FILE" deploy_scripts/quipu-freetier.service || echo "LOG_FILE not found!"
+      
       - name: Create deployment package
         run: |
           mkdir -p deploy
           cp dist/${{ env.APP_NAME }} deploy/
           cp version.txt deploy/
           cp deploy_scripts/install.sh deploy/
-          cp deploy_scripts/quipu-freetier.service deploy/quipu.service
+          cp deploy_scripts/quipu.service deploy/
           chmod +x deploy/${{ env.APP_NAME }}
           chmod +x deploy/install.sh
           tar -czf ${{ env.APP_NAME }}-${{ env.VERSION }}.tar.gz -C deploy .
@@ -108,7 +170,7 @@ jobs:
       - name: Upload artifact
         uses: actions/upload-artifact@v4
         with:
-          name: quipu-binary
+          name: quipu-binary-${{ github.sha }}
           path: ${{ env.APP_NAME }}-${{ env.VERSION }}.tar.gz
           retention-days: 30
 
@@ -119,11 +181,20 @@ jobs:
     
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          ref: ${{ github.sha }}
+      
+      - name: Debug checkout info
+        run: |
+          echo "Current commit: $(git rev-parse HEAD)"
+          echo "GitHub SHA: ${{ github.sha }}"
+          git log -1 --oneline
       
       - name: Download artifact
         uses: actions/download-artifact@v4
         with:
-          name: quipu-binary
+          name: quipu-binary-${{ github.sha }}
       
       - name: Setup SSH
         run: |
@@ -196,8 +267,32 @@ jobs:
             sudo systemctl daemon-reload
           fi
           
-          # Set ownership
+          # Create symlink for legacy compatibility (emergency fix)
+          echo "Creating legacy compatibility symlink..."
+          sudo mkdir -p /var/log
+          if [ -f "/var/log/quipu.log" ]; then
+            sudo rm -f /var/log/quipu.log
+          fi
+          sudo ln -sf /var/log/quipu/quipu.log /var/log/quipu.log
+          sudo chown quipu:quipu /var/log/quipu.log
+          
+          # Set ownership and ensure proper permissions
           sudo chown -R quipu:quipu $DEPLOY_DIR /var/log/quipu
+          sudo chmod 755 /var/log/quipu
+          
+          # Test logging setup before starting service
+          echo "Testing logging setup..."
+          sudo -u quipu touch /var/log/quipu/test.log && sudo -u quipu rm -f /var/log/quipu/test.log || {
+            echo "Warning: Cannot write to /var/log/quipu/, fixing permissions..."
+            sudo chmod 775 /var/log/quipu
+            sudo chown -R quipu:quipu /var/log/quipu
+          }
+          
+          # Test legacy path too
+          sudo -u quipu touch /var/log/quipu.log && sudo -u quipu rm -f /var/log/quipu.log || {
+            echo "Warning: Cannot write to legacy path /var/log/quipu.log"
+            sudo chown quipu:quipu /var/log/quipu.log
+          }
           
           # Start service
           echo "Starting service..."
