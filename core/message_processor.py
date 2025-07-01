@@ -1,18 +1,21 @@
 # core/message_processor.py
 import logging
 from typing import List
+
 from core.data_server import DataSaver
 from core.interfaces.platform_adapter import PlatformAdapter
 from core.llm_processor import LLMProcessor, ProcessingResult
 from core.messages import (
-    UNEXPECTED_ERROR,
-    MESSAGE_NOT_FOUND,
-    USER_NOT_FOUND,
+    CANCEL_BUTTON,
     CANCEL_MESSAGE,
     CONFIRM_BUTTON,
-    CANCEL_BUTTON,
+    MESSAGE_NOT_FOUND,
     SAVE_ERROR,
-    SAVE_SUCCESS
+    SAVE_ERROR_CTA,
+    SAVE_SUCCESS,
+    SAVE_SUCCESS_CTA,
+    UNEXPECTED_ERROR,
+    USER_NOT_FOUND,
 )
 from core.models.common.command_button import CommandButton
 from core.models.common.simple_message import SimpleStringResponse
@@ -23,6 +26,7 @@ from core.user_data_manager import UserDataManager
 logger = logging.getLogger(__name__)
 
 CONFIRM_SAVE = 1
+
 
 class MessageProcessor:
     def __init__(self):
@@ -54,15 +58,15 @@ class MessageProcessor:
 
         if not results:
             await platform.reply_text(UNEXPECTED_ERROR)
-            return -1 # Means conversations END but we have to check how whatsapp works
+            return -1  # Means conversations END but we have to check how whatsapp works
 
         for idx, result in enumerate(results):
             if result.error:
                 await platform.reply_text(f"❌ {result.error}")
-            if result.response_text:
-                await platform.reply_text(result.response_text)
-            elif result.data_object: 
-                response_text = result.data_object.to_presentation_string(platform.get_platform_name())
+            else:
+                response_text = result.data_object.to_presentation_string(
+                    platform.get_platform_name()
+                )
                 callback_id = f"{platform.get_message_id()}_{idx}"
 
                 buttons: List[CommandButton] = [
@@ -75,20 +79,22 @@ class MessageProcessor:
                 ]
 
                 await platform.reply_with_buttons(text=response_text, buttons=buttons)
-                
+
                 response_message = Message(
                     user_id=user_message.user_id,
                     message_id=callback_id,
                     message_text=response_text,
                     message_object=result.data_object,
-                    source=user_message.source
+                    source=user_message.source,
                 )
-                
+
                 self.message_service.save_message(message=response_message)
 
         return CONFIRM_SAVE
 
-    def save_and_respond(self, user_id: str, message_id: str, platform: PlatformAdapter) -> str:
+    def save_and_respond(
+        self, user_id: str, message_id: str, platform: PlatformAdapter
+    ) -> str:
         """
         Process and save a message for a specific user.
 
@@ -100,50 +106,73 @@ class MessageProcessor:
         Returns:
             str: Response message
         """
-        recovered_message = self.message_service.get_message(user_id=user_id, message_id=message_id, platform=platform.get_platform_name())
+        recovered_message = self.message_service.get_message(
+            user_id=user_id,
+            message_id=message_id,
+            platform=platform.get_platform_name(),
+        )
         user = self.user_data_manager.get_user_data(user_id)
 
         if not recovered_message:
-            logger.warning("Message not found", extra={
-                "user_id": user_id,
-                "message_id": message_id,
-                "platform": platform.get_platform_name()
-            })
+            logger.warning(
+                "Message not found",
+                extra={
+                    "user_id": user_id,
+                    "message_id": message_id,
+                    "platform": platform.get_platform_name(),
+                },
+            )
             return MESSAGE_NOT_FOUND
-            
+
         if not user:
-            logger.warning("User not found", extra={
-                "user_id": user_id,
-                "message_id": message_id,
-                "platform": platform.get_platform_name()
-            })
+            logger.warning(
+                "User not found",
+                extra={
+                    "user_id": user_id,
+                    "message_id": message_id,
+                    "platform": platform.get_platform_name(),
+                },
+            )
             return USER_NOT_FOUND
-        
-        success = self.data_saver.save_content(recovered_message.message_object, user=user)
-            
+
+        success = self.data_saver.save_content(
+            recovered_message.message_object, user=user
+        )
+
         if success:
-            logger.info("Message saved successfully", extra={
-                "user_id": user_id,
-                "message_id": message_id,
-                "platform": platform.get_platform_name()
-                })
+            logger.info(
+                "Message saved successfully",
+                extra={
+                    "user_id": user_id,
+                    "message_id": message_id,
+                    "platform": platform.get_platform_name(),
+                },
+            )
 
             self._delete_message(recovered_message)
 
-            return self._format_save_response(recovered_message.message_text, True)
+            return self._format_save_response(
+                recovered_message.message_object.get_description(), True
+            )
         else:
-            logger.error("Failed to save message", extra={
-                "user_id": user_id,
-                "message_id": message_id,
-                "platform": platform.get_platform_name()
-            })
-            
+            logger.error(
+                "Failed to save message",
+                extra={
+                    "user_id": user_id,
+                    "message_id": message_id,
+                    "platform": platform.get_platform_name(),
+                },
+            )
+
             self._delete_message(recovered_message)
-            
-            return self._format_save_response(recovered_message.message_text, False)
-            
-            
-    def cancel_and_respond(self, user_id: str, message_id: str, platform: PlatformAdapter) -> str:
+
+            return self._format_save_response(
+                recovered_message.message_object.get_description(), False
+            )
+
+    def cancel_and_respond(
+        self, user_id: str, message_id: str, platform: PlatformAdapter
+    ) -> str:
         """
         Process a cancellation request for a message. This function retrieves the message,
         deletes it if found, and returns a cancellation response.
@@ -156,13 +185,16 @@ class MessageProcessor:
         Returns:
             str: A message indicating that the action was cancelled
         """
-        recovered_message = self.message_service.get_message(user_id=user_id, message_id=message_id, platform=platform.get_platform_name())
+        recovered_message = self.message_service.get_message(
+            user_id=user_id,
+            message_id=message_id,
+            platform=platform.get_platform_name(),
+        )
 
         if recovered_message:
             self._delete_message(recovered_message)
 
         return CANCEL_MESSAGE
-
 
     def _delete_message(self, message: Message):
         """
@@ -170,22 +202,27 @@ class MessageProcessor:
         actual deletion of messages from the message service.
 
         Args:
-            message (Message): The message object to be deleted. 
+            message (Message): The message object to be deleted.
 
         """
-        self.message_service.delete_message(user_id=message.user_id, message_id=message.message_id, platform=message.source)
-               
+        self.message_service.delete_message(
+            user_id=message.user_id,
+            message_id=message.message_id,
+            platform=message.source,
+        )
 
     def _format_save_response(self, message_text: str, success: bool) -> str:
         """
         Formats the response message for save operations.
-        
+
         Args:
             message_text (str): The original message text
             success (bool): Whether the save operation was successful
-            
+
         Returns:
             str: Formatted response message
         """
         status = SAVE_SUCCESS if success else SAVE_ERROR
-        return f"{message_text}\n\n{status}"
+        cta = SAVE_SUCCESS_CTA if success else SAVE_ERROR_CTA
+
+        return f'"{message_text}" - {status} \n\n{cta}'

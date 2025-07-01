@@ -1,17 +1,23 @@
-from pydantic import BaseModel, Field
 from datetime import datetime
-from typing import List, Dict, Any
 from enum import Enum
+from typing import Any, Dict, List
+
+from pydantic import BaseModel, Field
+
 from core.models.base_model import FinancialModel
 from core.models.user import User
 
+
 class InvestmentAction(str, Enum):
     """Defines possible investment actions."""
+
     BUY = "compra"
     SELL = "venta"
 
+
 class Investment(BaseModel, FinancialModel):
     """Represents an investment operation."""
+
     description: str = Field(description="Description of the investment")
     category: str = Field(description="Category of the investment")
     date: datetime = Field(description="Operation datetime")
@@ -20,7 +26,7 @@ class Investment(BaseModel, FinancialModel):
     amount: float = Field(description="Amount of the investment")
     price: float = Field(description="Price of the investment tool")
     currency: str = Field(description="Currency of the operation")
-    
+
     def _to_telegram_presentation(self) -> str:
         """
         Returns a formatted string representation for Telegram.
@@ -36,7 +42,7 @@ class Investment(BaseModel, FinancialModel):
             <b>🔢 Cantidad:</b> <code>{self.format_money_data(self.amount)}</code>
             <b>💲 Precio por Unidad:</b> <code>{self.format_money_data(self.price)}</code> {self.currency}
             <b>💸 Monto Total:</b> <code>{self.format_money_data(self.amount * self.price)}</code> {self.currency}
-            <b>🗓️ Fecha:</b> <code>{self.date.strftime('%d/%m/%Y %H:%M')}</code>
+            <b>🗓️ Fecha:</b> <code>{self.date.strftime("%d/%m/%Y %H:%M")}</code>
         """
 
     def _to_whatsapp_presentation(self) -> str:
@@ -54,7 +60,14 @@ class Investment(BaseModel, FinancialModel):
         🔢 *Cantidad:* {self.format_money_data(self.amount)}
         💲 *Precio por Unidad:* {self.format_money_data(self.price)} {self.currency}
         💸 *Monto Total:* {self.format_money_data(self.amount * self.price)} {self.currency}
-        🗓️ *Fecha:* {self.date.strftime('%d/%m/%Y %H:%M')}"""
+        🗓️ *Fecha:* {self.date.strftime("%d/%m/%Y %H:%M")}"""
+
+    def get_description(self) -> str:
+        """
+        Returns a description of the investment operation.
+        This is used for user understanding and documentation.
+        """
+        return self.description
 
     def to_sheet_row(self) -> List[Any]:
         """Returns data formatted for spreadsheet storage."""
@@ -68,7 +81,7 @@ class Investment(BaseModel, FinancialModel):
             self.currency,
             self.description,
         ]
-        
+
     def to_storage_dict(self, user: User) -> Dict[str, Any]:
         """Returns data formatted for database storage."""
         return {
@@ -80,7 +93,7 @@ class Investment(BaseModel, FinancialModel):
             "amount": self.amount,
             "price": self.price,
             "currency": self.currency,
-            "webapp_user_id": str(user.id) if user.id else None
+            "webapp_user_id": str(user.id) if user.id else None,
         }
 
     def get_base_table_name(self) -> str:
@@ -89,4 +102,4 @@ class Investment(BaseModel, FinancialModel):
 
     def get_worksheet_name(self) -> str:
         """Returns the worksheet name for Google Sheets."""
-        return "Inversiones" 
+        return "Inversiones"
