@@ -589,7 +589,7 @@ Contexto de la aplicación (usá solo esta información para tus respuestas, no 
 - La app puede integrarse con WhatsApp, Telegram y Google Drive.
 - Somos un equipo de amigos que quiere crear un producto sólido y fácil de usar.
 - Vas a poder ver los movimientos clasificados e informes mensuales con gráficos.
-- Soporte: https://www.instagram.com/quipubot?igsh=MXFnZWNhc3BwMDUyNg%3D%3D&utm_source=qr
+- Soporte: https://www.instagram.com/quipubot
 - Para registrar un gasto o ingreso, simplemente enviá un mensaje con el monto y una breve descripción. Por ejemplo:
   - Gasto: "Gasté 4500 pesos en una coca cola"
   - Ingreso: "Me pagaron 50 mil pesos por arreglar una heladera"
@@ -610,7 +610,7 @@ Requisitos de tu respuesta:
 - Sé específico y concreto.
 - No te explayes demasiado.
 - Si la pregunta no puede responderse con esta información, contestá con el siguiente mensaje literal:
-  "Ahora no puedo contestarte eso, pero te puedo ayudar ingresando un gasto o ingreso. Si necesitás ayuda, podés contactarte con soporte en https://www.instagram.com/quipubot?igsh=MXFnZWNhc3BwMDUyNg%3D%3D&utm_source=qr"
+  "Ahora no puedo contestarte eso, pero te puedo ayudar ingresando un gasto o ingreso. Si necesitás ayuda, podés contactarte con soporte en https://www.instagram.com/quipubot"
 - Mantené un tono cercano y amable.
 - No agregues ningún detalle que no esté en el contexto.
 
@@ -656,7 +656,7 @@ Entrada:
 
 Salida:
 {{
-"response": "Ahora no puedo contestarte eso, pero te puedo ayudar ingresando un gasto o ingreso. Si necesitás ayuda, podés contactarte con soporte en https://www.instagram.com/quipubot?igsh=MXFnZWNhc3BwMDUyNg%3D%3D&utm_source=qr"
+"response": "Ahora no puedo contestarte eso, pero te puedo ayudar ingresando un gasto o ingreso. Si necesitás ayuda, podés contactarte con soporte en https://www.instagram.com/quipubot"
 }}
 
 Ejemplo 5
@@ -699,7 +699,7 @@ Entrada:
 
 Salida:
 {{
-"response": "Perdoná, no logré entender tu mensaje. Soy tu asistente financiero y puedo ayudarte registrando gastos o ingresos. Si intentaste hacerlo, te pido que me cuentes con más detalle el monto y la descripción. Si necesitás más ayuda, podés contactarnos por soporte en https://www.instagram.com/quipubot?igsh=MXFnZWNhc3BwMDUyNg%3D%3D&utm_source=qr."
+"response": "Perdoná, no logré entender tu mensaje. Soy tu asistente financiero y puedo ayudarte registrando gastos o ingresos. Si intentaste hacerlo, te pido que me cuentes con más detalle el monto y la descripción. Si necesitás más ayuda, podés contactarnos por soporte en https://www.instagram.com/quipubot"
 }}
 
 Ejemplo 2
@@ -708,7 +708,7 @@ Entrada:
 
 Salida:
 {{
-"response": "Disculpá, no pude identificar lo que quisiste decir. Si querés, podés contarme un gasto o ingreso con más detalle y lo registro. Para más ayuda, escribinos a https://www.instagram.com/quipubot?igsh=MXFnZWNhc3BwMDUyNg%3D%3D&utm_source=qr."
+"response": "Disculpá, no pude identificar lo que quisiste decir. Si querés, podés contarme un gasto o ingreso con más detalle y lo registro. Para más ayuda, escribinos a https://www.instagram.com/quipubot"
 }}
 
 Mensaje:
