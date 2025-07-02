@@ -9,13 +9,18 @@ load_dotenv(".env")  # Load environment variables from .env
 class Config:
     """Class to store application settings."""
 
+    OPENAI_API_KEY: str = os.getenv("OPENAI_API_KEY")
+    OPENAI_CHAT_COMPLETIONS_MODEL = os.getenv(
+        "OPENAI_CHAT_COMPLETIONS_MODEL", "gpt-4.1-nano"
+    )
+
     AKASH_API_BASE_URL: str = os.getenv("AKASH_API_BASE_URL")
     AKASH_API_KEY: List[str] = (
         os.getenv("AKASH_API_KEY").split(",") if os.getenv("AKASH_API_KEY") else []
     )
     LLM_MODEL_NAME: str = os.getenv("LLM_MODEL_NAME", "DeepSeek-R1-Distill-Qwen-32B")
     LLM_TEMPERATURE: float = float(os.getenv("LLM_TEMPERATURE", "0.7"))
-    LLM_TIMEOUT: int = int(os.getenv("LLM_TIMEOUT", 45))  # Timeout in seconds
+    LLM_TIMEOUT: int = int(os.getenv("LLM_TIMEOUT", 20))  # Timeout in seconds
     LLM_MAX_RETRIES: int = int(os.getenv("LLM_MAX_RETRIES", 1))
     TELEGRAM_BOT_TOKEN: str = os.getenv("TELEGRAM_BOT_TOKEN")
     GOOGLE_CREDENTIALS: str = os.getenv("GOOGLE_CREDENTIALS")
@@ -59,6 +64,14 @@ class Config:
 
     def _validate_configs(self):
         """Optional: Add validations to ensure required configs are present and valid."""
+
+        if not self.OPENAI_API_KEY:
+            raise ValueError("OPENAI_API_KEY must be set in the .env file.")
+        if not self.OPENAI_CHAT_COMPLETIONS_MODEL:
+            raise ValueError(
+                "OPENAI_CHAT_COMPLETIONS_MODEL must be set in the .env file."
+            )
+
         if not self.AKASH_API_BASE_URL:
             raise ValueError("AKASH_API_BASE_URL must be set in the .env file.")
         if not self.AKASH_API_KEY or len(self.AKASH_API_KEY) == 0:

@@ -10,6 +10,7 @@ from core.models.common.action_type import Action
 from core.models.common.financial_type import FinantialActions
 from core.models.common.simple_message import SimpleStringResponse
 from integrations.llm_providers_interface import LLMClientInterface
+from integrations.providers.llm_openai import OpenAILLM
 
 logger = logging.getLogger(__name__)
 
@@ -34,6 +35,7 @@ class RotatingLLMClientPool(LLMClientInterface):
     """
 
     def __init__(self):
+        self.fallback_llm = OpenAILLM()
         self.clients = []
         for key in config.AKASH_API_KEY:
             self.clients.append(
@@ -43,7 +45,6 @@ class RotatingLLMClientPool(LLMClientInterface):
                     model_name=config.LLM_MODEL_NAME,
                     temperature=config.LLM_TEMPERATURE,
                     timeout=config.LLM_TIMEOUT,
-                    max_retries=config.LLM_MAX_RETRIES,
                 )
             )
 
@@ -65,20 +66,31 @@ class RotatingLLMClientPool(LLMClientInterface):
         Uses the next available client to execute a prompt
         that returns a structured `Actions` enum.
         """
-        client = self._get_next_client().with_structured_output(Action)
-        return client.invoke(prompt)
+        return self.generate_fallbacked_response(prompt, Action)
 
     def generate_simple_response(self, prompt: str) -> SimpleStringResponse:
         """
         Uses the next available client to execute the given prompt and returns a structured SimpleStringResponse object.
         """
-        client = self._get_next_client().with_structured_output(SimpleStringResponse)
-        return client.invoke(prompt)
+        return self.generate_fallbacked_response(prompt, SimpleStringResponse)
 
     def generate_response(self, prompt: str, output) -> FinantialActions:
         """
         Sends a prompt to the Akash LLM and returns the generated response.
         Logs the request and any errors during the API call.
         """
-        client = self._get_next_client().with_structured_output(output)
-        return client.invoke(prompt)
+        return self.generate_fallbacked_response(prompt, output)
+
+    def generate_fallbacked_response(self, prompt, output):
+        """
+        Attempts to generate a response using the rotating LLM client pool.
+        If it fails, falls back to the OpenAI LLM client.
+        """
+        try:
+            client = self._get_next_client().with_structured_output(output)
+            return client.invoke(prompt)
+        except Exception as e:
+            logger.error(
+                f"Failed to generate response with rotating clients: {e}. Falling back to OpenAI LLM."
+            )
+            return self.fallback_llm.generate_response(prompt, output)
