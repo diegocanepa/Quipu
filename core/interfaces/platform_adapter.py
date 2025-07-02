@@ -134,3 +134,13 @@ class PlatformAdapter(ABC):
             message: The message to clean up.
         """
         pass
+    
+    @abstractmethod
+    async def react_message(self, emoji):
+        """
+        Cleans up a processing message if the platform supports it.
+
+        Args:
+            message: The message to clean up.
+        """
+        pass

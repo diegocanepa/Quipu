@@ -62,7 +62,7 @@ class AudioHandlers:
             await file.download_to_drive(custom_path=filename)
 
             # Process audio
-            transcription_result = await self.audio_processor.process_audio(filename)
+            transcription_result = await self.audio_processor.process_audio(telegram_adapter, filename)
             logger.info(transcription_result)
             os.remove(filename)
             
