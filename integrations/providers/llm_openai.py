@@ -1,6 +1,6 @@
 from langchain_openai import ChatOpenAI
 
-import config
+from config import config
 from integrations.llm_providers_interface import LLMClientInterface
 
 
