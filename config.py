@@ -13,14 +13,14 @@ class Config:
     OPENAI_CHAT_COMPLETIONS_MODEL = os.getenv(
         "OPENAI_CHAT_COMPLETIONS_MODEL", "gpt-4.1-nano"
     )
-
+    LLM_AKASH_RETRIES: int = os.getenv("LLM_AKASH_RETRIES", 0)
     AKASH_API_BASE_URL: str = os.getenv("AKASH_API_BASE_URL")
     AKASH_API_KEY: List[str] = (
         os.getenv("AKASH_API_KEY").split(",") if os.getenv("AKASH_API_KEY") else []
     )
     LLM_MODEL_NAME: str = os.getenv("LLM_MODEL_NAME", "DeepSeek-R1-Distill-Qwen-32B")
     LLM_TEMPERATURE: float = float(os.getenv("LLM_TEMPERATURE", "0.7"))
-    LLM_TIMEOUT: int = int(os.getenv("LLM_TIMEOUT", 20))  # Timeout in seconds
+    LLM_TIMEOUT: float = float(os.getenv("LLM_TIMEOUT", 10))  # Timeout in seconds
     LLM_MAX_RETRIES: int = int(os.getenv("LLM_MAX_RETRIES", 1))
     TELEGRAM_BOT_TOKEN: str = os.getenv("TELEGRAM_BOT_TOKEN")
     GOOGLE_CREDENTIALS: str = os.getenv("GOOGLE_CREDENTIALS")
@@ -71,7 +71,6 @@ class Config:
             raise ValueError(
                 "OPENAI_CHAT_COMPLETIONS_MODEL must be set in the .env file."
             )
-
         if not self.AKASH_API_BASE_URL:
             raise ValueError("AKASH_API_BASE_URL must be set in the .env file.")
         if not self.AKASH_API_KEY or len(self.AKASH_API_KEY) == 0:

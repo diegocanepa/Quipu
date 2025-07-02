@@ -1,8 +1,10 @@
+import logging
 from langchain_openai import ChatOpenAI
 
 from config import config
 from integrations.llm_providers_interface import LLMClientInterface
 
+logger = logging.getLogger(__name__)
 
 class OpenAILLM(LLMClientInterface):
     """
@@ -26,4 +28,6 @@ class OpenAILLM(LLMClientInterface):
         Logs the request and any errors during the API call.
         """
         client = self.llm.with_structured_output(output)
-        return client.invoke(prompt)
+        response = client.invoke(prompt)
+        logger.info(f"Response from Open API: {response}")
+        return response

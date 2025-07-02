@@ -14,7 +14,6 @@ from integrations.providers.llm_openai import OpenAILLM
 
 logger = logging.getLogger(__name__)
 
-
 class RotatingLLMClientPool(LLMClientInterface):
     """
     LLM client pool with rotating API keys to bypass per-key rate limits.
@@ -45,13 +44,18 @@ class RotatingLLMClientPool(LLMClientInterface):
                     model_name=config.LLM_MODEL_NAME,
                     temperature=config.LLM_TEMPERATURE,
                     timeout=config.LLM_TIMEOUT,
+                    request_timeout=config.LLM_TIMEOUT,
+                    max_retries=config.LLM_AKASH_RETRIES
                 )
+            )
+            logger.info(
+                f"Initialized timeout:{config.LLM_TIMEOUT} retries: {config.LLM_AKASH_RETRIES}"
             )
 
         self._clients_cycle = cycle(self.clients)
         self._lock = Lock()
         logger.info(
-            f"Initialized {len(self.clients)} LLM clients with rotating API keys."
+            f"Initialized {len(self.clients)} LLM clients with rotating API keys"
         )
 
     def _get_next_client(self) -> ChatOpenAI:
@@ -88,9 +92,11 @@ class RotatingLLMClientPool(LLMClientInterface):
         """
         try:
             client = self._get_next_client().with_structured_output(output)
-            return client.invoke(prompt)
+            response =  client.invoke(prompt)
+            logger.info(f"Answer from akash: {response}")
+            return response
         except Exception as e:
             logger.error(
-                f"Failed to generate response with rotating clients: {e}. Falling back to OpenAI LLM."
+                f"Failed to generate response with rotating clients. Falling back to OpenAI LLM."
             )
             return self.fallback_llm.generate_response(prompt, output)
