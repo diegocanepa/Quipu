@@ -1,15 +1,14 @@
 import logging
 from itertools import cycle
 from threading import Lock
+from typing import List
 
 from langchain_openai import ChatOpenAI
 
 from config import config
-from core.models.common.action_type import Actions
-from core.models.financial.forex import Forex
-from core.models.financial.investment import Investment
-from core.models.financial.transaction import Transaction
-from core.models.financial.transfer import Transfer
+from core.models.common.action_type import Action
+from core.models.common.financial_type import FinantialActions
+from core.models.common.simple_message import SimpleStringResponse
 from integrations.llm_providers_interface import LLMClientInterface
 
 logger = logging.getLogger(__name__)
@@ -59,20 +58,24 @@ class RotatingLLMClientPool(LLMClientInterface):
         Returns the next available client in a thread-safe manner.
         """
         with self._lock:
-            a = next(self._clients_cycle)
-            return a
+            return next(self._clients_cycle)
 
-    def determinate_action(self, prompt: str) -> Actions:
+    def determinate_action(self, prompt: str) -> Action:
         """
-        Usa el siguiente cliente disponible para ejecutar un prompt
-        que devuelve un enum `Actions` estructurado.
+        Uses the next available client to execute a prompt
+        that returns a structured `Actions` enum.
         """
-        client = self._get_next_client().with_structured_output(Actions)
+        client = self._get_next_client().with_structured_output(Action)
         return client.invoke(prompt)
 
-    def generate_response(
-        self, prompt: str, output
-    ) -> Forex | Investment | Transaction | Transfer:
+    def generate_simple_response(self, prompt: str) -> SimpleStringResponse:
+        """
+        Uses the next available client to execute the given prompt and returns a structured SimpleStringResponse object.
+        """
+        client = self._get_next_client().with_structured_output(SimpleStringResponse)
+        return client.invoke(prompt)
+
+    def generate_response(self, prompt: str, output) -> FinantialActions:
         """
         Sends a prompt to the Akash LLM and returns the generated response.
         Logs the request and any errors during the API call.

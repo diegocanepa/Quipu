@@ -6,36 +6,33 @@ import pytz
 from pydantic import BaseModel
 
 from core.feature_flag import FeatureFlagsEnum, is_feature_enabled
-from core.models.common.action_type import Actions, ActionTypes
-from core.models.financial.forex import Forex
-from core.models.financial.investment import Investment
-from core.models.financial.transaction import Transaction
-from core.models.financial.transfer import Transfer
+from core.messages import ERROR_PROCESSING_MESSAGE
+from core.models.common.financial_type import FinantialActions
+from core.models.common.simple_message import SimpleStringResponse
 from core.prompts import (
-    EXPENSE_PROMPT,
-    FOREX_PROMPT,
-    INCOME_PROMPT,
-    INVESTMENT_PROMPT,
     MULTI_ACTION_PROMPT,
     TRANSACTION_PROMPT,
-    TRANSFER_PROMPT,
+    SOCIAL_MESSAGE_RESPONSE_PROMPT,
+    QUESTION_RESPONSE_PROMPT,
+    UNKNOWN_MESSAGE_RESPONSE_PROMPT,
 )
 from integrations.providers.llm_akash import RotatingLLMClientPool as LLMAgent
+from core.models.common.action_type import Action, ActionTypes
+from core.models.financial.transaction import Transaction
 
 logger = logging.getLogger(__name__)
-
 
 class RequestLLMModel(BaseModel):
     prompt: str
     output_model: Type[BaseModel]
-
 
 class ProcessingResult(BaseModel):
     """
     Represents the result of processing and saving a data object.
     """
 
-    data_object: Optional[Union[Forex, Investment, Transaction, Transfer]] = None
+    data_object: Optional[Transaction] = None
+    response_text: Optional[str] = None
     error: Optional[str] = None
 
 
@@ -70,59 +67,43 @@ class LLMProcessor:
         current_datetime = datetime.now(pytz.timezone("America/Argentina/Buenos_Aires"))
 
         try:
-            actions_types = self.determine_action_type(content)
-            if not actions_types or len(actions_types) == 0:
+            action = self.determine_action_type(content)
+            if not action:
                 logger.warning(
                     f"Could not determine action type for content: '{content}'."
                 )
                 processing_results.append(
                     ProcessingResult(
-                        error='No se pudo determinar una acción para registrar en base al mensaje. \
-                            \n Pobrá especificando el movimiento con "Gasté" o "Recibí" seguido del monto y la descripción del movimiento.'
+                        error=ERROR_PROCESSING_MESSAGE
                     )
                 )
                 return processing_results
 
-            llm_request_models = []
-            for action in actions_types:
-                result = self._process_action(action.message, action.action_type)
-                if result is not None:  # Filter out None values
-                    llm_request_models.append(result)
+            llm_request = self._process_action(action.message, action.action_type)
 
-            llm_request_models = [
-                item for sublist in llm_request_models for item in sublist
-            ]
-
-            if not llm_request_models:
-                logger.warning("Failed to create LLM request models for action:")
+            if not llm_request:
+                logger.warning(f"Failed to create LLM request models for action: {action}")
                 processing_results.append(
                     ProcessingResult(
-                        error="Se identifico la accion pero no fue posible procesar el mensaje."
+                        error=ERROR_PROCESSING_MESSAGE
                     )
                 )
                 return processing_results
-
-            for request in llm_request_models:
-                try:
-                    response = self.llm_client.generate_response(
-                        prompt=request.prompt, output=request.output_model
-                    )
-                    if self.has_significant_value(response):
-                        response.date = current_datetime
-                        processing_results.append(
-                            ProcessingResult(data_object=response)
-                        )
-                        logger.info(f"Processed: {response.model_dump_json()}")
-                except Exception as e:
-                    logger.error(
-                        f"Error calling LLM for action: '{request.output_model.__name__}': '{e}'",
-                        exc_info=True,
-                    )
+            
+            if action.action_type == ActionTypes.TRANSACTION:
+                responses = self.llm_client.generate_response(prompt=llm_request.prompt, output=llm_request.output_model)
+                for transaction in responses.actions:
+                    transaction.date = current_datetime # :TODO Only when date is not provided by user
                     processing_results.append(
-                        ProcessingResult(
-                            error=f"Ocurrio un error procesando la {request.output_model.__name__}"
-                        )
+                        ProcessingResult(data_object=transaction)
                     )
+                    logger.info(f"Processed: {transaction.model_dump_json()}")
+            else:
+                response = self.llm_client.generate_simple_response(prompt=llm_request.prompt)
+                processing_results.append(
+                        ProcessingResult(response_text=response.response)
+                    )
+
         except Exception as e:
             logger.error(
                 f"An unexpected error occurred during content processing: '{e}'",
@@ -130,26 +111,26 @@ class LLMProcessor:
             )
             processing_results.append(
                 ProcessingResult(
-                    error="Algo sucedio. No pudimos procesar el mensaje :("
+                    error=ERROR_PROCESSING_MESSAGE
                 )
             )
 
         return processing_results
 
-    def determine_action_type(self, content: str) -> Optional[Actions]:
+    def determine_action_type(self, content: str) -> Optional[Action]:
         """
         Determines the action type from the input content using the LLM.
         """
         prompt = MULTI_ACTION_PROMPT.format(content=content)
-        actions = self.llm_client.determinate_action(prompt)
+        action = self.llm_client.determinate_action(prompt)
         logger.info(
-            f"Determined actions types for content: '{content}', actions: '{actions}'."
+            f"Determined actions types for content: '{content}', actions: '{action}'."
         )
-        return actions.actions
+        return action
 
     def _process_action(
         self, content: str, action_type: ActionTypes
-    ) -> Optional[List[RequestLLMModel]]:
+    ) -> RequestLLMModel:
         """
         Determines the necessary LLM calls based on the action type and returns
         a list of RequestLLMModel objects.
@@ -161,74 +142,49 @@ class LLMProcessor:
         Returns:
             A list of RequestLLMModel objects, or None if no requests are needed.
         """
-        if action_type == ActionTypes.TRANSFER and is_feature_enabled(
-            FeatureFlagsEnum.TRANSFER
-        ):
-            return self._prepare_transfer_requests(content)
-        elif action_type == ActionTypes.EXCHANGE and is_feature_enabled(
-            FeatureFlagsEnum.EXCHANGE
-        ):
-            return self._prepare_exchange_requests(content)
-        elif action_type == ActionTypes.TRANSACTION and is_feature_enabled(
+        if action_type == ActionTypes.TRANSACTION and is_feature_enabled(
             FeatureFlagsEnum.TRANSACTION
         ):
             return self._prepare_transaction_requests(content)
-        elif action_type == ActionTypes.INVESTMENT and is_feature_enabled(
-            FeatureFlagsEnum.INVESTMENT
-        ):
-            return self._prepare_investment_requests(content)
+        elif action_type == ActionTypes.QUESTION:
+            return self._prepare_question_requests(content)
+        elif action_type == ActionTypes.SOCIAL_MESSAGE:
+            return self._prepare_social_message_requests(content)
+        elif action_type == ActionTypes.UNKNOWN_MESSAGE:
+            return self._prepare_unknow_message_requests(content)
+        else:
+            logger.warning(f"No LLM requests prepared for action: {action_type}")
+            return None
 
-    def _prepare_transfer_requests(self, content: str) -> List[RequestLLMModel]:
-        """Prepares LLM request models for a Transfer action."""
-        reason = "En la transferencia pudo existir un fee/comision si el monto origen es distinto al monto destino. El fee seria monto origen - monto destino"
-
-        return [
-            RequestLLMModel(
-                prompt=self._get_prompt(TRANSFER_PROMPT, content), output_model=Transfer
-            ),
-            RequestLLMModel(
-                prompt=self._get_prompt(EXPENSE_PROMPT, content, reason=reason),
-                output_model=Transaction,
-            ),
-        ]
-
-    def _prepare_exchange_requests(self, content: str) -> List[RequestLLMModel]:
-        """Prepares LLM request models for an Exchange action."""
-        reason_transfer = "De este cambio de divisas se redujo la cantidad de plata en la billetera origen por lo que se deberia insertar una transferencia con wallet_to=None y final ammout=0"
-        reason_income = "De este cambio de divisas se obtuvo un monto de pesos argentinos por lo que se considera un ingreso en pesos argentinos. Hacer multiplicacion de cantidad de dolares por precio dolar si es necesario."
-        return [
-            RequestLLMModel(
-                prompt=self._get_prompt(FOREX_PROMPT, content), output_model=Forex
-            ),
-            RequestLLMModel(
-                prompt=self._get_prompt(INCOME_PROMPT, content, reason=reason_income),
-                output_model=Transaction,
-            ),
-            RequestLLMModel(
-                prompt=self._get_prompt(
-                    TRANSFER_PROMPT, content, reason=reason_transfer
-                ),
-                output_model=Transfer,
-            ),
-        ]
-
-    def _prepare_transaction_requests(self, content: str) -> List[RequestLLMModel]:
+    def _prepare_transaction_requests(self, content: str) -> RequestLLMModel:
         """Prepares LLM request models for a Transaction action."""
-        return [
-            RequestLLMModel(
+        return RequestLLMModel(
                 prompt=self._get_prompt(TRANSACTION_PROMPT, content),
-                output_model=Transaction,
+                output_model=FinantialActions,
             )
-        ]
 
-    def _prepare_investment_requests(self, content: str) -> List[RequestLLMModel]:
-        """Prepares LLM request models for an Investment action."""
-        return [
-            RequestLLMModel(
-                prompt=self._get_prompt(INVESTMENT_PROMPT, content),
-                output_model=Investment,
+    def _prepare_social_message_requests(self, content: str) -> RequestLLMModel:
+        """Prepara el request para mensajes sociales."""
+        return RequestLLMModel(
+                prompt=self._get_prompt(SOCIAL_MESSAGE_RESPONSE_PROMPT, content),
+                output_model=SimpleStringResponse,
             )
-        ]
+        
+
+    def _prepare_question_requests(self, content: str) -> RequestLLMModel:
+        """Prepara el request para preguntas de usuario."""
+        return RequestLLMModel(
+                prompt=self._get_prompt(QUESTION_RESPONSE_PROMPT, content),
+                output_model=SimpleStringResponse,
+            )
+
+    def _prepare_unknow_message_requests(self, content: str) -> RequestLLMModel:
+        """Prepara el request para mensajes desconocidos."""
+        return  RequestLLMModel(
+                prompt=self._get_prompt(UNKNOWN_MESSAGE_RESPONSE_PROMPT, content),
+                output_model=SimpleStringResponse,
+            )
+        
 
     def _get_prompt(
         self, promp: str, content: str, reason: Optional[str] = None
@@ -245,8 +201,3 @@ class LLMProcessor:
             The formatted prompt.
         """
         return promp.format(content=content, reason=reason if reason else "")
-
-    def has_significant_value(self, action) -> bool:
-        return isinstance(action, Transfer) or (
-            not isinstance(action, Transfer) and getattr(action, "amount", None) != 0
-        )
