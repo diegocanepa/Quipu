@@ -16,6 +16,7 @@ class OpenAILLM(LLMClientInterface):
     def __init__(self):
         self.llm = ChatOpenAI(
             api_key=config.OPENAI_API_KEY,
+            temperature=0,
             model_name=config.OPENAI_CHAT_COMPLETIONS_MODEL,
         )
 
