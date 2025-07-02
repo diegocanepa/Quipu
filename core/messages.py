@@ -276,7 +276,6 @@ MSG_WEBAPP_NOT_REGISTERED_HTML = (
 MSG_VOICE_NO_TEXT = "❌ <b>No pude entender el mensaje de voz</b>\n\nPor favor, intentá enviar el mensaje nuevamente o escribí el texto directamente 📝"
 MSG_VOICE_PROCESSING_ERROR = "❌ <b>Hubo un error al procesar el mensaje de voz</b>\n\nPor favor, intentá nuevamente en unos minutos 🎙️"
 
-ERROR_PROCESSING_MESSAGE="""
-No se pudo determinar una acción para registrar en base al mensaje. \
+ERROR_PROCESSING_MESSAGE="""No se pudo determinar una acción para registrar en base al mensaje. \
 \n Pobrá especificando el movimiento con "Gasté" o "Recibí" seguido del monto y la descripción del movimiento.
 """
