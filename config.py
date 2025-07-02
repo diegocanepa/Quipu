@@ -10,9 +10,13 @@ class Config:
     """Class to store application settings."""
 
     AKASH_API_BASE_URL: str = os.getenv("AKASH_API_BASE_URL")
-    AKASH_API_KEY: List[str] = os.getenv("AKASH_API_KEY").split(",") if os.getenv("AKASH_API_KEY") else []
+    AKASH_API_KEY: List[str] = (
+        os.getenv("AKASH_API_KEY").split(",") if os.getenv("AKASH_API_KEY") else []
+    )
     LLM_MODEL_NAME: str = os.getenv("LLM_MODEL_NAME", "DeepSeek-R1-Distill-Qwen-32B")
     LLM_TEMPERATURE: float = float(os.getenv("LLM_TEMPERATURE", "0.7"))
+    LLM_TIMEOUT: int = int(os.getenv("LLM_TIMEOUT", 45))  # Timeout in seconds
+    LLM_MAX_RETRIES: int = int(os.getenv("LLM_MAX_RETRIES", 1))
     TELEGRAM_BOT_TOKEN: str = os.getenv("TELEGRAM_BOT_TOKEN")
     GOOGLE_CREDENTIALS: str = os.getenv("GOOGLE_CREDENTIALS")
     GOOGLE_SHEET_TEMPLATE_URL: str = os.getenv("GOOGLE_SHEET_TEMPLATE_URL")
@@ -38,15 +42,15 @@ class Config:
     WEBAPP_BASE_URL: str = os.getenv("WEBAPP_BASE_URL")
 
     # Flask settings
-    HOST = os.getenv('HOST', '0.0.0.0')
-    PORT = int(os.getenv('PORT', 8080))
-    DEBUG = os.getenv('DEBUG', 'False').lower() == 'true'
+    HOST = os.getenv("HOST", "0.0.0.0")
+    PORT = int(os.getenv("PORT", 8080))
+    DEBUG = os.getenv("DEBUG", "False").lower() == "true"
 
     # WhatsApp settings
-    WHATSAPP_PHONE_ID = os.getenv('WHATSAPP_PHONE_ID')
-    WHATSAPP_TOKEN = os.getenv('WHATSAPP_TOKEN')
-    WHATSAPP_APP_ID = os.getenv('WHATSAPP_APP_ID')
-    WHATSAPP_APP_SECRET = os.getenv('WHATSAPP_APP_SECRET')
+    WHATSAPP_PHONE_ID = os.getenv("WHATSAPP_PHONE_ID")
+    WHATSAPP_TOKEN = os.getenv("WHATSAPP_TOKEN")
+    WHATSAPP_APP_ID = os.getenv("WHATSAPP_APP_ID")
+    WHATSAPP_APP_SECRET = os.getenv("WHATSAPP_APP_SECRET")
     WHATSAPP_BASE_URL: str = os.getenv("WHATSAPP_BASE_URL")
     WHATSAPP_VERIFY_TOKEN: str = os.getenv("WHATSAPP_VERIFY_TOKEN")
 
@@ -66,7 +70,9 @@ class Config:
         if not self.GOOGLE_SHEET_TEMPLATE_URL:
             raise ValueError("GOOGLE_SHEET_TEMPLATE_URL must be set in the .env file.")
         if not self.GOOGLE_SERVICE_ACCOUNT_EMAIL:
-            raise ValueError("GOOGLE_SERVICE_ACCOUNT_EMAIL must be set in the .env file.")
+            raise ValueError(
+                "GOOGLE_SERVICE_ACCOUNT_EMAIL must be set in the .env file."
+            )
         if not self.SUPABASE_URL:
             raise ValueError("SUPABASE_URL must be set in the .env file.")
         if not self.SUPABASE_KEY:
