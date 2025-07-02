@@ -1,5 +1,5 @@
 import logging
-from typing import Optional
+import asyncio
 
 from pywa_async import WhatsApp, types, filters
 from api.whatsapp.handlers.message_handler import WhatsAppV2MessageHandler
@@ -34,21 +34,30 @@ class WhatsAppV2Handlers:
         # Register message handler for text messages
         @self.wa.on_message(filters=filters.text)
         async def on_message(client: WhatsApp, msg: types.Message):
-            await self.message_handler.handle_message(msg)
+            logger.info(f"[WhatsApp][Text] Received message from webhook | Message ID: {msg.id}")
+            asyncio.create_task(self.message_handler.handle_message(msg))
+            logger.info(f"[WhatsApp][Text] Message processing task created | Message ID: {msg.id}")
 
         # Register audio handler
         @self.wa.on_message(filters=filters.audio)
         async def on_audio(client: WhatsApp, msg: types.Message):
-            await self.audio_handler.handle_audio_message(msg)
+            logger.info(f"[WhatsApp][Audio] Received audio message from webhook | Message ID: {msg.id}")
+            asyncio.create_task(self.audio_handler.handle_audio_message(msg))
+            logger.info(f"[WhatsApp][Audio] Audio message processing task created | Message ID: {msg.id}")
+            
 
         # Register voice handler
         @self.wa.on_message(filters=filters.voice)
         async def on_voice(client: WhatsApp, msg: types.Message):
-            await self.audio_handler.handle_audio_message(msg)
+            logger.info(f"[WhatsApp][Voice] Received voice message from webhook | Message ID: {msg.id}")
+            asyncio.create_task(self.audio_handler.handle_audio_message(msg))
+            logger.info(f"[WhatsApp][Voice] Voice message processing task created | Message ID: {msg.id}")
 
         # Register callback handler
         @self.wa.on_callback_button()
         async def on_callback(client: WhatsApp, callback: types.CallbackButton):
-            await self.callback_handler.handle_callback(callback)
+            logger.info(f"[WhatsApp][Callback] Received callback event | Callback ID: {callback.id}")
+            asyncio.create_task(self.callback_handler.handle_callback(callback))
+            logger.info(f"[WhatsApp][Callback] Callback processing task created | Callback ID: {callback.id}")
 
         logger.info("WhatsApp v2 handlers registered successfully")
