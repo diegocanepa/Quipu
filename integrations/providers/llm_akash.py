@@ -1,17 +1,18 @@
 import logging
-from threading import Lock
 from itertools import cycle
+from threading import Lock
+from typing import List
+
 from langchain_openai import ChatOpenAI
-from core.models.common.action_type import Actions
-from core.models.financial.forex import Forex
-from core.models.financial.investment import Investment
-from core.models.financial.transaction import Transaction
-from core.models.financial.transfer import Transfer
+
 from config import config
+from core.models.common.action_type import Action
+from core.models.common.financial_type import FinantialActions
+from core.models.common.simple_message import SimpleStringResponse
 from integrations.llm_providers_interface import LLMClientInterface
+from integrations.providers.llm_openai import OpenAILLM
 
 logger = logging.getLogger(__name__)
-
 
 class RotatingLLMClientPool(LLMClientInterface):
     """
@@ -33,6 +34,7 @@ class RotatingLLMClientPool(LLMClientInterface):
     """
 
     def __init__(self):
+        self.fallback_llm = OpenAILLM()
         self.clients = []
         for key in config.AKASH_API_KEY:
             self.clients.append(
@@ -40,36 +42,61 @@ class RotatingLLMClientPool(LLMClientInterface):
                     base_url=config.AKASH_API_BASE_URL,
                     api_key=key.strip(),
                     model_name=config.LLM_MODEL_NAME,
-                    temperature=config.LLM_TEMPERATURE
+                    temperature=config.LLM_TEMPERATURE,
+                    timeout=config.LLM_TIMEOUT,
+                    request_timeout=config.LLM_TIMEOUT,
+                    max_retries=config.LLM_AKASH_RETRIES
                 )
+            )
+            logger.info(
+                f"Initialized timeout:{config.LLM_TIMEOUT} retries: {config.LLM_AKASH_RETRIES}"
             )
 
         self._clients_cycle = cycle(self.clients)
         self._lock = Lock()
-        logger.info(f"Initialized {len(self.clients)} LLM clients with rotating API keys.")
+        logger.info(
+            f"Initialized {len(self.clients)} LLM clients with rotating API keys"
+        )
 
     def _get_next_client(self) -> ChatOpenAI:
         """
         Returns the next available client in a thread-safe manner.
         """
         with self._lock:
-            
-            a = next(self._clients_cycle)
-            logger.info(f"--------- {a}")
-            return a
+            return next(self._clients_cycle)
 
-    def determinate_action(self, prompt: str) -> Actions:
+    def determinate_action(self, prompt: str) -> Action:
         """
-        Usa el siguiente cliente disponible para ejecutar un prompt
-        que devuelve un enum `Actions` estructurado.
+        Uses the next available client to execute a prompt
+        that returns a structured `Actions` enum.
         """
-        client = self._get_next_client().with_structured_output(Actions)
-        return client.invoke(prompt)
+        return self.generate_fallbacked_response(prompt, Action)
 
-    def generate_response(self, prompt: str, output)  -> Forex | Investment | Transaction | Transfer:
+    def generate_simple_response(self, prompt: str) -> SimpleStringResponse:
+        """
+        Uses the next available client to execute the given prompt and returns a structured SimpleStringResponse object.
+        """
+        return self.generate_fallbacked_response(prompt, SimpleStringResponse)
+
+    def generate_response(self, prompt: str, output) -> FinantialActions:
         """
         Sends a prompt to the Akash LLM and returns the generated response.
         Logs the request and any errors during the API call.
         """
-        client = self._get_next_client().with_structured_output(output)
-        return client.invoke(prompt)
+        return self.generate_fallbacked_response(prompt, output)
+
+    def generate_fallbacked_response(self, prompt, output):
+        """
+        Attempts to generate a response using the rotating LLM client pool.
+        If it fails, falls back to the OpenAI LLM client.
+        """
+        try:
+            client = self._get_next_client().with_structured_output(output)
+            response =  client.invoke(prompt)
+            logger.info(f"Answer from akash: {response}")
+            return response
+        except Exception as e:
+            logger.error(
+                f"Failed to generate response with rotating clients. Falling back to OpenAI LLM."
+            )
+            return self.fallback_llm.generate_response(prompt, output)
