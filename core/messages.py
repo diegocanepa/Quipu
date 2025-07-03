@@ -37,22 +37,21 @@ MSG_PRESENT_OPTIONS = (
 
 # Google Sheet linking messages
 MSG_SHEET_CHOICE_CONFIRM = (
-    "¡Excelente elección! ✅\n"
-    "Vamos a configurar tu Google Sheet."
+    "¡Excelente elección! ✅\nVamos a configurar tu Google Sheet."
 )
 
 MSG_SHEET_STEP_1_COPY = (
     "<b>Paso 1: Copia la plantilla</b>\n\n"
-    "1. Abre este enlace ➡️ <a href=\"{template_url}\">Plantilla Google Sheet</a>\n"
-    "2. Ve a \"<i>Archivo → Hacer una copia</i>\"\n"
-    "3. Nombra tu hoja (ej: \"Mis Finanzas\")\n"
+    '1. Abre este enlace ➡️ <a href="{template_url}">Plantilla Google Sheet</a>\n'
+    '2. Ve a "<i>Archivo → Hacer una copia</i>"\n'
+    '3. Nombra tu hoja (ej: "Mis Finanzas")\n'
     "4. Guárdala en tu Drive"
 )
 
 MSG_SHEET_STEP_2_SHARE = (
     "<b>Paso 2: Comparte la hoja</b>\n\n"
     "1. Abre <i>tu copia</i> de la hoja\n"
-    "2. Clic en \"<b>Compartir</b>\" (arriba a la derecha)\n"
+    '2. Clic en "<b>Compartir</b>" (arriba a la derecha)\n'
     "3. Agrega este email como <b>Editor</b>:\n"
     "<code>{sa_email}</code>\n\n"
     "Luego, envíame el <b>enlace</b> de tu hoja 👇"
@@ -62,9 +61,7 @@ MSG_SHEET_LINK_CHECKING = (
     "Verificando el acceso a tu Google Sheet... Por favor espera. 🔄"
 )
 
-MSG_SHEET_AWAITING_URL = (
-    "Envíame el enlace de tu Google Sheet para continuar 👇"
-)
+MSG_SHEET_AWAITING_URL = "Envíame el enlace de tu Google Sheet para continuar 👇"
 MSG_SHEET_CHECKING_ACCESS = (
     "Verificando el acceso a tu Google Sheet... Por favor espera. 🤔"
 )
@@ -81,7 +78,7 @@ MSG_SHEET_LINK_FAILED_ACCESS = (
     "❌ No pude acceder a tu hoja.\n\n"
     "Verifica que:\n"
     "• Compartiste con: <code>{sa_email}</code>\n"
-    "• El permiso es \"<b>Editor</b>\"\n"
+    '• El permiso es "<b>Editor</b>"\n'
     "• El enlace es correcto\n\n"
     "¿Intentamos de nuevo? Compartime el enlace de tu hoja!"
 )
@@ -92,27 +89,23 @@ MSG_SHEET_LINK_INVALID_URL = (
 )
 
 MSG_SHEET_ALREADY_LINKED = (
-    "¡Tu Google Sheet ya está vinculada! ✅\n"
-    "Usa /info para ver tu estado."
+    "¡Tu Google Sheet ya está vinculada! ✅\nUsa /info para ver tu estado."
 )
 
 MSG_WEBAPP_ALREADY_LINKED = (
     "¡Tu cuenta web ya está vinculada a través de la web! ✅\n"
-    "Mirá tus datos haciendo click <a href=\"{url_link}\">acá</a> 📊\n\n"
+    'Mirá tus datos haciendo click <a href="{url_link}">acá</a> 📊\n\n'
     "<i>Para más información sobre tu cuenta usá /info</i> 💫"
 )
 
 # Webapp linking messages
-MSG_WEBAPP_CHOICE_CONFIRM = (
-    "¡Excelente elección! ✅\n"
-    "Vamos a vincular tu cuenta web."
-)
+MSG_WEBAPP_CHOICE_CONFIRM = "¡Excelente elección! ✅\nVamos a vincular tu cuenta web."
 
 MSG_WEBAPP_STEPS = (
     "<b>Sigue estos pasos:</b>\n\n"
     "1. Ingresa aquí:\n"
-    "<a href=\"{webapp_base_url}\">🌐 Plataforma Web</a>\n\n"
-    "2. En tu perfil, busca \"<b>Vincular con Telegram</b>\"\n\n"
+    '<a href="{webapp_base_url}">🌐 Plataforma Web</a>\n\n'
+    '2. En tu perfil, busca "<b>Vincular con Telegram</b>"\n\n'
     "3. Haz clic y confirma la vinculación ✨"
 )
 
@@ -131,14 +124,12 @@ MSG_WEBAPP_LINK_SUCCESS = (
 MSG_WEBAPP_LINK_FAILED = (
     "❌ La vinculación con la aplicación web no se pudo completar.\n\n"
     "Puedes:\n"
-    "• Seguí los pasos de nuevo e intenta nuevamente desde la <a href=\"{webapp_base_url}\">web</a>\n"
+    '• Seguí los pasos de nuevo e intenta nuevamente desde la <a href="{webapp_base_url}">web</a>\n'
     "• Cambiar a Google Sheets\n"
     "• Cancelar la configuración"
 )
 
-MSG_WEBAPP_DEEPLINK_TRIGGERED = (
-    "Procesando tu solicitud de vinculación... 🔄"
-)
+MSG_WEBAPP_DEEPLINK_TRIGGERED = "Procesando tu solicitud de vinculación... 🔄"
 
 MSG_ONBOARDING_REQUIRED = (
     "¡Hola! 👋\n\n"
@@ -160,12 +151,8 @@ MSG_INFO_STATUS = (
     "🌐 Cuenta Web: {webapp_status}\n"
 )
 
-STATUS_LINKED = (
-    "✅ Vinculado <a href=\"{url_link}\">(ver datos)</a>"
-)
-STATUS_NOT_LINKED = (
-    "❌ No vinculado"
-)
+STATUS_LINKED = '✅ Vinculado <a href="{url_link}">(ver datos)</a>'
+STATUS_NOT_LINKED = "❌ No vinculado"
 
 MSG_INFO_NOT_LINKED_ACTIONS = (
     "\n¡Hey! 👋 Parece que aún no has completado el proceso de bienvenida.\n\n"
@@ -182,9 +169,7 @@ MSG_INFO_LINKED_ACTIONS = (
     "¡Es así de simple! ¿Qué te gustaría registrar primero? 🚀"
 )
 
-MSG_INFO_LINK_OTHER_METHOD = (
-    "\n\n<b>¿Querés vincular otro método?</b>"
-)
+MSG_INFO_LINK_OTHER_METHOD = "\n\n<b>¿Querés vincular otro método?</b>"
 
 MSG_INFO_LINK_SHEET_CMD = "• /linksheet para Google Sheet"
 MSG_INFO_LINK_WEBAPP_CMD = "• /linkweb para Cuenta Web"
@@ -201,18 +186,14 @@ MSG_HELP_TEXT = (
 )
 
 MSG_CANCEL_ONBOARDING = (
-    "Configuración cancelada.\n"
-    "Usa /start cuando quieras continuar 👋"
+    "Configuración cancelada.\nUsa /start cuando quieras continuar 👋"
 )
 
 MSG_UNKNOWN_COMMAND = (
-    "No reconozco ese comando.\n"
-    "Usa /help para ver las opciones disponibles."
+    "No reconozco ese comando.\nUsa /help para ver las opciones disponibles."
 )
 
-MSG_UNKNOWN_MESSAGE = (
-    "Hmm, no entendí lo que querés hacer. Asegurate de usar el comando correcto y seguí las instrucciones. Si no sabés cómo hacerlo, podés usar /help para ver las opciones disponibles."
-)
+MSG_UNKNOWN_MESSAGE = "Hmm, no entendí lo que querés hacer. Asegurate de usar el comando correcto y seguí las instrucciones. Si no sabés cómo hacerlo, podés usar /help para ver las opciones disponibles."
 
 MSG_CANCEL_ONBOARDING_CONFIRM = (
     "✖️ Proceso de configuración cancelado.\n\n"
@@ -234,7 +215,7 @@ MSG_WEBAPP_NOT_REGISTERED = (
     "🧾 *Pasos:*\n"
     "1. Ingresá aquí ➡️ Crear cuenta en Quipu: {webapp_signup_url}\n"
     "2. Completá el registro en pocos segundos\n"
-    "3. Desde tu perfil, hacé clic en \"*Vincular con WhatsApp*\" para conectar tu cuenta\n\n"
+    '3. Desde tu perfil, hacé clic en "*Vincular con WhatsApp*" para conectar tu cuenta\n\n'
     "Una vez vinculada, vas a poder gestionar tus finanzas fácilmente desde WhatsApp 📱✨"
 )
 
@@ -267,11 +248,15 @@ All messages are formatted in HTML for better presentation.
 UNEXPECTED_ERROR = "❌ Hubo un error inesperado durante el procesamiento."
 MESSAGE_NOT_FOUND = "❌ No se encontró el mensaje original."
 USER_NOT_FOUND = "❌ Ocurrió un error inesperado al buscar el usuario."
-SAVE_ERROR = "❌ Error al guardar"
 CANCEL_MESSAGE = "❌ Acción cancelada."
+SAVE_ERROR = "Error ❌"
+SAVE_ERROR_CTA = (
+    "Hubo un error al guardar tus datos. Por favor, intentá nuevamente más tarde."
+)
 
 # Success messages
-SAVE_SUCCESS = "✅ Guardado correctamente"
+SAVE_SUCCESS = "Confirmado ✅"
+SAVE_SUCCESS_CTA = "Podes verlo en www.quipubot.app"
 
 # Button texts
 CONFIRM_BUTTON = "✅ Confirmar"
@@ -281,12 +266,16 @@ MSG_WEBAPP_NOT_REGISTERED_HTML = (
     "🚫 <b>¡Aún no creaste una cuenta en nuestra página web!</b>\n\n"
     "Para comenzar a utilizar la plataforma web, primero necesitás crear tu cuenta.\n\n"
     "<b>🧾 Pasos:</b>\n"
-    "1. Ingresá aquí ➡️ <a href=\"{webapp_signup_url}\">Crear cuenta en Quipu</a>\n"
+    '1. Ingresá aquí ➡️ <a href="{webapp_signup_url}">Crear cuenta en Quipu</a>\n'
     "2. Completá el registro en pocos segundos\n"
-    "3. Desde tu perfil, hacé clic en \"<b>Vincular con Telegram</b>\" para conectar tu cuenta\n\n"
+    '3. Desde tu perfil, hacé clic en "<b>Vincular con Telegram</b>" para conectar tu cuenta\n\n'
     "Una vez vinculada, vas a poder gestionar tus finanzas fácilmente desde Telegram 📱✨"
 )
 
 # Voice Processing Messages
 MSG_VOICE_NO_TEXT = "❌ <b>No pude entender el mensaje de voz</b>\n\nPor favor, intentá enviar el mensaje nuevamente o escribí el texto directamente 📝"
 MSG_VOICE_PROCESSING_ERROR = "❌ <b>Hubo un error al procesar el mensaje de voz</b>\n\nPor favor, intentá nuevamente en unos minutos 🎙️"
+
+ERROR_PROCESSING_MESSAGE="""No se pudo determinar una acción para registrar en base al mensaje. \
+\n Pobrá especificando el movimiento con "Gasté" o "Recibí" seguido del monto y la descripción del movimiento.
+"""
