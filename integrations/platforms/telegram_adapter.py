@@ -156,9 +156,9 @@ class TelegramAdapter(PlatformAdapter):
             emoji (str): The emoji to react with.
 
         Returns:
-            The result of the Telegram API react_message call.
+            The result of the Telegram API send_reaction call.
         """
-        pass
+        return self.update.message.set_reaction("🤝")
 
     def clean_up_processing_message(self, message):
         """
