@@ -147,6 +147,18 @@ class TelegramAdapter(PlatformAdapter):
         if self.update.callback_query:
             return self.update.callback_query.message.reply_text(text, reply_markup=reply_markup, parse_mode='HTML', **kwargs)
         return self.update.message.reply_text(text, reply_markup=reply_markup, parse_mode='HTML', **kwargs)
+    
+    def react_message(self, emoji):
+        """
+        Reacts to a telegram message with the specified emoji.
+
+        Args:
+            emoji (str): The emoji to react with.
+
+        Returns:
+            The result of the Telegram API send_reaction call.
+        """
+        return self.update.message.set_reaction("🤝")
 
     def clean_up_processing_message(self, message):
         """
