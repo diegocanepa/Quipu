@@ -1,4 +1,4 @@
-import logging
+from logging_config import get_logger
 from datetime import datetime
 from typing import List, Optional, Type, Union
 
@@ -20,7 +20,7 @@ from integrations.providers.llm_akash import RotatingLLMClientPool as LLMAgent
 from core.models.common.action_type import Action, ActionTypes
 from core.models.financial.transaction import Transaction
 
-logger = logging.getLogger(__name__)
+logger = get_logger(__name__)
 
 class RequestLLMModel(BaseModel):
     prompt: str

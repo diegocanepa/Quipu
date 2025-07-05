@@ -1,10 +1,10 @@
 import redis
-import logging
+from logging_config import get_logger
 from typing import Optional, Any
 from core.interfaces.cache_service import CacheService
 from config import Config
 
-logger = logging.getLogger(__name__)
+logger = get_logger(__name__)
 
 class RedisCacheClient(CacheService):
     """

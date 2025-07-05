@@ -1,4 +1,4 @@
-import logging
+from logging_config import get_logger
 from telegram.ext import (
     Application,
     MessageHandler,
@@ -12,7 +12,7 @@ from api.telegram.handlers.audio_handlers import audio_handlers
 from api.telegram.handlers.onboarding_handlers import onboarding_conv_handler
 from config import config
 
-logger = logging.getLogger(__name__)
+logger = get_logger(__name__)
 
 application = (
     Application.builder()

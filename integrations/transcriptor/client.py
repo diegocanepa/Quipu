@@ -1,12 +1,11 @@
 from dataclasses import dataclass
-import logging
+from logging_config import get_logger
 from config import config
 
 import aiohttp
 
 # Configure logging
-logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(module)s - %(message)s')
-logger = logging.getLogger(__name__)
+logger = get_logger(__name__)
 
 class TranscriptionServiceError(Exception):
     """Custom exception for errors during transcription service interaction."""
