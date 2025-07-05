@@ -52,6 +52,7 @@ class MessageProcessor:
         Returns:
             int: The state for the conversation handler (CONFIRM_SAVE).
         """
+        await platform.react_message("⏳")
         results: List[ProcessingResult] = await self.llm_processor.process_content(
             user_message.message_text
         )
