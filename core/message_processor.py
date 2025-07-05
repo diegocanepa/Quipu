@@ -1,5 +1,4 @@
 # core/message_processor.py
-from logging_config import get_logger
 from typing import List
 
 from core.data_server import DataSaver
@@ -22,6 +21,7 @@ from core.models.common.simple_message import SimpleStringResponse
 from core.models.message import Message
 from core.services.message_service import MessageService
 from core.user_data_manager import UserDataManager
+from logging_config import get_logger
 
 logger = get_logger(__name__)
 
@@ -66,8 +66,10 @@ class MessageProcessor:
                 await platform.reply_text(f"❌ {result.error}")
             if result.response_text:
                 await platform.reply_text(result.response_text)
-            elif result.data_object: 
-                response_text = result.data_object.to_presentation_string(platform.get_platform_name())
+            elif result.data_object:
+                response_text = result.data_object.to_presentation_string(
+                    platform.get_platform_name()
+                )
                 callback_id = f"{platform.get_message_id()}_{idx}"
 
                 buttons: List[CommandButton] = [
@@ -195,7 +197,9 @@ class MessageProcessor:
         if recovered_message:
             self._delete_message(recovered_message)
 
-        return CANCEL_MESSAGE
+        return (
+            f'"{recovered_message.message_object.get_description()}" - {CANCEL_MESSAGE}'
+        )
 
     def _delete_message(self, message: Message):
         """
