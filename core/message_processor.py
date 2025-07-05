@@ -196,10 +196,9 @@ class MessageProcessor:
 
         if recovered_message:
             self._delete_message(recovered_message)
-
-        return (
-            f'"{recovered_message.message_object.get_description()}" - {CANCEL_MESSAGE}'
-        )
+            return f'"{recovered_message.message_object.get_description()}" - {CANCEL_MESSAGE}'
+        else:
+            return CANCEL_MESSAGE
 
     def _delete_message(self, message: Message):
         """
