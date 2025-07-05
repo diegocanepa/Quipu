@@ -21,7 +21,11 @@ def get_version():
     except Exception:
         return "unknown"
 
-logger = logging.getLogger(__name__)
+# Configurar logger con CloudWatch
+import os
+from logging_config import get_logger
+
+logger = get_logger(__name__)
 
 # Initialize Blueprint and Telegram application
 app = Blueprint('telegram', __name__)

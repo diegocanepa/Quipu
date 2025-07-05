@@ -11,8 +11,9 @@ from asgiref.wsgi import WsgiToAsgi
 from http import HTTPStatus
 import argparse
 
-# Get logger for this module
-logger = logging.getLogger(__name__)
+# Get logger for this module with CloudWatch support
+from logging_config import get_logger
+logger = get_logger(__name__)
 
 app = Blueprint('whatsapp', __name__)
 

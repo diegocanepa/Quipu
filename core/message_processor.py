@@ -1,5 +1,5 @@
 # core/message_processor.py
-import logging
+from logging_config import get_logger
 from typing import List
 
 from core.data_server import DataSaver
@@ -23,7 +23,7 @@ from core.models.message import Message
 from core.services.message_service import MessageService
 from core.user_data_manager import UserDataManager
 
-logger = logging.getLogger(__name__)
+logger = get_logger(__name__)
 
 CONFIRM_SAVE = 1
 
