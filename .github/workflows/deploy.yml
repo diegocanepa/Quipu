@@ -242,13 +242,6 @@ jobs:
           ssh -i ~/.ssh/id_rsa ${{ secrets.EC2_USER }}@${{ secrets.EC2_HOST }} "echo 'SSH connection successful'"
       
       - name: Deploy to server
-        env:
-          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
-          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
-          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
-          SUPABASE_KEY: ${{ secrets.SUPABASE_KEY }}
-          GOOGLE_CREDENTIALS: ${{ secrets.GOOGLE_CREDENTIALS }}
         run: |
           set -e
           
@@ -367,59 +360,10 @@ jobs:
           echo "=== Deployment completed ==="
           DEPLOY_EOF
           
-          # Create environment setup script
-          cat > setup_env.sh << 'ENV_EOF'
-          #!/bin/bash
-          
-          # Set environment variables for CloudWatch
-          echo "Setting up CloudWatch environment variables..."
-          sudo mkdir -p /opt/quipu
-          
-          # Create .env file with CloudWatch settings
-          sudo tee /opt/quipu/.env > /dev/null << INNER_EOF
-          USE_CLOUDWATCH=true
-          AWS_ACCESS_KEY_ID=$AWS_ACCESS_KEY_ID
-          AWS_SECRET_ACCESS_KEY=$AWS_SECRET_ACCESS_KEY
-          AWS_REGION=us-east-2
-          ENVIRONMENT=production
-          TELEGRAM_BOT_TOKEN=$TELEGRAM_BOT_TOKEN
-          SUPABASE_URL=$SUPABASE_URL
-          SUPABASE_KEY=$SUPABASE_KEY
-          GOOGLE_CREDENTIALS=$GOOGLE_CREDENTIALS
-          INNER_EOF
-          
-          sudo chown quipu:quipu /opt/quipu/.env
-          sudo chmod 600 /opt/quipu/.env
-          
-          # Test CloudWatch connectivity
-          echo "Testing CloudWatch configuration..."
-          cd /opt/quipu
-          sudo -u quipu -E python3 -c "
-          import sys
-          sys.path.insert(0, '/opt/quipu')
-          import os
-          os.environ['USE_CLOUDWATCH'] = 'true'
-          os.environ['AWS_ACCESS_KEY_ID'] = '$AWS_ACCESS_KEY_ID'
-          os.environ['AWS_SECRET_ACCESS_KEY'] = '$AWS_SECRET_ACCESS_KEY'
-          os.environ['AWS_REGION'] = 'us-east-2'
-          os.environ['ENVIRONMENT'] = 'production'
-          try:
-              from logging_config import CloudWatchConfig, get_logger
-              success = CloudWatchConfig.setup_global_cloudwatch()
-              if success:
-                  logger = get_logger('deploy.test')
-                  logger.info('Deployment CloudWatch test successful')
-                  print('✅ CloudWatch configured successfully')
-              else:
-                  print('⚠️ CloudWatch configuration failed')
-          except Exception as e:
-              print(f'❌ CloudWatch test error: {e}')
-          " || echo "CloudWatch test failed, but continuing deployment..."
-          ENV_EOF
+
           
           # Transfer and execute deployment script
           scp -i ~/.ssh/id_rsa -o StrictHostKeyChecking=no deploy.sh ${{ secrets.EC2_USER }}@${{ secrets.EC2_HOST }}:/tmp/
-          scp -i ~/.ssh/id_rsa -o StrictHostKeyChecking=no setup_env.sh ${{ secrets.EC2_USER }}@${{ secrets.EC2_HOST }}:/tmp/
           
           echo "Executing deployment script..."
           ssh -i ~/.ssh/id_rsa -o StrictHostKeyChecking=no ${{ secrets.EC2_USER }}@${{ secrets.EC2_HOST }} "chmod +x /tmp/deploy.sh && /tmp/deploy.sh" || {
@@ -427,16 +371,6 @@ jobs:
             ssh -i ~/.ssh/id_rsa -o StrictHostKeyChecking=no ${{ secrets.EC2_USER }}@${{ secrets.EC2_HOST }} "sudo journalctl -u quipu.service --lines=20 --no-pager || true"
             exit 1
           }
-          
-          echo "Setting up environment variables..."
-          ssh -i ~/.ssh/id_rsa -o StrictHostKeyChecking=no ${{ secrets.EC2_USER }}@${{ secrets.EC2_HOST }} \
-            "AWS_ACCESS_KEY_ID='$AWS_ACCESS_KEY_ID' \
-             AWS_SECRET_ACCESS_KEY='$AWS_SECRET_ACCESS_KEY' \
-             TELEGRAM_BOT_TOKEN='$TELEGRAM_BOT_TOKEN' \
-             SUPABASE_URL='$SUPABASE_URL' \
-             SUPABASE_KEY='$SUPABASE_KEY' \
-             GOOGLE_CREDENTIALS='$GOOGLE_CREDENTIALS' \
-             chmod +x /tmp/setup_env.sh && /tmp/setup_env.sh"
       
       - name: Health Check
         run: |
@@ -454,6 +388,10 @@ jobs:
             fi
             echo "Recent logs:"
             sudo journalctl -u quipu.service --since "5 minutes ago" --no-pager | tail -10
+            
+            echo "Environment check:"
+            echo "Lines in .env: $(sudo wc -l < /opt/quipu/.env 2>/dev/null || echo 'file not found')"
+            echo "CloudWatch enabled: $(sudo grep -q USE_CLOUDWATCH /opt/quipu/.env 2>/dev/null && echo 'yes' || echo 'not set')"
           else
             echo "❌ Service failed"
             sudo journalctl -u quipu.service --lines=20 --no-pager
