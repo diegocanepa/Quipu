@@ -88,7 +88,7 @@ class WhatsAppV2AudioHandler:
             path = await audio.download()
 
             # Process audio
-            transcription_result = await self.audio_processor.process_audio(path)
+            transcription_result = await self.audio_processor.process_audio(platform, path)
             logger.info(f"Audio transcription result: {transcription_result}")
             
             if transcription_result:

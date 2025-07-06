@@ -149,6 +149,22 @@ class WhatsAppV2Adapter(PlatformAdapter):
             buttons=keyboard,
             **kwargs
         )
+    
+    async def react_message(self, emoji):
+        """
+        Reacts to a WhatsApp message with the specified emoji.
+
+        Args:
+            emoji (str): The emoji to react with.
+
+        Returns:
+            The result of the WhatsApp API react_message call.
+        """
+        return await self.wa.send_reaction(
+            to=self._sanitize_number(self.get_platform_user_id()),
+            message_id=self.get_message_id(),
+            emoji=emoji
+        )
 
     def clean_up_processing_message(self, message):
         """
@@ -159,6 +175,8 @@ class WhatsAppV2Adapter(PlatformAdapter):
         """
         # WhatsApp doesn't support message deletion
         pass
+    
+    
 
     def _button_to_keyboard(self, buttons: list[CommandButton]):
         """
@@ -192,4 +210,4 @@ class WhatsAppV2Adapter(PlatformAdapter):
         # Argentina: if it starts with 549, remove the '9'
         if raw_number.startswith("549"):
             return "54" + raw_number[3:]
-        return raw_number 
+        return raw_number
