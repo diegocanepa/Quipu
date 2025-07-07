@@ -1,4 +1,4 @@
-import logging
+from logging_config import get_logger
 from telegram import Update
 from telegram.ext import ContextTypes, ConversationHandler
 
@@ -6,7 +6,7 @@ from api.telegram.middlewere.require_onboarding import require_onboarding
 from core.message_processor import MessageProcessor
 from integrations.platforms.telegram_adapter import TelegramAdapter
 
-logger = logging.getLogger(__name__)
+logger = get_logger(__name__)
 
 # Variable set to know the stage of the conversation
 CONFIRM_SAVE = 1

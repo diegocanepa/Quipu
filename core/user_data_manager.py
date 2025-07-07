@@ -1,11 +1,11 @@
-import logging
+from logging_config import get_logger
 from datetime import datetime, timezone
 from typing import Optional
 
 from integrations.supabase.supabase import SupabaseManager
 from core.models.user import User
 
-logger = logging.getLogger(__name__)
+logger = get_logger(__name__)
 
 class UserDataManager:
     def __init__(self):

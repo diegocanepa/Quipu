@@ -1,4 +1,4 @@
-import logging
+from logging_config import get_logger
 from typing import Optional
 import re
 
@@ -9,7 +9,7 @@ from integrations.platforms.whatsapp_adapter import WhatsAppV2Adapter
 from config import config
 from api.whatsapp.messages import messages
 
-logger = logging.getLogger(__name__)
+logger = get_logger(__name__)
 
 class WhatsAppV2MessageHandler:
     """

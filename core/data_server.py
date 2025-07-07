@@ -1,11 +1,11 @@
-import logging
+from logging_config import get_logger
 
 from core.models.user import User
 from core.models.base_model import FinancialModel
 from integrations.spreadsheet.spreadsheet import SpreadsheetManager
 from integrations.supabase.supabase import SupabaseManager as SupaManager
 
-logger = logging.getLogger(__name__)
+logger = get_logger(__name__)
 
 class DataSaver:
     """
