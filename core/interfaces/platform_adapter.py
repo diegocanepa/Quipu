@@ -144,3 +144,10 @@ class PlatformAdapter(ABC):
             message: The message to clean up.
         """
         pass
+
+    @abstractmethod
+    async def delete_reaction(self):
+        """
+        Deletes the reaction from the message.
+        """
+        pass
