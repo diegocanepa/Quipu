@@ -52,7 +52,9 @@ class TranscriptionServiceClient:
             TranscriptionServiceError: For other service-specific errors.
         """
         endpoint = "transcribe"
-        url = f"{self._base_url}/{endpoint}"
+        # Add max_duration as a query param
+        max_duration = config.MAX_DURATION_AUDIO_IN_SECS
+        url = f"{self._base_url}/{endpoint}?max_duration={max_duration}"
         data = {'file': audio_file}
         logger.info(f"Sending POST request to: {url}, with form data keys: {list(data.keys())}")
 

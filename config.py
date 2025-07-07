@@ -45,6 +45,7 @@ class Config:
     FF_TRANSACTION: bool = os.getenv("FF_TRANSACTION", "true").lower() == "true"
     FF_INVESTMENT: bool = os.getenv("FF_INVESTMENT", "true").lower() == "true"
     WEBAPP_BASE_URL: str = os.getenv("WEBAPP_BASE_URL")
+    MAX_DURATION_AUDIO_IN_SECS: int = int(os.getenv("MAX_DURATION_AUDIO_IN_SECS", 60))
 
     # Flask settings
     HOST = os.getenv("HOST", "0.0.0.0")
