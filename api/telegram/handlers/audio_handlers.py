@@ -64,7 +64,6 @@ class AudioHandlers:
             # Process audio
             transcription_result = await self.audio_processor.process_audio(telegram_adapter, filename)
             logger.info(transcription_result)
-            os.remove(filename)
             
             message = telegram_adapter.map_to_message(message_text=transcription_result)
 
@@ -76,6 +75,8 @@ class AudioHandlers:
         except Exception as e:
             logger.error(f"Error handling voice message: {e}")
             await telegram_adapter.reply_text(MSG_VOICE_PROCESSING_ERROR)
+        finally:
+            os.remove(filename)
 
 # Create a singleton instance
 audio_handlers = AudioHandlers()

@@ -3,11 +3,11 @@ from oauth2client.service_account import ServiceAccountCredentials
 from config import config
 import base64
 import json
-import logging
+from logging_config import get_logger
 import re
 from typing import Optional, List
 
-logger = logging.getLogger(__name__)
+logger = get_logger(__name__)
 
 scopes = ["https://spreadsheets.google.com/feeds",'https://www.googleapis.com/auth/spreadsheets',"https://www.googleapis.com/auth/drive.file","https://www.googleapis.com/auth/drive"]
 

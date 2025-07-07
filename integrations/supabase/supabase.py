@@ -1,10 +1,10 @@
-import logging
+from logging_config import get_logger
 from abc import ABC, abstractmethod
 from typing import Dict, Any
 from supabase import create_client, Client
 from config import config
 
-logger = logging.getLogger(__name__)
+logger = get_logger(__name__)
 
 class SupabaseManagerService(ABC):
     @abstractmethod

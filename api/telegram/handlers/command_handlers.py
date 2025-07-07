@@ -1,4 +1,4 @@
-import logging
+from logging_config import get_logger
 from telegram import InlineKeyboardButton, InlineKeyboardMarkup, Update
 from telegram.ext import ContextTypes
 
@@ -9,7 +9,7 @@ from core.user_data_manager import UserDataManager
 
 from config import config
 
-logger = logging.getLogger(__name__)
+logger = get_logger(__name__)
 
 class CommandHandlers:
     def __init__(self):

@@ -1,10 +1,10 @@
-import logging
+from logging_config import get_logger
 from langchain_openai import ChatOpenAI
 
 from config import config
 from integrations.llm_providers_interface import LLMClientInterface
 
-logger = logging.getLogger(__name__)
+logger = get_logger(__name__)
 
 class OpenAILLM(LLMClientInterface):
     """

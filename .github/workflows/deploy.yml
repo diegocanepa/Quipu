@@ -317,6 +317,8 @@ jobs:
           echo "=== Deployment completed ==="
           DEPLOY_EOF
           
+
+          
           # Transfer and execute deployment script
           scp -i ~/.ssh/id_rsa -o StrictHostKeyChecking=no deploy.sh ${{ secrets.EC2_USER }}@${{ secrets.EC2_HOST }}:/tmp/
           
@@ -343,6 +345,10 @@ jobs:
             fi
             echo "Recent logs:"
             sudo journalctl -u quipu.service --since "5 minutes ago" --no-pager | tail -10
+            
+            echo "Environment check:"
+            echo "Lines in .env: $(sudo wc -l < /opt/quipu/.env 2>/dev/null || echo 'file not found')"
+            echo "CloudWatch enabled: $(sudo grep -q USE_CLOUDWATCH /opt/quipu/.env 2>/dev/null && echo 'yes' || echo 'not set')"
           else
             echo "❌ Service failed"
             sudo journalctl -u quipu.service --lines=20 --no-pager

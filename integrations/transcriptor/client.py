@@ -1,12 +1,11 @@
 from dataclasses import dataclass
-import logging
+from logging_config import get_logger
 from config import config
 
 import aiohttp
 
 # Configure logging
-logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(module)s - %(message)s')
-logger = logging.getLogger(__name__)
+logger = get_logger(__name__)
 
 class TranscriptionServiceError(Exception):
     """Custom exception for errors during transcription service interaction."""
@@ -52,7 +51,9 @@ class TranscriptionServiceClient:
             TranscriptionServiceError: For other service-specific errors.
         """
         endpoint = "transcribe"
-        url = f"{self._base_url}/{endpoint}"
+        # Add max_duration as a query param
+        max_duration = config.MAX_DURATION_AUDIO_IN_SECS
+        url = f"{self._base_url}/{endpoint}?max_duration={max_duration}"
         data = {'file': audio_file}
         logger.info(f"Sending POST request to: {url}, with form data keys: {list(data.keys())}")
 

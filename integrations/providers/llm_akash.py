@@ -1,4 +1,4 @@
-import logging
+from logging_config import get_logger
 from itertools import cycle
 from threading import Lock
 from typing import List
@@ -12,7 +12,7 @@ from core.models.common.simple_message import SimpleStringResponse
 from integrations.llm_providers_interface import LLMClientInterface
 from integrations.providers.llm_openai import OpenAILLM
 
-logger = logging.getLogger(__name__)
+logger = get_logger(__name__)
 
 class RotatingLLMClientPool(LLMClientInterface):
     """

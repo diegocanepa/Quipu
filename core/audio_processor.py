@@ -41,3 +41,5 @@ class AudioProcessor:
         except Exception as e:
             logger.error(f"An unexpected error occurred: {e}")
             return None
+        finally:
+            await platform.delete_reaction()
