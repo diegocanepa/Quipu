@@ -248,7 +248,7 @@ All messages are formatted in HTML for better presentation.
 UNEXPECTED_ERROR = "❌ Hubo un error inesperado durante el procesamiento."
 MESSAGE_NOT_FOUND = "❌ No se encontró el mensaje original."
 USER_NOT_FOUND = "❌ Ocurrió un error inesperado al buscar el usuario."
-CANCEL_MESSAGE = "❌ Acción cancelada."
+CANCEL_MESSAGE = "Movimiento Cancelado ❌"
 SAVE_ERROR = "Error ❌"
 SAVE_ERROR_CTA = (
     "Hubo un error al guardar tus datos. Por favor, intentá nuevamente más tarde."
@@ -276,6 +276,6 @@ MSG_WEBAPP_NOT_REGISTERED_HTML = (
 MSG_VOICE_NO_TEXT = "❌ <b>No pude entender el mensaje de voz</b>\n\nPor favor, intentá enviar el mensaje nuevamente o escribí el texto directamente 📝"
 MSG_VOICE_PROCESSING_ERROR = "❌ <b>Hubo un error al procesar el mensaje de voz</b>\n\nPor favor, intentá nuevamente en unos minutos 🎙️"
 
-ERROR_PROCESSING_MESSAGE="""No se pudo determinar una acción para registrar en base al mensaje. \
+ERROR_PROCESSING_MESSAGE = """No se pudo determinar una acción para registrar en base al mensaje. \
 \n Pobrá especificando el movimiento con "Gasté" o "Recibí" seguido del monto y la descripción del movimiento.
 """
