@@ -165,7 +165,17 @@ class WhatsAppV2Adapter(PlatformAdapter):
             message_id=self.get_message_id(),
             emoji=emoji
         )
-
+        
+    async def delete_reaction(self):
+        """
+        Deletes the reaction from the message.
+        """
+        return await self.wa.send_reaction(
+            to=self._sanitize_number(self.get_platform_user_id()),
+            message_id=self.get_message_id(),
+            emoji=""
+        )
+        
     def clean_up_processing_message(self, message):
         """
         Cleans up a processing message if the platform supports it.

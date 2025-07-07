@@ -159,6 +159,12 @@ class TelegramAdapter(PlatformAdapter):
             The result of the Telegram API send_reaction call.
         """
         return self.update.message.set_reaction("🤝")
+    
+    def delete_reaction(self):
+        """
+        Deletes the reaction from the message.
+        """
+        return self.update.message.set_reaction()
 
     def clean_up_processing_message(self, message):
         """
