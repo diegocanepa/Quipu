@@ -91,6 +91,8 @@ class MessageProcessor:
 
                 self.message_service.save_message(message=response_message)
 
+        await platform.delete_reaction()
+
         return CONFIRM_SAVE
 
     def save_and_respond(
