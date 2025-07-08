@@ -19,7 +19,7 @@ from whatsapp_bot import initialize_whatsapp
 # Configure logging
 def setup_logging():
     """Configure logging for the application with multiple fallback strategies and CloudWatch integration"""
-    from logging_config import CloudWatchConfig
+    from logging_config import CloudWatchGroupedConfig
 
     # Try multiple log file locations in order of preference
     log_file_candidates = [
@@ -90,7 +90,7 @@ def setup_logging():
         print(f"📝 Logging configured with {len(handlers)} handlers (stdout + file)")
 
     # Configurar CloudWatch globalmente
-    cloudwatch_enabled = CloudWatchConfig.setup_global_cloudwatch()
+    cloudwatch_enabled = CloudWatchGroupedConfig.setup_global_cloudwatch()
     if cloudwatch_enabled:
         print("☁️ CloudWatch logging habilitado")
     else:
