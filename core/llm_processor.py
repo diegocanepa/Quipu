@@ -10,8 +10,9 @@ from core.messages import ERROR_PROCESSING_MESSAGE
 from core.models.common.financial_type import FinantialActions
 from core.models.common.simple_message import SimpleStringResponse
 from core.prompts import (
-    MULTI_ACTION_PROMPT,
+    ACTION_PROMPT,
     TRANSACTION_PROMPT,
+    HUMAN_PROMPT,
     SOCIAL_MESSAGE_RESPONSE_PROMPT,
     QUESTION_RESPONSE_PROMPT,
     UNKNOWN_MESSAGE_RESPONSE_PROMPT,
@@ -23,7 +24,8 @@ from core.models.financial.transaction import Transaction
 logger = logging.getLogger(__name__)
 
 class RequestLLMModel(BaseModel):
-    prompt: str
+    system_prompt: str
+    human_prompt: str
     output_model: Type[BaseModel]
 
 class ProcessingResult(BaseModel):
@@ -65,6 +67,7 @@ class LLMProcessor:
         logger.info(f"Processing content: '{content}'")
         processing_results: List[ProcessingResult] = []
         current_datetime = datetime.now(pytz.timezone("America/Argentina/Buenos_Aires"))
+        day_of_week = current_datetime.strftime("%A")
 
         try:
             action = self.determine_action_type(content)
@@ -79,7 +82,7 @@ class LLMProcessor:
                 )
                 return processing_results
 
-            llm_request = self._process_action(action.message, action.action_type)
+            llm_request = self._process_action(action.message, action.action_type, current_datetime, day_of_week)
 
             if not llm_request:
                 logger.warning(f"Failed to create LLM request models for action: {action}")
@@ -91,15 +94,14 @@ class LLMProcessor:
                 return processing_results
             
             if action.action_type == ActionTypes.TRANSACTION:
-                responses = self.llm_client.generate_response(prompt=llm_request.prompt, output=llm_request.output_model)
+                responses = self.llm_client.generate_response(system_template=llm_request.system_prompt, human_template=llm_request.human_prompt, output=llm_request.output_model)
                 for transaction in responses.actions:
-                    transaction.date = current_datetime # :TODO Only when date is not provided by user
                     processing_results.append(
                         ProcessingResult(data_object=transaction)
                     )
                     logger.info(f"Processed: {transaction.model_dump_json()}")
             else:
-                response = self.llm_client.generate_simple_response(prompt=llm_request.prompt)
+                response = self.llm_client.generate_simple_response(system_template=llm_request.system_prompt, human_template=llm_request.human_prompt)
                 processing_results.append(
                         ProcessingResult(response_text=response.response)
                     )
@@ -121,16 +123,16 @@ class LLMProcessor:
         """
         Determines the action type from the input content using the LLM.
         """
-        prompt = MULTI_ACTION_PROMPT.format(content=content)
-        action = self.llm_client.determinate_action(prompt)
+        action_request = self._prepare_determinate_action_requests(content)
+        action = self.llm_client.determinate_action(system_template=action_request.system_prompt, human_template=action_request.human_prompt)
         logger.info(
             f"Determined actions types for content: '{content}', actions: '{action}'."
         )
         return action
 
     def _process_action(
-        self, content: str, action_type: ActionTypes
-    ) -> RequestLLMModel:
+        self, content: str, action_type: ActionTypes, current_datetime: datetime, day_of_week: str
+    ) -> Optional[RequestLLMModel]:
         """
         Determines the necessary LLM calls based on the action type and returns
         a list of RequestLLMModel objects.
@@ -145,7 +147,7 @@ class LLMProcessor:
         if action_type == ActionTypes.TRANSACTION and is_feature_enabled(
             FeatureFlagsEnum.TRANSACTION
         ):
-            return self._prepare_transaction_requests(content)
+            return self._prepare_transaction_requests(content, current_datetime, day_of_week)
         elif action_type == ActionTypes.QUESTION:
             return self._prepare_question_requests(content)
         elif action_type == ActionTypes.SOCIAL_MESSAGE:
@@ -156,48 +158,42 @@ class LLMProcessor:
             logger.warning(f"No LLM requests prepared for action: {action_type}")
             return None
 
-    def _prepare_transaction_requests(self, content: str) -> RequestLLMModel:
+    def _prepare_determinate_action_requests(self, content: str) -> RequestLLMModel:
         """Prepares LLM request models for a Transaction action."""
         return RequestLLMModel(
-                prompt=self._get_prompt(TRANSACTION_PROMPT, content),
+                system_prompt=ACTION_PROMPT,
+                human_prompt=content,
+                output_model=Action,
+            )
+    
+    def _prepare_transaction_requests(self, content: str, current_datetime: datetime, day_of_week: str) -> RequestLLMModel:
+        """Prepares LLM request models for a Transaction action."""
+        return RequestLLMModel(
+                system_prompt=TRANSACTION_PROMPT,
+                human_prompt=HUMAN_PROMPT.format(content=content, current_date=current_datetime, current_day_of_week=day_of_week),
                 output_model=FinantialActions,
             )
 
     def _prepare_social_message_requests(self, content: str) -> RequestLLMModel:
         """Prepara el request para mensajes sociales."""
         return RequestLLMModel(
-                prompt=self._get_prompt(SOCIAL_MESSAGE_RESPONSE_PROMPT, content),
+                system_prompt=SOCIAL_MESSAGE_RESPONSE_PROMPT,
+                human_prompt=content,
                 output_model=SimpleStringResponse,
             )
-        
 
     def _prepare_question_requests(self, content: str) -> RequestLLMModel:
         """Prepara el request para preguntas de usuario."""
         return RequestLLMModel(
-                prompt=self._get_prompt(QUESTION_RESPONSE_PROMPT, content),
+                system_prompt=QUESTION_RESPONSE_PROMPT,
+                human_prompt=content,
                 output_model=SimpleStringResponse,
             )
 
     def _prepare_unknow_message_requests(self, content: str) -> RequestLLMModel:
         """Prepara el request para mensajes desconocidos."""
         return  RequestLLMModel(
-                prompt=self._get_prompt(UNKNOWN_MESSAGE_RESPONSE_PROMPT, content),
+                system_prompt=UNKNOWN_MESSAGE_RESPONSE_PROMPT,
+                human_prompt=content,
                 output_model=SimpleStringResponse,
             )
-        
-
-    def _get_prompt(
-        self, promp: str, content: str, reason: Optional[str] = None
-    ) -> str:
-        """
-        Determines the appropriate prompt based on the action type and an optional reason.
-
-        Args:
-            promp: promp string.
-            content: The input content to be formatted into the prompt.
-            reason: An optional reason to include in the prompt. Defaults to None.
-
-        Returns:
-            The formatted prompt.
-        """
-        return promp.format(content=content, reason=reason if reason else "")
