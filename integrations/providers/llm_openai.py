@@ -1,9 +1,6 @@
-<<<<<<< Updated upstream
+
 from logging_config import get_logger
-=======
-import logging
 from typing import Type, Union
->>>>>>> Stashed changes
 from langchain_openai import ChatOpenAI
 from pydantic import SecretStr
 
