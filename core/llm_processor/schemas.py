@@ -5,7 +5,7 @@ from core.models.common.financial_type import FinantialActions
 from core.models.common.simple_message import SimpleStringResponse
 from core.models.financial.transaction import Transaction
 
-class RequestLLMModel(BaseModel):
+class LLMModelRequest(BaseModel):
     system_prompt: str
     human_prompt: str
     output_model:  Type[Union[Action, FinantialActions, SimpleStringResponse]]

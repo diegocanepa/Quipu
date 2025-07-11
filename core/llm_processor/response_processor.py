@@ -1,4 +1,4 @@
-from core.llm_processor.schemas import ProcessingResult, RequestLLMModel, ResponseProcessorException
+from core.llm_processor.schemas import ProcessingResult, LLMModelRequest, ResponseProcessorException
 from core.models.common.action_type import ActionTypes
 from integrations.providers.llm_akash import RotatingLLMClientPool as LLMAgent
 from typing import List, cast
@@ -12,7 +12,7 @@ class ResponseProcessor:
     def __init__(self):
         self.llm_client = LLMAgent()
 
-    async def process_response(self, prompt: RequestLLMModel) -> List[ProcessingResult]:
+    async def process_response(self, prompt: LLMModelRequest) -> List[ProcessingResult]:
         """
         Processes the LLM response and returns a list of ProcessingResult objects.
         Raises ResponseProcessorException if the response type is not recognized or an error occurs.
