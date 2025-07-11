@@ -10,12 +10,12 @@ from core.models.common.financial_type import FinantialActions
 from core.models.common.simple_message import SimpleStringResponse
 from datetime import datetime
 import pytz
-from core.llm_processor.schemas import PrompBuilderException, RequestLLMModel
+from core.llm_processor.schemas import PromptBuilderException, RequestLLMModel
 
 class PromptBuilder:
     """
     Builds the appropriate prompt for the LLM based on the detected action type.
-    Raises PrompBuilderException for unknown action types.
+    Raises PromptBuilderException for unknown action types.
     """
     def build_prompt(self, content: str, action) -> RequestLLMModel:
         """
@@ -31,7 +31,7 @@ class PromptBuilder:
         elif action.action_type == ActionTypes.UNKNOWN_MESSAGE:
             return self._build_unknown_message_request(content)
         else:
-            raise PrompBuilderException(f"Unknown action type: {action.action_type}")
+            raise PromptBuilderException(f"Unknown action type: {action.action_type}")
 
     def _build_transaction_request(self, content: str) -> RequestLLMModel:
         """

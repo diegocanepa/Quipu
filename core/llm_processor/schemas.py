@@ -28,6 +28,6 @@ class ActionDetectorException(LLMProcessorException):
     """Exception for errors in the ActionDetector."""
     pass 
 
-class PrompBuilderException(LLMProcessorException):
+class PromptBuilderException(LLMProcessorException):
     """Exception for errors in the ActionDetector."""
     pass 
