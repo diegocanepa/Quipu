@@ -1,7 +1,7 @@
 from core.models.common.action_type import Action
 from core.prompts import ACTION_PROMPT
 from integrations.providers.llm_akash import RotatingLLMClientPool as LLMAgent
-import logging
+from logging_config import get_logger
 from core.llm_processor.schemas import ActionDetectorException
 
 class ActionDetector:
@@ -11,7 +11,7 @@ class ActionDetector:
     """
     def __init__(self):
         self.llm_client = LLMAgent()
-        self.logger = logging.getLogger(__name__)
+        self.logger = get_logger(__name__)
 
     def detect_action(self, content: str) -> Action:
         """

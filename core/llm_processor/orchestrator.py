@@ -5,7 +5,7 @@ from core.llm_processor.validator import LLMResponseValidator
 from typing import List
 from core.llm_processor.schemas import ProcessingResult, LLMProcessorException
 from core.messages import ERROR_PROCESSING_MESSAGE
-import logging
+from logging_config import get_logger
 
 class LLMOrchestrator:
     """
@@ -17,7 +17,7 @@ class LLMOrchestrator:
         self.prompt_builder = PromptBuilder()
         self.response_processor = ResponseProcessor()
         self.validator = LLMResponseValidator()
-        self.logger = logging.getLogger(__name__)
+        self.logger = get_logger(__name__)
         self.logger.info("LLMProcessorV2 initialized.")
 
     async def process_content(self, content: str) -> List[ProcessingResult]:

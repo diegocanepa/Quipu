@@ -4,6 +4,7 @@ from integrations.providers.llm_akash import RotatingLLMClientPool as LLMAgent
 from typing import List, cast
 from core.models.common.financial_type import FinantialActions
 from core.models.common.simple_message import SimpleStringResponse
+from logging_config import get_logger
 
 class ResponseProcessor:
     """
@@ -11,6 +12,7 @@ class ResponseProcessor:
     """
     def __init__(self):
         self.llm_client = LLMAgent()
+        self.logger = get_logger(__name__)
 
     async def process_response(self, prompt: LLMModelRequest) -> List[ProcessingResult]:
         """
@@ -18,11 +20,13 @@ class ResponseProcessor:
         Raises ResponseProcessorException if the response type is not recognized or an error occurs.
         """
         try:
+            self.logger.info(f"[ResponseProcessor] Processing response for prompt: {prompt.human_prompt}")
             response = self.llm_client.generate_response(
                 system_template=prompt.system_prompt,
                 human_template=prompt.human_prompt,
                 output=prompt.output_model
             )
+            self.logger.info(f"[ResponseProcessor] LLM response received: {response}")
             if self._is_finantial_actions(response):
                 return self._build_finantial_actions_results(cast(FinantialActions, response))
             elif self._is_simple_string_response(response):
@@ -50,10 +54,14 @@ class ResponseProcessor:
         """
         Builds a list of ProcessingResult objects from a FinantialActions response.
         """
-        return [ProcessingResult(data_object=transaction) for transaction in getattr(response, 'actions', [])]
+        results = [ProcessingResult(data_object=transaction) for transaction in getattr(response, 'actions', [])]
+        self.logger.info(f"[ResponseProcessor] Built {len(results)} ProcessingResult(s) from FinantialActions.")
+        return results
 
     def _build_simple_string_response_results(self, response: SimpleStringResponse) -> List[ProcessingResult]:
         """
         Builds a list of ProcessingResult objects from a SimpleStringResponse response.
         """
-        return [ProcessingResult(response_text=getattr(response, 'response', None))] 
+        results = [ProcessingResult(response_text=getattr(response, 'response', None))]
+        self.logger.info(f"[ResponseProcessor] Built ProcessingResult from SimpleStringResponse: {results}")
+        return results 
