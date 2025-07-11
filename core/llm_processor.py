@@ -66,7 +66,7 @@ class LLMProcessor:
         """
         logger.info(f"Processing content: '{content}'")
         processing_results: List[ProcessingResult] = []
-        current_datetime = datetime.now(pytz.timezone("America/Argentina/Buenos_Aires"))
+        current_datetime = datetime.now(pytz.timezone("America/Argentina/Buenos_Aires")) # :TODO: Consider different timezones for events features
         day_of_week = current_datetime.strftime("%A")
 
         try:
