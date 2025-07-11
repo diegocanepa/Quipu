@@ -1,5 +1,5 @@
 from abc import ABC, abstractmethod
-from argparse import Action
+from core.models.common.action_type import Action
 from typing import Any, Type, Union
 
 from core.models.common.financial_type import FinantialActions
