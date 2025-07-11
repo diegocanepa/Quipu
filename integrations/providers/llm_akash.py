@@ -4,6 +4,13 @@ from threading import Lock
 from typing import List
 
 from langchain_openai import ChatOpenAI
+from langchain.prompts import (
+    ChatPromptTemplate,
+    SystemMessagePromptTemplate,
+    HumanMessagePromptTemplate,
+)
+
+from pydantic import SecretStr
 
 from config import config
 from core.models.common.action_type import Action
@@ -40,11 +47,10 @@ class RotatingLLMClientPool(LLMClientInterface):
             self.clients.append(
                 ChatOpenAI(
                     base_url=config.AKASH_API_BASE_URL,
-                    api_key=key.strip(),
-                    model_name=config.LLM_MODEL_NAME,
+                    api_key=SecretStr(key.strip()),
+                    model=config.LLM_MODEL_NAME,
                     temperature=config.LLM_TEMPERATURE,
                     timeout=config.LLM_TIMEOUT,
-                    request_timeout=config.LLM_TIMEOUT,
                     max_retries=config.LLM_AKASH_RETRIES
                 )
             )
@@ -65,27 +71,36 @@ class RotatingLLMClientPool(LLMClientInterface):
         with self._lock:
             return next(self._clients_cycle)
 
-    def determinate_action(self, prompt: str) -> Action:
+    def determinate_action(self, system_template: str,  human_template: str,):
         """
         Uses the next available client to execute a prompt
         that returns a structured `Actions` enum.
         """
-        return self.generate_fallbacked_response(prompt, Action)
+        chat_prompt = self._get_chat_prompt(system_template, human_template)
+        return self._generate_fallbacked_response(chat_prompt, Action)
 
-    def generate_simple_response(self, prompt: str) -> SimpleStringResponse:
+    def generate_simple_response(self, system_template: str,  human_template: str):
         """
         Uses the next available client to execute the given prompt and returns a structured SimpleStringResponse object.
         """
-        return self.generate_fallbacked_response(prompt, SimpleStringResponse)
+        chat_prompt = self._get_chat_prompt(system_template, human_template)
+        return self._generate_fallbacked_response(chat_prompt, SimpleStringResponse)
 
-    def generate_response(self, prompt: str, output) -> FinantialActions:
+    def generate_response(self, system_template: str,  human_template: str, output):
         """
         Sends a prompt to the Akash LLM and returns the generated response.
         Logs the request and any errors during the API call.
         """
-        return self.generate_fallbacked_response(prompt, output)
+        chat_prompt = self._get_chat_prompt(system_template, human_template)
+        return self._generate_fallbacked_response(chat_prompt, output)
+    
+    def _get_chat_prompt(self, system_template: str,  human_template: str):
+        system_prompt = SystemMessagePromptTemplate.from_template(system_template)
+        human_prompt = HumanMessagePromptTemplate.from_template(human_template)
+        chat_prompt = ChatPromptTemplate.from_messages([system_prompt, human_prompt])
+        return chat_prompt.format()
 
-    def generate_fallbacked_response(self, prompt, output):
+    def _generate_fallbacked_response(self, prompt, output):
         """
         Attempts to generate a response using the rotating LLM client pool.
         If it fails, falls back to the OpenAI LLM client.

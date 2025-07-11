@@ -19,7 +19,7 @@ class Config:
         os.getenv("AKASH_API_KEY").split(",") if os.getenv("AKASH_API_KEY") else []
     )
     LLM_MODEL_NAME: str = os.getenv("LLM_MODEL_NAME", "DeepSeek-R1-Distill-Qwen-32B")
-    LLM_TEMPERATURE: float = float(os.getenv("LLM_TEMPERATURE", "0.7"))
+    LLM_TEMPERATURE: float = float(os.getenv("LLM_TEMPERATURE", "0.2"))
     LLM_TIMEOUT: float = float(os.getenv("LLM_TIMEOUT", 10))  # Timeout in seconds
     LLM_MAX_RETRIES: int = int(os.getenv("LLM_MAX_RETRIES", 1))
     TELEGRAM_BOT_TOKEN: str = os.getenv("TELEGRAM_BOT_TOKEN")
