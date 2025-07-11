@@ -33,7 +33,7 @@ class PlatformAdapter(ABC):
     
     
     @abstractmethod
-    def map_to_message(self, message_text: str = None) -> Message:
+    def map_to_message(self, message_text: str) -> Message:
         """
         Returns message model
 
@@ -103,7 +103,7 @@ class PlatformAdapter(ABC):
         pass
 
     @abstractmethod
-    def reply_text(self, text: str, **kwargs):
+    async def reply_text(self, text: str, **kwargs):
         """
         Sends a text reply to the user.
 
@@ -114,7 +114,7 @@ class PlatformAdapter(ABC):
         pass
 
     @abstractmethod
-    def reply_with_buttons(self, text: str, buttons: List[CommandButton], **kwargs):
+    async def reply_with_buttons(self, text: str, buttons: List[CommandButton], **kwargs):
         """
         Sends a reply with buttons to the user.
 

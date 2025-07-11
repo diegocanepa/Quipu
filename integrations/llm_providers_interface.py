@@ -1,11 +1,15 @@
 from abc import ABC, abstractmethod
-from typing import Any
+from core.models.common.action_type import Action
+from typing import Any, Type, Union
+
+from core.models.common.financial_type import FinantialActions
+from core.models.common.simple_message import SimpleStringResponse
 
 class LLMClientInterface(ABC):
     """Interface for language model clients."""
 
     @abstractmethod
-    def generate_response(self, prompt: str) -> Any:
+    def generate_response(self, prompt: str, output: Type[Union[Action, FinantialActions, SimpleStringResponse]]) -> Type[Union[Action, FinantialActions, SimpleStringResponse]]:
         """
         Generates a response from the language model.
 

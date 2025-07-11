@@ -23,7 +23,7 @@ from core.models.financial.transaction import Transaction
 
 logger = get_logger(__name__)
 
-class RequestLLMModel(BaseModel):
+class LLMModelRequest(BaseModel):
     system_prompt: str
     human_prompt: str
     output_model: Type[BaseModel]
@@ -66,7 +66,7 @@ class LLMProcessor:
         """
         logger.info(f"Processing content: '{content}'")
         processing_results: List[ProcessingResult] = []
-        current_datetime = datetime.now(pytz.timezone("America/Argentina/Buenos_Aires"))
+        current_datetime = datetime.now(pytz.timezone("America/Argentina/Buenos_Aires")) # :TODO: Consider different timezones for events features
         day_of_week = current_datetime.strftime("%A")
 
         try:
@@ -132,17 +132,17 @@ class LLMProcessor:
 
     def _process_action(
         self, content: str, action_type: ActionTypes, current_datetime: datetime, day_of_week: str
-    ) -> Optional[RequestLLMModel]:
+    ) -> Optional[LLMModelRequest]:
         """
         Determines the necessary LLM calls based on the action type and returns
-        a list of RequestLLMModel objects.
+        a list of LLMModelRequest objects.
 
         Args:
             content: The input string.
             action_type: The determined ActionTypes.
 
         Returns:
-            A list of RequestLLMModel objects, or None if no requests are needed.
+            A list of LLMModelRequest objects, or None if no requests are needed.
         """
         if action_type == ActionTypes.TRANSACTION and is_feature_enabled(
             FeatureFlagsEnum.TRANSACTION
@@ -158,41 +158,41 @@ class LLMProcessor:
             logger.warning(f"No LLM requests prepared for action: {action_type}")
             return None
 
-    def _prepare_determinate_action_requests(self, content: str) -> RequestLLMModel:
+    def _prepare_determinate_action_requests(self, content: str) -> LLMModelRequest:
         """Prepares LLM request models for a Transaction action."""
-        return RequestLLMModel(
+        return LLMModelRequest(
                 system_prompt=ACTION_PROMPT,
                 human_prompt=content,
                 output_model=Action,
             )
     
-    def _prepare_transaction_requests(self, content: str, current_datetime: datetime, day_of_week: str) -> RequestLLMModel:
+    def _prepare_transaction_requests(self, content: str, current_datetime: datetime, day_of_week: str) -> LLMModelRequest:
         """Prepares LLM request models for a Transaction action."""
-        return RequestLLMModel(
+        return LLMModelRequest(
                 system_prompt=TRANSACTION_PROMPT,
                 human_prompt=HUMAN_PROMPT.format(content=content, current_date=current_datetime, current_day_of_week=day_of_week),
                 output_model=FinantialActions,
             )
 
-    def _prepare_social_message_requests(self, content: str) -> RequestLLMModel:
+    def _prepare_social_message_requests(self, content: str) -> LLMModelRequest:
         """Prepara el request para mensajes sociales."""
-        return RequestLLMModel(
+        return LLMModelRequest(
                 system_prompt=SOCIAL_MESSAGE_RESPONSE_PROMPT,
                 human_prompt=content,
                 output_model=SimpleStringResponse,
             )
 
-    def _prepare_question_requests(self, content: str) -> RequestLLMModel:
+    def _prepare_question_requests(self, content: str) -> LLMModelRequest:
         """Prepara el request para preguntas de usuario."""
-        return RequestLLMModel(
+        return LLMModelRequest(
                 system_prompt=QUESTION_RESPONSE_PROMPT,
                 human_prompt=content,
                 output_model=SimpleStringResponse,
             )
 
-    def _prepare_unknow_message_requests(self, content: str) -> RequestLLMModel:
+    def _prepare_unknow_message_requests(self, content: str) -> LLMModelRequest:
         """Prepara el request para mensajes desconocidos."""
-        return  RequestLLMModel(
+        return  LLMModelRequest(
                 system_prompt=UNKNOWN_MESSAGE_RESPONSE_PROMPT,
                 human_prompt=content,
                 output_model=SimpleStringResponse,
