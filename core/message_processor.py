@@ -3,7 +3,8 @@ from typing import List
 
 from core.data_server import DataSaver
 from core.interfaces.platform_adapter import PlatformAdapter
-from core.llm_processor import LLMProcessor, ProcessingResult
+from core.llm_processor.orchestrator import LLMOrchestrator
+from core.llm_processor.schemas import ProcessingResult
 from core.messages import (
     CANCEL_BUTTON,
     CANCEL_MESSAGE,
@@ -31,7 +32,7 @@ CONFIRM_SAVE = 1
 class MessageProcessor:
     def __init__(self):
         # TODO: Implement dependency injection and singleton pattern.
-        self.llm_processor = LLMProcessor()
+        self.llm_processor = LLMOrchestrator()
         self.message_service = MessageService()
         self.data_saver = DataSaver()
         self.user_data_manager = UserDataManager()
@@ -57,15 +58,15 @@ class MessageProcessor:
             user_message.message_text
         )
 
-        if not results:
-            await platform.reply_text(UNEXPECTED_ERROR)
-            return -1  # Means conversations END but we have to check how whatsapp works
-
         for idx, result in enumerate(results):
             if result.error:
                 await platform.reply_text(f"❌ {result.error}")
+                await platform.delete_reaction()
+                return -1
             if result.response_text:
                 await platform.reply_text(result.response_text)
+                await platform.delete_reaction()
+                return -1
             elif result.data_object:
                 response_text = result.data_object.to_presentation_string(
                     platform.get_platform_name()
